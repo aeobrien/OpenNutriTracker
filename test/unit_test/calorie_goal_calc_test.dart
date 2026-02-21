@@ -44,4 +44,55 @@ void main() {
       expect(resultCalorieGoal.toInt(), expectedKcal);
     });
   });
+
+  group('Allowance and Earned Calories', () {
+    late UserEntity user;
+
+    setUp(() {
+      user = UserEntityFixtures.youngSedentaryMaleWantingToMaintainWeight;
+    });
+
+    test('getAllowance with default multiplier (0.75)', () {
+      // TDEE: 2662, goal adj: 0, exercise: 400 * 0.75 = 300
+      final result = CalorieGoalCalc.getAllowance(user, 400.0);
+      expect(result.toInt(), 2962);
+    });
+
+    test('getAllowance with multiplier 0.5', () {
+      // TDEE: 2662, goal adj: 0, exercise: 400 * 0.5 = 200
+      final result =
+          CalorieGoalCalc.getAllowance(user, 400.0, exerciseMultiplier: 0.5);
+      expect(result.toInt(), 2862);
+    });
+
+    test('getAllowance with multiplier 1.0 matches getTotalKcalGoal', () {
+      final allowance =
+          CalorieGoalCalc.getAllowance(user, 400.0, exerciseMultiplier: 1.0);
+      final legacy = CalorieGoalCalc.getTotalKcalGoal(user, 400.0);
+      expect(allowance, legacy);
+    });
+
+    test('getAllowance with multiplier 0 ignores exercise', () {
+      final result =
+          CalorieGoalCalc.getAllowance(user, 400.0, exerciseMultiplier: 0);
+      // TDEE: 2662, goal adj: 0, exercise: 0
+      expect(result.toInt(), 2662);
+    });
+
+    test('getEarnedCalories with zero exercise', () {
+      expect(CalorieGoalCalc.getEarnedCalories(0), 0);
+    });
+
+    test('getEarnedCalories with default multiplier', () {
+      expect(CalorieGoalCalc.getEarnedCalories(400.0), 300.0);
+    });
+
+    test('getRemaining positive', () {
+      expect(CalorieGoalCalc.getRemaining(2000, 1500), 500);
+    });
+
+    test('getRemaining negative (over target)', () {
+      expect(CalorieGoalCalc.getRemaining(2000, 2500), -500);
+    });
+  });
 }

@@ -70,6 +70,9 @@ class ConfigRepository {
       userFatGoalPct: all['userFatGoalPct'] != null
           ? double.tryParse(all['userFatGoalPct']!)
           : null,
+      exerciseMultiplier: all['exerciseMultiplier'] != null
+          ? double.tryParse(all['exerciseMultiplier']!)
+          : null,
     );
   }
 
@@ -103,5 +106,13 @@ class ConfigRepository {
     await _configDao.setDouble('userCarbGoalPct', carbs);
     await _configDao.setDouble('userProteinGoalPct', protein);
     await _configDao.setDouble('userFatGoalPct', fat);
+  }
+
+  Future<double> getExerciseMultiplier() async {
+    return await _configDao.getDouble('exerciseMultiplier') ?? 0.75;
+  }
+
+  Future<void> setExerciseMultiplier(double multiplier) async {
+    await _configDao.setDouble('exerciseMultiplier', multiplier);
   }
 }

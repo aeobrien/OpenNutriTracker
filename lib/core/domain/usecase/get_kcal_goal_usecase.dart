@@ -24,7 +24,10 @@ class GetKcalGoalUsecase {
             .map((activity) => activity.burnedKcal)
             .toList()
             .sum;
-    return CalorieGoalCalc.getTotalKcalGoal(user, totalKcalActivities,
-        kcalUserAdjustment: config.userKcalAdjustment);
+    final exerciseMultiplier =
+        config.exerciseMultiplier ?? CalorieGoalCalc.defaultExerciseMultiplier;
+    return CalorieGoalCalc.getAllowance(user, totalKcalActivities,
+        kcalUserAdjustment: config.userKcalAdjustment,
+        exerciseMultiplier: exerciseMultiplier);
   }
 }

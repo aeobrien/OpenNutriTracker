@@ -110,6 +110,26 @@ class LogEntryDao extends DatabaseAccessor<AppDatabase>
         .toList();
   }
 
+  Future<List<LogEntryWithFoodItem>> getByDate(DateTime date) async {
+    final dayStart =
+        DateTime(date.year, date.month, date.day).millisecondsSinceEpoch;
+    final dayEnd = DateTime(date.year, date.month, date.day, 23, 59, 59, 999)
+        .millisecondsSinceEpoch;
+
+    final query = select(logEntries).join([
+      leftOuterJoin(foodItems, foodItems.id.equalsExp(logEntries.foodItemId)),
+    ])
+      ..where(logEntries.timestamp.isBetweenValues(dayStart, dayEnd));
+
+    final rows = await query.get();
+    return rows
+        .map((row) => LogEntryWithFoodItem(
+              logEntry: row.readTable(logEntries),
+              foodItem: row.readTableOrNull(foodItems),
+            ))
+        .toList();
+  }
+
   Future<List<LogEntry>> getAllRaw() async {
     return select(logEntries).get();
   }

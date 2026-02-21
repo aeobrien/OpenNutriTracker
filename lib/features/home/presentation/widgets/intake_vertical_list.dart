@@ -161,51 +161,13 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                         firstListElement: firstListElement);
                   } else {
                     final intakeEntity = widget.intakeList[index];
-                    return LongPressDraggable<IntakeEntity>(
-                      onDragStarted: () {
-                        widget.onItemDragCallback?.call(true);
-                      },
-                      onDragEnd: (details) {
-                        widget.onItemDragCallback?.call(false);
-                      },
-                      data: intakeEntity,
-                      feedback: Material(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.0),
-                        ),
-                        child: Opacity(
-                          opacity: 0.7,
-                          child: IntakeCard(
-                            key: ValueKey(intakeEntity.meal.code),
-                            intake: intakeEntity,
-                            firstListElement: false,
-                            usesImperialUnits: widget.usesImperialUnits,
-                          ),
-                        ),
-                      ),
-                      childWhenDragging: Row(
-                        children: [
-                          SizedBox(width: firstListElement ? 16 : 0),
-                          SizedBox(
-                            width: 120,
-                            height: 120,
-                            child: Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16.0),
-                              ),
-                              color: Theme.of(context).cardColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      child: IntakeCard(
-                        key: ValueKey(intakeEntity.meal.code),
-                        intake: intakeEntity,
-                        onItemLongPressed: widget.onItemLongPressedCallback,
-                        onItemTapped: widget.onItemTappedCallback,
-                        firstListElement: firstListElement,
-                        usesImperialUnits: widget.usesImperialUnits,
-                      ),
+                    return IntakeCard(
+                      key: ValueKey(intakeEntity.meal.code),
+                      intake: intakeEntity,
+                      onItemLongPressed: widget.onItemLongPressedCallback,
+                      onItemTapped: widget.onItemTappedCallback,
+                      firstListElement: firstListElement,
+                      usesImperialUnits: widget.usesImperialUnits,
                     );
                   }
                 },

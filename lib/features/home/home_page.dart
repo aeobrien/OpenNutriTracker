@@ -27,8 +27,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final log = Logger('HomePage');
 
   late HomeBloc _homeBloc;
-  bool _isDragging = false;
-
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -143,7 +141,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           addMealType: AddMealType.breakfastType,
           intakeList: breakfastIntakeList,
           onDeleteIntakeCallback: onDeleteIntake,
-          onItemDragCallback: onIntakeItemDrag,
+          onItemLongPressedCallback: onIntakeItemLongPressed,
           onItemTappedCallback: onIntakeItemTapped,
           usesImperialUnits: usesImperialUnits,
         ),
@@ -154,7 +152,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           addMealType: AddMealType.lunchType,
           intakeList: lunchIntakeList,
           onDeleteIntakeCallback: onDeleteIntake,
-          onItemDragCallback: onIntakeItemDrag,
+          onItemLongPressedCallback: onIntakeItemLongPressed,
           onItemTappedCallback: onIntakeItemTapped,
           usesImperialUnits: usesImperialUnits,
         ),
@@ -165,7 +163,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           listIcon: IntakeTypeEntity.dinner.getIconData(),
           intakeList: dinnerIntakeList,
           onDeleteIntakeCallback: onDeleteIntake,
-          onItemDragCallback: onIntakeItemDrag,
+          onItemLongPressedCallback: onIntakeItemLongPressed,
           onItemTappedCallback: onIntakeItemTapped,
           usesImperialUnits: usesImperialUnits,
         ),
@@ -176,40 +174,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           addMealType: AddMealType.snackType,
           intakeList: snackIntakeList,
           onDeleteIntakeCallback: onDeleteIntake,
-          onItemDragCallback: onIntakeItemDrag,
+          onItemLongPressedCallback: onIntakeItemLongPressed,
           onItemTappedCallback: onIntakeItemTapped,
           usesImperialUnits: usesImperialUnits,
         ),
         const SizedBox(height: 48.0)
       ]),
-      Align(
-          alignment: Alignment.bottomCenter,
-          child: Visibility(
-              visible: _isDragging,
-              child: Container(
-                height: 70,
-                color: Theme.of(context).colorScheme.error
-                  ..withValues(alpha: 0.3),
-                child: DragTarget<IntakeEntity>(
-                  onAcceptWithDetails: (data) {
-                    _confirmDelete(context, data.data);
-                  },
-                  onLeave: (data) {
-                    setState(() {
-                      _isDragging = false;
-                    });
-                  },
-                  builder: (context, candidateData, rejectedData) {
-                    return const Center(
-                      child: Icon(
-                        Icons.delete_outline,
-                        size: 36,
-                        color: Colors.white,
-                      ),
-                    );
-                  },
-                ),
-              )))
     ]);
   }
 
@@ -243,14 +213,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  void onIntakeItemDrag(bool isDragging) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      setState(() {
-        _isDragging = isDragging;
-      });
-    });
-  }
-
   void onIntakeItemTapped(BuildContext context, IntakeEntity intakeEntity,
       bool usesImperialUnits) async {
     final changeIntakeAmount = await showDialog<double>(
@@ -271,18 +233,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void onDeleteIntake(IntakeEntity intake, TrackedDayEntity? trackedDayEntity) {
     _homeBloc.deleteIntakeItem(intake);
     _homeBloc.add(const LoadItemsEvent());
-  }
-
-  void _confirmDelete(BuildContext context, IntakeEntity intake) async {
-    bool? delete = await showDialog<bool>(
-        context: context, builder: (context) => const DeleteDialog());
-
-    if (delete == true) {
-      onDeleteIntake(intake, null);
-    }
-    setState(() {
-      _isDragging = false;
-    });
   }
 
   /// Show disclaimer dialog after build method

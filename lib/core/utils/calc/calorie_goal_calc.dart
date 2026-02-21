@@ -7,6 +7,8 @@ class CalorieGoalCalc {
   static const double maintainWeightKcalAdjustment = 0;
   static const double gainWeightKcalAdjustment = 500;
 
+  static const double defaultExerciseMultiplier = 0.75;
+
   static double getDailyKcalLeft(
           double totalKcalGoal, double totalKcalIntake) =>
       totalKcalGoal - totalKcalIntake;
@@ -14,13 +16,31 @@ class CalorieGoalCalc {
   static double getTdee(UserEntity userEntity) =>
       TDEECalc.getTDEEKcalIOM2005(userEntity);
 
-  static double getTotalKcalGoal(
-          UserEntity userEntity, double totalKcalActivities,
-          {double? kcalUserAdjustment}) =>
+  /// Returns activeCalories scaled by the exercise multiplier.
+  static double getEarnedCalories(double activeCalories,
+          {double exerciseMultiplier = defaultExerciseMultiplier}) =>
+      activeCalories * exerciseMultiplier;
+
+  /// Full daily allowance: TDEE + goal adjustment + user adjustment + earned calories.
+  static double getAllowance(UserEntity userEntity, double activeCalories,
+          {double? kcalUserAdjustment,
+          double exerciseMultiplier = defaultExerciseMultiplier}) =>
       getTdee(userEntity) +
       getKcalGoalAdjustment(userEntity.goal) +
       (kcalUserAdjustment ?? 0) +
-      totalKcalActivities;
+      getEarnedCalories(activeCalories,
+          exerciseMultiplier: exerciseMultiplier);
+
+  /// Remaining calories: allowance - intake.
+  static double getRemaining(double allowance, double intake) =>
+      allowance - intake;
+
+  /// @deprecated Use [getAllowance] instead. Kept for backward compatibility.
+  static double getTotalKcalGoal(
+          UserEntity userEntity, double totalKcalActivities,
+          {double? kcalUserAdjustment}) =>
+      getAllowance(userEntity, totalKcalActivities,
+          kcalUserAdjustment: kcalUserAdjustment, exerciseMultiplier: 1.0);
 
   static double getKcalGoalAdjustment(UserWeightGoalEntity goal) {
     double kcalAdjustment;
