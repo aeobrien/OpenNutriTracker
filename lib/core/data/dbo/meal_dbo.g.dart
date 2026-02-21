@@ -8,7 +8,7 @@ part of 'meal_dbo.dart';
 
 class MealDBOAdapter extends TypeAdapter<MealDBO> {
   @override
-  final int typeId = 1;
+  final typeId = 1;
 
   @override
   MealDBO read(BinaryReader reader) {
@@ -25,7 +25,7 @@ class MealDBOAdapter extends TypeAdapter<MealDBO> {
       url: fields[5] as String?,
       mealQuantity: fields[6] as String?,
       mealUnit: fields[7] as String?,
-      servingQuantity: fields[8] as double?,
+      servingQuantity: (fields[8] as num?)?.toDouble(),
       servingUnit: fields[9] as String?,
       servingSize: fields[12] as String?,
       nutriments: fields[11] as MealNutrimentsDBO,
@@ -57,12 +57,12 @@ class MealDBOAdapter extends TypeAdapter<MealDBO> {
       ..write(obj.servingQuantity)
       ..writeByte(9)
       ..write(obj.servingUnit)
-      ..writeByte(12)
-      ..write(obj.servingSize)
       ..writeByte(10)
       ..write(obj.source)
       ..writeByte(11)
-      ..write(obj.nutriments);
+      ..write(obj.nutriments)
+      ..writeByte(12)
+      ..write(obj.servingSize);
   }
 
   @override
@@ -78,7 +78,7 @@ class MealDBOAdapter extends TypeAdapter<MealDBO> {
 
 class MealSourceDBOAdapter extends TypeAdapter<MealSourceDBO> {
   @override
-  final int typeId = 14;
+  final typeId = 14;
 
   @override
   MealSourceDBO read(BinaryReader reader) {
@@ -101,16 +101,12 @@ class MealSourceDBOAdapter extends TypeAdapter<MealSourceDBO> {
     switch (obj) {
       case MealSourceDBO.unknown:
         writer.writeByte(0);
-        break;
       case MealSourceDBO.custom:
         writer.writeByte(1);
-        break;
       case MealSourceDBO.off:
         writer.writeByte(2);
-        break;
       case MealSourceDBO.fdc:
         writer.writeByte(3);
-        break;
     }
   }
 
@@ -130,37 +126,38 @@ class MealSourceDBOAdapter extends TypeAdapter<MealSourceDBO> {
 // **************************************************************************
 
 MealDBO _$MealDBOFromJson(Map<String, dynamic> json) => MealDBO(
-      code: json['code'] as String?,
-      name: json['name'] as String?,
-      brands: json['brands'] as String?,
-      thumbnailImageUrl: json['thumbnailImageUrl'] as String?,
-      mainImageUrl: json['mainImageUrl'] as String?,
-      url: json['url'] as String?,
-      mealQuantity: json['mealQuantity'] as String?,
-      mealUnit: json['mealUnit'] as String?,
-      servingQuantity: (json['servingQuantity'] as num?)?.toDouble(),
-      servingUnit: json['servingUnit'] as String?,
-      servingSize: json['servingSize'] as String?,
-      nutriments: MealNutrimentsDBO.fromJson(
-          json['nutriments'] as Map<String, dynamic>),
-      source: $enumDecode(_$MealSourceDBOEnumMap, json['source']),
-    );
+  code: json['code'] as String?,
+  name: json['name'] as String?,
+  brands: json['brands'] as String?,
+  thumbnailImageUrl: json['thumbnailImageUrl'] as String?,
+  mainImageUrl: json['mainImageUrl'] as String?,
+  url: json['url'] as String?,
+  mealQuantity: json['mealQuantity'] as String?,
+  mealUnit: json['mealUnit'] as String?,
+  servingQuantity: (json['servingQuantity'] as num?)?.toDouble(),
+  servingUnit: json['servingUnit'] as String?,
+  servingSize: json['servingSize'] as String?,
+  nutriments: MealNutrimentsDBO.fromJson(
+    json['nutriments'] as Map<String, dynamic>,
+  ),
+  source: $enumDecode(_$MealSourceDBOEnumMap, json['source']),
+);
 
 Map<String, dynamic> _$MealDBOToJson(MealDBO instance) => <String, dynamic>{
-      'code': instance.code,
-      'name': instance.name,
-      'brands': instance.brands,
-      'thumbnailImageUrl': instance.thumbnailImageUrl,
-      'mainImageUrl': instance.mainImageUrl,
-      'url': instance.url,
-      'mealQuantity': instance.mealQuantity,
-      'mealUnit': instance.mealUnit,
-      'servingQuantity': instance.servingQuantity,
-      'servingUnit': instance.servingUnit,
-      'servingSize': instance.servingSize,
-      'source': _$MealSourceDBOEnumMap[instance.source]!,
-      'nutriments': instance.nutriments,
-    };
+  'code': instance.code,
+  'name': instance.name,
+  'brands': instance.brands,
+  'thumbnailImageUrl': instance.thumbnailImageUrl,
+  'mainImageUrl': instance.mainImageUrl,
+  'url': instance.url,
+  'mealQuantity': instance.mealQuantity,
+  'mealUnit': instance.mealUnit,
+  'servingQuantity': instance.servingQuantity,
+  'servingUnit': instance.servingUnit,
+  'servingSize': instance.servingSize,
+  'source': _$MealSourceDBOEnumMap[instance.source]!,
+  'nutriments': instance.nutriments,
+};
 
 const _$MealSourceDBOEnumMap = {
   MealSourceDBO.unknown: 'unknown',

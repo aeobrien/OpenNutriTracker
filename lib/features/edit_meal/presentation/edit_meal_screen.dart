@@ -14,7 +14,6 @@ import 'package:opennutritracker/features/edit_meal/presentation/bloc/edit_meal_
 import 'package:opennutritracker/features/edit_meal/presentation/widgets/default_meal_image.dart';
 import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/generated/l10n.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 class EditMealScreen extends StatefulWidget {
   const EditMealScreen({super.key});
@@ -298,8 +297,7 @@ class _EditMealScreenState extends State<EditMealScreen> {
           arguments: MealDetailScreenArguments(
               newMealEntity, _intakeTypeEntity, _day, usesImperialUnits));
     } catch (exception, stacktrace) {
-      log.warning("Error while creating new meal entity");
-      Sentry.captureException(exception, stackTrace: stacktrace);
+      log.warning("Error while creating new meal entity: $exception");
 
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(S.of(context).errorMealSave)));

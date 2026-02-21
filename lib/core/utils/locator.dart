@@ -1,11 +1,14 @@
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:get_it/get_it.dart';
-import 'package:opennutritracker/core/data/data_source/config_data_source.dart';
-import 'package:opennutritracker/core/data/data_source/intake_data_source.dart';
 import 'package:opennutritracker/core/data/data_source/physical_activity_data_source.dart';
-import 'package:opennutritracker/core/data/data_source/tracked_day_data_source.dart';
-import 'package:opennutritracker/core/data/data_source/user_activity_data_source.dart';
-import 'package:opennutritracker/core/data/data_source/user_data_source.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/user_activity_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
+import 'package:opennutritracker/core/data/drift/migration/hive_to_drift_migrator.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/data/repository/physical_activity_repository.dart';
@@ -28,7 +31,6 @@ import 'package:opennutritracker/core/domain/usecase/get_tracked_day_usecase.dar
 import 'package:opennutritracker/core/domain/usecase/get_user_activity_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_user_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/update_intake_usecase.dart';
-import 'package:opennutritracker/core/utils/env.dart';
 import 'package:opennutritracker/core/utils/hive_db_provider.dart';
 import 'package:opennutritracker/core/utils/ont_image_cache_manager.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
@@ -37,7 +39,6 @@ import 'package:opennutritracker/features/add_activity/presentation/bloc/activit
 import 'package:opennutritracker/features/add_activity/presentation/bloc/recent_activities_bloc.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/fdc_data_source.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/off_data_source.dart';
-import 'package:opennutritracker/features/add_meal/data/data_sources/sp_fdc_data_source.dart';
 import 'package:opennutritracker/features/add_meal/data/repository/products_repository.dart';
 import 'package:opennutritracker/features/add_meal/domain/usecase/search_products_usecase.dart';
 import 'package:opennutritracker/features/add_meal/presentation/bloc/add_meal_bloc.dart';
@@ -57,21 +58,39 @@ import 'package:opennutritracker/features/settings/domain/usecase/export_data_us
 import 'package:opennutritracker/features/settings/domain/usecase/import_data_usecase.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/export_import_bloc.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:logging/logging.dart';
 
 final locator = GetIt.instance;
 
 Future<void> initLocator() async {
-  // Init secure storage and Hive database;
-  final secureAppStorageProvider = SecureAppStorageProvider();
-  final hiveDBProvider = HiveDBProvider();
-  await hiveDBProvider
-      .initHiveDB(await secureAppStorageProvider.getHiveEncryptionKey());
+  final log = Logger('Locator');
 
-  // Backend
-  await Supabase.initialize(
-      url: Env.supabaseProjectUrl, anonKey: Env.supabaseProjectAnonKey);
-  locator.registerLazySingleton<SupabaseClient>(() => Supabase.instance.client);
+  // Init secure storage (still needed for Hive migration encryption key)
+  final secureAppStorageProvider = SecureAppStorageProvider();
+  final encryptionKey = await secureAppStorageProvider.getHiveEncryptionKey();
+
+  // Create drift database
+  final appDatabase = AppDatabase.create();
+
+  // Register Hive adapters for migration (no boxes opened yet)
+  final hiveDBProvider = HiveDBProvider();
+  await hiveDBProvider.initHiveDB(encryptionKey);
+
+  // Create DAOs
+  final configDao = ConfigDao(appDatabase);
+  final logEntryDao = LogEntryDao(appDatabase);
+  final foodItemDao = FoodItemDao(appDatabase);
+  final dailyStatsDao = DailyStatsDao(appDatabase);
+  final userProfileDao = UserProfileDao(appDatabase);
+  final userActivityDao = UserActivityDao(appDatabase);
+
+  // Run Hive → drift migration if needed
+  final migrator = HiveToDriftMigrator(appDatabase, configDao);
+  try {
+    await migrator.migrate(encryptionKey);
+  } catch (e) {
+    log.severe('Hive migration failed, continuing with empty database', e);
+  }
 
   // Cache manager
   locator
@@ -157,42 +176,32 @@ Future<void> initLocator() async {
       () => ImportDataUsecase(locator(), locator(), locator()));
 
   // Repositories
-  locator.registerLazySingleton(() => ConfigRepository(locator()));
-  locator
-      .registerLazySingleton<UserRepository>(() => UserRepository(locator()));
+  locator.registerLazySingleton(() => ConfigRepository(configDao));
+  locator.registerLazySingleton<UserRepository>(
+      () => UserRepository(userProfileDao));
   locator.registerLazySingleton<IntakeRepository>(
-      () => IntakeRepository(locator()));
+      () => IntakeRepository(logEntryDao, foodItemDao));
   locator.registerLazySingleton<ProductsRepository>(
-      () => ProductsRepository(locator(), locator(), locator()));
+      () => ProductsRepository(locator(), locator()));
   locator.registerLazySingleton<UserActivityRepository>(
-      () => UserActivityRepository(locator()));
+      () => UserActivityRepository(userActivityDao));
   locator.registerLazySingleton<PhysicalActivityRepository>(
       () => PhysicalActivityRepository(locator()));
   locator.registerLazySingleton<TrackedDayRepository>(
-      () => TrackedDayRepository(locator()));
+      () => TrackedDayRepository(dailyStatsDao));
 
-  // DataSources
-  locator
-      .registerLazySingleton(() => ConfigDataSource(hiveDBProvider.configBox));
-  locator.registerLazySingleton<UserDataSource>(
-      () => UserDataSource(hiveDBProvider.userBox));
-  locator.registerLazySingleton<IntakeDataSource>(
-      () => IntakeDataSource(hiveDBProvider.intakeBox));
-  locator.registerLazySingleton<UserActivityDataSource>(
-      () => UserActivityDataSource(hiveDBProvider.userActivityBox));
+  // DataSources (only non-Hive ones remain)
   locator.registerLazySingleton<PhysicalActivityDataSource>(
       () => PhysicalActivityDataSource());
   locator.registerLazySingleton<OFFDataSource>(() => OFFDataSource());
   locator.registerLazySingleton<FDCDataSource>(() => FDCDataSource());
-  locator.registerLazySingleton<SpFdcDataSource>(() => SpFdcDataSource());
-  locator.registerLazySingleton(
-      () => TrackedDayDataSource(hiveDBProvider.trackedDayBox));
 
+  // Initialize config if needed
   await _initializeConfig(locator());
 }
 
-Future<void> _initializeConfig(ConfigDataSource configDataSource) async {
-  if (!await configDataSource.configInitialized()) {
-    configDataSource.initializeConfig();
+Future<void> _initializeConfig(ConfigRepository configRepository) async {
+  if (!await configRepository.configInitialized()) {
+    configRepository.initializeConfig();
   }
 }

@@ -8,7 +8,7 @@ part of 'physical_activity_dbo.dart';
 
 class PhysicalActivityDBOAdapter extends TypeAdapter<PhysicalActivityDBO> {
   @override
-  final int typeId = 11;
+  final typeId = 11;
 
   @override
   PhysicalActivityDBO read(BinaryReader reader) {
@@ -20,7 +20,7 @@ class PhysicalActivityDBOAdapter extends TypeAdapter<PhysicalActivityDBO> {
       fields[1] as String,
       fields[2] as String,
       fields[3] as String,
-      fields[4] as double,
+      (fields[4] as num).toDouble(),
       (fields[5] as List).cast<String>(),
       fields[6] as PhysicalActivityTypeDBO,
     );
@@ -58,7 +58,7 @@ class PhysicalActivityDBOAdapter extends TypeAdapter<PhysicalActivityDBO> {
 class PhysicalActivityTypeDBOAdapter
     extends TypeAdapter<PhysicalActivityTypeDBO> {
   @override
-  final int typeId = 12;
+  final typeId = 12;
 
   @override
   PhysicalActivityTypeDBO read(BinaryReader reader) {
@@ -87,25 +87,18 @@ class PhysicalActivityTypeDBOAdapter
     switch (obj) {
       case PhysicalActivityTypeDBO.bicycling:
         writer.writeByte(1);
-        break;
       case PhysicalActivityTypeDBO.conditioningExercise:
         writer.writeByte(2);
-        break;
       case PhysicalActivityTypeDBO.dancing:
         writer.writeByte(3);
-        break;
       case PhysicalActivityTypeDBO.running:
         writer.writeByte(4);
-        break;
       case PhysicalActivityTypeDBO.sport:
         writer.writeByte(5);
-        break;
       case PhysicalActivityTypeDBO.waterActivities:
         writer.writeByte(6);
-        break;
       case PhysicalActivityTypeDBO.winterActivities:
         writer.writeByte(7);
-        break;
     }
   }
 
@@ -135,15 +128,15 @@ PhysicalActivityDBO _$PhysicalActivityDBOFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$PhysicalActivityDBOToJson(
-        PhysicalActivityDBO instance) =>
-    <String, dynamic>{
-      'code': instance.code,
-      'specificActivity': instance.specificActivity,
-      'description': instance.description,
-      'mets': instance.mets,
-      'tags': instance.tags,
-      'type': _$PhysicalActivityTypeDBOEnumMap[instance.type]!,
-    };
+  PhysicalActivityDBO instance,
+) => <String, dynamic>{
+  'code': instance.code,
+  'specificActivity': instance.specificActivity,
+  'description': instance.description,
+  'mets': instance.mets,
+  'tags': instance.tags,
+  'type': _$PhysicalActivityTypeDBOEnumMap[instance.type]!,
+};
 
 const _$PhysicalActivityTypeDBOEnumMap = {
   PhysicalActivityTypeDBO.bicycling: 'bicycling',

@@ -8,7 +8,7 @@ part of 'user_activity_dbo.dart';
 
 class UserActivityDBOAdapter extends TypeAdapter<UserActivityDBO> {
   @override
-  final int typeId = 10;
+  final typeId = 10;
 
   @override
   UserActivityDBO read(BinaryReader reader) {
@@ -18,8 +18,8 @@ class UserActivityDBOAdapter extends TypeAdapter<UserActivityDBO> {
     };
     return UserActivityDBO(
       fields[0] as String,
-      fields[1] as double,
-      fields[2] as double,
+      (fields[1] as num).toDouble(),
+      (fields[2] as num).toDouble(),
       fields[3] as DateTime,
       fields[4] as PhysicalActivityDBO,
     );
@@ -63,7 +63,8 @@ UserActivityDBO _$UserActivityDBOFromJson(Map<String, dynamic> json) =>
       (json['burnedKcal'] as num).toDouble(),
       DateTime.parse(json['date'] as String),
       PhysicalActivityDBO.fromJson(
-          json['physicalActivityDBO'] as Map<String, dynamic>),
+        json['physicalActivityDBO'] as Map<String, dynamic>,
+      ),
     );
 
 Map<String, dynamic> _$UserActivityDBOToJson(UserActivityDBO instance) =>

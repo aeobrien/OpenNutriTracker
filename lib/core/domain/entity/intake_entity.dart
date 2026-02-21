@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:opennutritracker/core/data/dbo/intake_dbo.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart' as drift;
+import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 
@@ -19,6 +21,23 @@ class IntakeEntity extends Equatable {
       required this.type,
       required this.meal,
       required this.dateTime});
+
+  factory IntakeEntity.fromLogEntry(LogEntryWithFoodItem row) {
+    final entry = row.logEntry;
+    final foodItem = row.foodItem;
+    return IntakeEntity(
+        id: entry.id,
+        unit: entry.unit,
+        amount: entry.amount,
+        type: IntakeTypeEntity.values.firstWhere(
+            (e) => e.name == entry.mealSlot,
+            orElse: () => IntakeTypeEntity.snack),
+        meal: foodItem != null
+            ? MealEntity.fromFoodItem(foodItem)
+            : MealEntity.empty(),
+        dateTime:
+            DateTime.fromMillisecondsSinceEpoch(entry.timestamp));
+  }
 
   factory IntakeEntity.fromIntakeDBO(IntakeDBO intakeDBO) {
     return IntakeEntity(

@@ -8,7 +8,7 @@ part of 'app_theme_dbo.dart';
 
 class AppThemeDBOAdapter extends TypeAdapter<AppThemeDBO> {
   @override
-  final int typeId = 15;
+  final typeId = 15;
 
   @override
   AppThemeDBO read(BinaryReader reader) {
@@ -29,13 +29,10 @@ class AppThemeDBOAdapter extends TypeAdapter<AppThemeDBO> {
     switch (obj) {
       case AppThemeDBO.light:
         writer.writeByte(0);
-        break;
       case AppThemeDBO.dark:
         writer.writeByte(1);
-        break;
       case AppThemeDBO.system:
         writer.writeByte(2);
-        break;
     }
   }
 

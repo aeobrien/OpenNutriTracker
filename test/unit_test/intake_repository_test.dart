@@ -1,10 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hive/hive.dart';
-import 'package:opennutritracker/core/data/data_source/intake_data_source.dart';
-import 'package:opennutritracker/core/data/dbo/intake_dbo.dart';
-import 'package:opennutritracker/core/data/dbo/intake_type_dbo.dart';
-import 'package:opennutritracker/core/data/dbo/meal_dbo.dart';
-import 'package:opennutritracker/core/data/dbo/meal_nutriments_dbo.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
@@ -12,29 +9,20 @@ import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import '../fixture/meal_entity_fixtures.dart';
 
 void main() {
-
   group('IntakeRepository test', () {
+    late AppDatabase db;
+    late IntakeRepository repo;
+
     setUp(() {
-      TestWidgetsFlutterBinding.ensureInitialized();
-      // final temp = await getTemporaryDirectory();
-      Hive.init(".");
-      Hive.registerAdapter(IntakeDBOAdapter());
-      Hive.registerAdapter(IntakeTypeDBOAdapter());
-      Hive.registerAdapter(MealDBOAdapter());
-      Hive.registerAdapter(MealSourceDBOAdapter());
-      Hive.registerAdapter(MealNutrimentsDBOAdapter());
+      db = AppDatabase.createInMemory();
+      repo = IntakeRepository(LogEntryDao(db), FoodItemDao(db));
     });
 
-    tearDown(() {
-      Hive.deleteFromDisk();
+    tearDown(() async {
+      await db.close();
     });
 
     test('returns last added first', () async {
-      final box = await Hive.openBox<IntakeDBO>('intake_test');
-
-      final repo = IntakeRepository(IntakeDataSource(box));
-
-
       await repo.addIntake(IntakeEntity(
           id: "1",
           unit: "g",

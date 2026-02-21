@@ -23,22 +23,18 @@ class ExportDataUsecase {
       String userIntakeJsonFileName,
       String trackedDayJsonFileName) async {
     // Export user activity data to Json File Bytes
-    final fullUserActivity =
-        await _userActivityRepository.getAllUserActivityDBO();
-    final fullUserActivityJson = jsonEncode(
-        fullUserActivity.map((activity) => activity.toJson()).toList());
+    final fullUserActivityJson =
+        jsonEncode(await _userActivityRepository.getAllUserActivityJson());
     final userActivityJsonBytes = utf8.encode(fullUserActivityJson);
 
     // Export intake data to Json File Bytes
-    final fullIntake = await _intakeRepository.getAllIntakesDBO();
     final fullIntakeJson =
-        jsonEncode(fullIntake.map((intake) => intake.toJson()).toList());
+        jsonEncode(await _intakeRepository.getAllIntakesJson());
     final intakeJsonBytes = utf8.encode(fullIntakeJson);
 
     // Export tracked day data to Json File Bytes
-    final fullTrackedDay = await _trackedDayRepository.getAllTrackedDaysDBO();
-    final fullTrackedDayJson = jsonEncode(
-        fullTrackedDay.map((trackedDay) => trackedDay.toJson()).toList());
+    final fullTrackedDayJson =
+        jsonEncode(await _trackedDayRepository.getAllTrackedDaysJson());
     final trackedDayJsonBytes = utf8.encode(fullTrackedDayJson);
 
     // Create a zip file with the exported data

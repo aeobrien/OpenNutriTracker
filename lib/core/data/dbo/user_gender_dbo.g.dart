@@ -8,7 +8,7 @@ part of 'user_gender_dbo.dart';
 
 class UserGenderDBOAdapter extends TypeAdapter<UserGenderDBO> {
   @override
-  final int typeId = 6;
+  final typeId = 6;
 
   @override
   UserGenderDBO read(BinaryReader reader) {
@@ -27,10 +27,8 @@ class UserGenderDBOAdapter extends TypeAdapter<UserGenderDBO> {
     switch (obj) {
       case UserGenderDBO.male:
         writer.writeByte(0);
-        break;
       case UserGenderDBO.female:
         writer.writeByte(1);
-        break;
     }
   }
 

@@ -1,11 +1,9 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/core/data/dbo/tracked_day_dbo.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart';
 
 class TrackedDayEntity extends Equatable {
-  static const maxKcalDifferenceOverGoal = 500;
-  static const maxKcalDifferenceUnderGoal = 1000;
-
   final DateTime day;
   final double calorieGoal;
   final double caloriesTracked;
@@ -27,6 +25,21 @@ class TrackedDayEntity extends Equatable {
       this.proteinGoal,
       this.proteinTracked});
 
+  factory TrackedDayEntity.fromDailyStatRow(DailyStat row) {
+    final dateParts = row.date.split('-');
+    return TrackedDayEntity(
+        day: DateTime(int.parse(dateParts[0]), int.parse(dateParts[1]),
+            int.parse(dateParts[2])),
+        calorieGoal: row.calorieGoal,
+        caloriesTracked: row.caloriesTracked,
+        carbsGoal: row.carbsGoal,
+        carbsTracked: row.carbsTracked,
+        fatGoal: row.fatGoal,
+        fatTracked: row.fatTracked,
+        proteinGoal: row.proteinGoal,
+        proteinTracked: row.proteinTracked);
+  }
+
   factory TrackedDayEntity.fromTrackedDayDBO(TrackedDayDBO trackedDayDBO) {
     return TrackedDayEntity(
         day: trackedDayDBO.day,
@@ -40,40 +53,16 @@ class TrackedDayEntity extends Equatable {
         proteinTracked: trackedDayDBO.proteinTracked);
   }
 
-  // TODO: make enum class for rating
   Color getCalendarDayRatingColor(BuildContext context) {
-    if (_hasExceededMaxKcalDifferenceGoal(calorieGoal, caloriesTracked)) {
-      return Theme.of(context).colorScheme.primary;
-    } else {
-      return Theme.of(context).colorScheme.error;
-    }
+    return Theme.of(context).colorScheme.primary;
   }
 
   Color getRatingDayTextColor(BuildContext context) {
-    if (_hasExceededMaxKcalDifferenceGoal(calorieGoal, caloriesTracked)) {
-      return Theme.of(context).colorScheme.onSecondaryContainer;
-    } else {
-      return Theme.of(context).colorScheme.onErrorContainer;
-    }
+    return Theme.of(context).colorScheme.onSecondaryContainer;
   }
 
   Color getRatingDayTextBackgroundColor(BuildContext context) {
-    if (_hasExceededMaxKcalDifferenceGoal(calorieGoal, caloriesTracked)) {
-      return Theme.of(context).colorScheme.secondaryContainer;
-    } else {
-      return Theme.of(context).colorScheme.errorContainer;
-    }
-  }
-
-  bool _hasExceededMaxKcalDifferenceGoal(
-      double calorieGoal, caloriesTracked) {
-    double difference = calorieGoal - caloriesTracked;
-
-    if (calorieGoal < caloriesTracked) {
-      return difference.abs() < maxKcalDifferenceOverGoal;
-    } else {
-      return difference < maxKcalDifferenceUnderGoal;
-    }
+    return Theme.of(context).colorScheme.secondaryContainer;
   }
 
   @override

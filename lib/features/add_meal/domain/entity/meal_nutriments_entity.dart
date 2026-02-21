@@ -1,6 +1,7 @@
 import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:opennutritracker/core/data/dbo/meal_nutriments_dbo.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/utils/extensions.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/fdc/fdc_const.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/fdc/fdc_food_nutriment_dto.dart';
@@ -41,6 +42,17 @@ class MealNutrimentsEntity extends Equatable {
       sugars100: null,
       saturatedFat100: null,
       fiber100: null);
+
+  factory MealNutrimentsEntity.fromFoodItem(FoodItem row) {
+    return MealNutrimentsEntity(
+        energyKcal100: row.kcalPer100,
+        carbohydrates100: row.carbsPer100,
+        fat100: row.fatPer100,
+        proteins100: row.proteinPer100,
+        sugars100: row.sugarPer100,
+        saturatedFat100: row.saturatedFatPer100,
+        fiber100: row.fibrePer100);
+  }
 
   factory MealNutrimentsEntity.fromMealNutrimentsDBO(
       MealNutrimentsDBO nutriments) {

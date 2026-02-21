@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:opennutritracker/core/domain/entity/user_pal_entity.dart';
 
 part 'user_pal_dbo.g.dart';

@@ -13,8 +13,8 @@ FDCFoodNutrimentDTO _$FDCFoodNutrimentDTOFromJson(Map<String, dynamic> json) =>
     );
 
 Map<String, dynamic> _$FDCFoodNutrimentDTOToJson(
-        FDCFoodNutrimentDTO instance) =>
-    <String, dynamic>{
-      'nutrient_id': instance.nutrientId,
-      'amount': instance.amount,
-    };
+  FDCFoodNutrimentDTO instance,
+) => <String, dynamic>{
+  'nutrient_id': instance.nutrientId,
+  'amount': instance.amount,
+};

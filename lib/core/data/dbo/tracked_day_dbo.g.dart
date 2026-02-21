@@ -8,7 +8,7 @@ part of 'tracked_day_dbo.dart';
 
 class TrackedDayDBOAdapter extends TypeAdapter<TrackedDayDBO> {
   @override
-  final int typeId = 9;
+  final typeId = 9;
 
   @override
   TrackedDayDBO read(BinaryReader reader) {
@@ -18,14 +18,14 @@ class TrackedDayDBOAdapter extends TypeAdapter<TrackedDayDBO> {
     };
     return TrackedDayDBO(
       day: fields[0] as DateTime,
-      calorieGoal: fields[1] as double,
-      caloriesTracked: fields[2] as double,
-      carbsGoal: fields[3] as double?,
-      carbsTracked: fields[4] as double?,
-      fatGoal: fields[5] as double?,
-      fatTracked: fields[6] as double?,
-      proteinGoal: fields[7] as double?,
-      proteinTracked: fields[8] as double?,
+      calorieGoal: (fields[1] as num).toDouble(),
+      caloriesTracked: (fields[2] as num).toDouble(),
+      carbsGoal: (fields[3] as num?)?.toDouble(),
+      carbsTracked: (fields[4] as num?)?.toDouble(),
+      fatGoal: (fields[5] as num?)?.toDouble(),
+      fatTracked: (fields[6] as num?)?.toDouble(),
+      proteinGoal: (fields[7] as num?)?.toDouble(),
+      proteinTracked: (fields[8] as num?)?.toDouble(),
     );
   }
 

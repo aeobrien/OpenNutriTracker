@@ -8,7 +8,7 @@ part of 'user_dbo.dart';
 
 class UserDBOAdapter extends TypeAdapter<UserDBO> {
   @override
-  final int typeId = 5;
+  final typeId = 5;
 
   @override
   UserDBO read(BinaryReader reader) {
@@ -18,8 +18,8 @@ class UserDBOAdapter extends TypeAdapter<UserDBO> {
     };
     return UserDBO(
       birthday: fields[0] as DateTime,
-      heightCM: fields[1] as double,
-      weightKG: fields[2] as double,
+      heightCM: (fields[1] as num).toDouble(),
+      weightKG: (fields[2] as num).toDouble(),
       gender: fields[3] as UserGenderDBO,
       goal: fields[4] as UserWeightGoalDBO,
       pal: fields[5] as UserPALDBO,

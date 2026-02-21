@@ -6,6 +6,8 @@ import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/error_dialog.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
+import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
+import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
 import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/features/scanner/presentation/scanner_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -66,12 +68,22 @@ class _ScannerScreenState extends State<ScannerScreen> {
           return Scaffold(
               appBar: AppBar(),
               body: Center(
-                child: ErrorDialog(
-                  errorText:
-                      state.type == ScannerFailedStateType.productNotFound
-                          ? S.of(context).errorProductNotFound
-                          : S.of(context).errorFetchingProductData,
-                  onRefreshPressed: _onRefreshButtonPressed,
+                child: Column(
+                  children: [
+                    ErrorDialog(
+                      errorText:
+                          state.type == ScannerFailedStateType.productNotFound
+                              ? S.of(context).errorProductNotFound
+                              : S.of(context).errorFetchingProductData,
+                      onRefreshPressed: _onRefreshButtonPressed,
+                    ),
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: _onSearchByNamePressed,
+                      icon: const Icon(Icons.search),
+                      label: Text(S.of(context).searchLabel),
+                    ),
+                  ],
                 ),
               ));
         }
@@ -125,6 +137,27 @@ class _ScannerScreenState extends State<ScannerScreen> {
             }
           }),
     );
+  }
+
+  void _onSearchByNamePressed() {
+    final mealType = _intakeTypeToAddMealType(_intakeTypeEntity);
+    Navigator.of(context).pushReplacementNamed(
+      NavigationOptions.addMealRoute,
+      arguments: AddMealScreenArguments(mealType, _day),
+    );
+  }
+
+  static AddMealType _intakeTypeToAddMealType(IntakeTypeEntity intakeType) {
+    switch (intakeType) {
+      case IntakeTypeEntity.breakfast:
+        return AddMealType.breakfastType;
+      case IntakeTypeEntity.lunch:
+        return AddMealType.lunchType;
+      case IntakeTypeEntity.dinner:
+        return AddMealType.dinnerType;
+      case IntakeTypeEntity.snack:
+        return AddMealType.snackType;
+    }
   }
 
   void _onRefreshButtonPressed() {

@@ -8,7 +8,7 @@ part of 'user_weight_goal_dbo.dart';
 
 class UserWeightGoalDBOAdapter extends TypeAdapter<UserWeightGoalDBO> {
   @override
-  final int typeId = 7;
+  final typeId = 7;
 
   @override
   UserWeightGoalDBO read(BinaryReader reader) {
@@ -29,13 +29,10 @@ class UserWeightGoalDBOAdapter extends TypeAdapter<UserWeightGoalDBO> {
     switch (obj) {
       case UserWeightGoalDBO.loseWeight:
         writer.writeByte(0);
-        break;
       case UserWeightGoalDBO.maintainWeight:
         writer.writeByte(1);
-        break;
       case UserWeightGoalDBO.gainWeight:
         writer.writeByte(2);
-        break;
     }
   }
 

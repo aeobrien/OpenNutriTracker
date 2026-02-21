@@ -1,4 +1,4 @@
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 
 part 'intake_type_dbo.g.dart';

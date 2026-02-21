@@ -27,7 +27,6 @@ class ImportDataUsecase {
     // Allow user to pick a zip file
     final result = await FilePicker.platform.pickFiles(
       type: FileType.any,
-      // allowedExtensions: ['zip'],
     );
 
     if (result == null || result.files.single.path == null) {

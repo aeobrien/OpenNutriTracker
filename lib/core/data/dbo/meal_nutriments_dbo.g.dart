@@ -8,7 +8,7 @@ part of 'meal_nutriments_dbo.dart';
 
 class MealNutrimentsDBOAdapter extends TypeAdapter<MealNutrimentsDBO> {
   @override
-  final int typeId = 3;
+  final typeId = 3;
 
   @override
   MealNutrimentsDBO read(BinaryReader reader) {
@@ -17,13 +17,13 @@ class MealNutrimentsDBOAdapter extends TypeAdapter<MealNutrimentsDBO> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return MealNutrimentsDBO(
-      energyKcal100: fields[0] as double?,
-      carbohydrates100: fields[1] as double?,
-      fat100: fields[2] as double?,
-      proteins100: fields[3] as double?,
-      sugars100: fields[4] as double?,
-      saturatedFat100: fields[5] as double?,
-      fiber100: fields[6] as double?,
+      energyKcal100: (fields[0] as num?)?.toDouble(),
+      carbohydrates100: (fields[1] as num?)?.toDouble(),
+      fat100: (fields[2] as num?)?.toDouble(),
+      proteins100: (fields[3] as num?)?.toDouble(),
+      sugars100: (fields[4] as num?)?.toDouble(),
+      saturatedFat100: (fields[5] as num?)?.toDouble(),
+      fiber100: (fields[6] as num?)?.toDouble(),
     );
   }
 

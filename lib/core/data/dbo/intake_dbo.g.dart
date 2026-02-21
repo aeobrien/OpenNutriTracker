@@ -8,7 +8,7 @@ part of 'intake_dbo.dart';
 
 class IntakeDBOAdapter extends TypeAdapter<IntakeDBO> {
   @override
-  final int typeId = 0;
+  final typeId = 0;
 
   @override
   IntakeDBO read(BinaryReader reader) {
@@ -19,7 +19,7 @@ class IntakeDBOAdapter extends TypeAdapter<IntakeDBO> {
     return IntakeDBO(
       id: fields[0] as String,
       unit: fields[1] as String,
-      amount: fields[2] as double,
+      amount: (fields[2] as num).toDouble(),
       type: fields[3] as IntakeTypeDBO,
       meal: fields[4] as MealDBO,
       dateTime: fields[5] as DateTime,
@@ -60,22 +60,22 @@ class IntakeDBOAdapter extends TypeAdapter<IntakeDBO> {
 // **************************************************************************
 
 IntakeDBO _$IntakeDBOFromJson(Map<String, dynamic> json) => IntakeDBO(
-      id: json['id'] as String,
-      unit: json['unit'] as String,
-      amount: (json['amount'] as num).toDouble(),
-      type: $enumDecode(_$IntakeTypeDBOEnumMap, json['type']),
-      meal: MealDBO.fromJson(json['meal'] as Map<String, dynamic>),
-      dateTime: DateTime.parse(json['dateTime'] as String),
-    );
+  id: json['id'] as String,
+  unit: json['unit'] as String,
+  amount: (json['amount'] as num).toDouble(),
+  type: $enumDecode(_$IntakeTypeDBOEnumMap, json['type']),
+  meal: MealDBO.fromJson(json['meal'] as Map<String, dynamic>),
+  dateTime: DateTime.parse(json['dateTime'] as String),
+);
 
 Map<String, dynamic> _$IntakeDBOToJson(IntakeDBO instance) => <String, dynamic>{
-      'id': instance.id,
-      'unit': instance.unit,
-      'amount': instance.amount,
-      'type': _$IntakeTypeDBOEnumMap[instance.type]!,
-      'meal': instance.meal,
-      'dateTime': instance.dateTime.toIso8601String(),
-    };
+  'id': instance.id,
+  'unit': instance.unit,
+  'amount': instance.amount,
+  'type': _$IntakeTypeDBOEnumMap[instance.type]!,
+  'meal': instance.meal,
+  'dateTime': instance.dateTime.toIso8601String(),
+};
 
 const _$IntakeTypeDBOEnumMap = {
   IntakeTypeDBO.breakfast: 'breakfast',

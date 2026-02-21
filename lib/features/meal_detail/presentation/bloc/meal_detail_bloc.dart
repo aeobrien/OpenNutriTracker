@@ -11,7 +11,6 @@ import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
-import 'package:sentry_flutter/sentry_flutter.dart';
 
 part 'meal_detail_event.dart';
 
@@ -69,7 +68,6 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
             selectedUnit: selectedUnit));
       } catch (e) {
         log.severe('Error calculating kcal: $e');
-        Sentry.captureException(e);
       }
     });
   }

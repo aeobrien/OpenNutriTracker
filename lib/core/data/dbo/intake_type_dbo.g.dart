@@ -8,7 +8,7 @@ part of 'intake_type_dbo.dart';
 
 class IntakeTypeDBOAdapter extends TypeAdapter<IntakeTypeDBO> {
   @override
-  final int typeId = 4;
+  final typeId = 4;
 
   @override
   IntakeTypeDBO read(BinaryReader reader) {
@@ -31,16 +31,12 @@ class IntakeTypeDBOAdapter extends TypeAdapter<IntakeTypeDBO> {
     switch (obj) {
       case IntakeTypeDBO.breakfast:
         writer.writeByte(0);
-        break;
       case IntakeTypeDBO.lunch:
         writer.writeByte(1);
-        break;
       case IntakeTypeDBO.dinner:
         writer.writeByte(2);
-        break;
       case IntakeTypeDBO.snack:
         writer.writeByte(3);
-        break;
     }
   }
 

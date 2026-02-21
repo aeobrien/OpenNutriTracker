@@ -8,7 +8,7 @@ part of 'config_dbo.dart';
 
 class ConfigDBOAdapter extends TypeAdapter<ConfigDBO> {
   @override
-  final int typeId = 13;
+  final typeId = 13;
 
   @override
   ConfigDBO read(BinaryReader reader) {
@@ -17,16 +17,16 @@ class ConfigDBOAdapter extends TypeAdapter<ConfigDBO> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return ConfigDBO(
-      fields[0] as bool,
-      fields[1] as bool,
-      fields[2] as bool,
-      fields[3] as AppThemeDBO,
-      usesImperialUnits: fields[4] as bool?,
-      userKcalAdjustment: fields[5] as double?,
-    )
-      ..userCarbGoalPct = fields[6] as double?
-      ..userProteinGoalPct = fields[7] as double?
-      ..userFatGoalPct = fields[8] as double?;
+        fields[0] as bool,
+        fields[1] as bool,
+        fields[2] as bool,
+        fields[3] as AppThemeDBO,
+        usesImperialUnits: fields[4] == null ? false : fields[4] as bool?,
+        userKcalAdjustment: (fields[5] as num?)?.toDouble(),
+      )
+      ..userCarbGoalPct = (fields[6] as num?)?.toDouble()
+      ..userProteinGoalPct = (fields[7] as num?)?.toDouble()
+      ..userFatGoalPct = (fields[8] as num?)?.toDouble();
   }
 
   @override
@@ -68,29 +68,30 @@ class ConfigDBOAdapter extends TypeAdapter<ConfigDBO> {
 // JsonSerializableGenerator
 // **************************************************************************
 
-ConfigDBO _$ConfigDBOFromJson(Map<String, dynamic> json) => ConfigDBO(
-      json['hasAcceptedDisclaimer'] as bool,
-      json['hasAcceptedPolicy'] as bool,
-      json['hasAcceptedSendAnonymousData'] as bool,
-      $enumDecode(_$AppThemeDBOEnumMap, json['selectedAppTheme']),
-      usesImperialUnits: json['usesImperialUnits'] as bool? ?? false,
-      userKcalAdjustment: (json['userKcalAdjustment'] as num?)?.toDouble(),
-    )
+ConfigDBO _$ConfigDBOFromJson(Map<String, dynamic> json) =>
+    ConfigDBO(
+        json['hasAcceptedDisclaimer'] as bool,
+        json['hasAcceptedPolicy'] as bool,
+        json['hasAcceptedSendAnonymousData'] as bool,
+        $enumDecode(_$AppThemeDBOEnumMap, json['selectedAppTheme']),
+        usesImperialUnits: json['usesImperialUnits'] as bool? ?? false,
+        userKcalAdjustment: (json['userKcalAdjustment'] as num?)?.toDouble(),
+      )
       ..userCarbGoalPct = (json['userCarbGoalPct'] as num?)?.toDouble()
       ..userProteinGoalPct = (json['userProteinGoalPct'] as num?)?.toDouble()
       ..userFatGoalPct = (json['userFatGoalPct'] as num?)?.toDouble();
 
 Map<String, dynamic> _$ConfigDBOToJson(ConfigDBO instance) => <String, dynamic>{
-      'hasAcceptedDisclaimer': instance.hasAcceptedDisclaimer,
-      'hasAcceptedPolicy': instance.hasAcceptedPolicy,
-      'hasAcceptedSendAnonymousData': instance.hasAcceptedSendAnonymousData,
-      'selectedAppTheme': _$AppThemeDBOEnumMap[instance.selectedAppTheme]!,
-      'usesImperialUnits': instance.usesImperialUnits,
-      'userKcalAdjustment': instance.userKcalAdjustment,
-      'userCarbGoalPct': instance.userCarbGoalPct,
-      'userProteinGoalPct': instance.userProteinGoalPct,
-      'userFatGoalPct': instance.userFatGoalPct,
-    };
+  'hasAcceptedDisclaimer': instance.hasAcceptedDisclaimer,
+  'hasAcceptedPolicy': instance.hasAcceptedPolicy,
+  'hasAcceptedSendAnonymousData': instance.hasAcceptedSendAnonymousData,
+  'selectedAppTheme': _$AppThemeDBOEnumMap[instance.selectedAppTheme]!,
+  'usesImperialUnits': instance.usesImperialUnits,
+  'userKcalAdjustment': instance.userKcalAdjustment,
+  'userCarbGoalPct': instance.userCarbGoalPct,
+  'userProteinGoalPct': instance.userProteinGoalPct,
+  'userFatGoalPct': instance.userFatGoalPct,
+};
 
 const _$AppThemeDBOEnumMap = {
   AppThemeDBO.light: 'light',

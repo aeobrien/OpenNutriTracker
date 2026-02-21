@@ -2,11 +2,11 @@ import 'dart:io';
 
 import 'package:equatable/equatable.dart';
 import 'package:opennutritracker/core/data/dbo/meal_dbo.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart' as drift;
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/core/utils/supported_language.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/fdc/fdc_const.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/fdc/fdc_food_dto.dart';
-import 'package:opennutritracker/features/add_meal/data/dto/fdc_sp/sp_fdc_food_dto.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/off/off_product_dto.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_nutriments_entity.dart';
 
@@ -73,6 +73,23 @@ class MealEntity extends Equatable {
       nutriments: MealNutrimentsEntity.empty(),
       source: MealSourceEntity.custom);
 
+  factory MealEntity.fromFoodItem(drift.FoodItem row) => MealEntity(
+      code: row.barcode ?? row.id,
+      name: row.name,
+      brands: row.brand,
+      thumbnailImageUrl: row.thumbnailImageUrl,
+      mainImageUrl: row.mainImageUrl,
+      url: row.url,
+      mealQuantity: row.mealQuantity,
+      mealUnit: row.mealUnit,
+      servingQuantity: row.servingQuantity,
+      servingUnit: row.servingUnit,
+      servingSize: row.servingSize,
+      nutriments: MealNutrimentsEntity.fromFoodItem(row),
+      source: MealSourceEntity.values.firstWhere(
+          (e) => e.name == row.source,
+          orElse: () => MealSourceEntity.unknown));
+
   factory MealEntity.fromMealDBO(MealDBO mealDBO) => MealEntity(
       code: mealDBO.code,
       name: mealDBO.name,
@@ -123,25 +140,6 @@ class MealEntity extends Equatable {
         servingSize: fdcFood.servingSizeUnit,
         nutriments:
             MealNutrimentsEntity.fromFDCNutriments(fdcFood.foodNutrients),
-        source: MealSourceEntity.fdc);
-  }
-
-  factory MealEntity.fromSpFDCFood(SpFdcFoodDTO foodItem) {
-    final fdcId = foodItem.fdcId?.toInt().toString();
-
-    return MealEntity(
-        code: fdcId,
-        name: foodItem.getLocaleDescription(
-            SupportedLanguage.fromCode(Platform.localeName)),
-        brands: null,
-        url: FDCConst.getFoodDetailUrlString(fdcId),
-        mealQuantity: null,
-        mealUnit: FDCConst.fdcDefaultUnit,
-        servingQuantity: foodItem.servingSize,
-        servingUnit: FDCConst.fdcDefaultUnit,
-        servingSize:
-            "${(foodItem.servingAmount ?? 1).toInt()} ${foodItem.servingSizeUnit}",
-        nutriments: MealNutrimentsEntity.fromFDCNutriments(foodItem.nutrients),
         source: MealSourceEntity.fdc);
   }
 

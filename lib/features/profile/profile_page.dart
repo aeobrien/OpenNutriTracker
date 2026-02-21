@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:opennutritracker/core/domain/entity/user_bmi_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_gender_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_pal_entity.dart';
@@ -8,7 +7,6 @@ import 'package:opennutritracker/core/domain/entity/user_weight_goal_entity.dart
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
-import 'package:opennutritracker/features/profile/presentation/widgets/bmi_overview.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_gender_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_goal_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_height_dialog.dart';
@@ -43,8 +41,8 @@ class _ProfilePageState extends State<ProfilePage> {
         } else if (state is ProfileLoadingState) {
           return _getLoadingContent();
         } else if (state is ProfileLoadedState) {
-          return _getLoadedContent(context, state.userBMI, state.userEntity,
-              state.usesImperialUnits);
+          return _getLoadedContent(
+              context, state.userEntity, state.usesImperialUnits);
         } else {
           return _getLoadingContent();
         }
@@ -58,15 +56,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _getLoadedContent(BuildContext context, UserBMIEntity userBMIEntity,
-      UserEntity user, bool usesImperialUnits) {
+  Widget _getLoadedContent(
+      BuildContext context, UserEntity user, bool usesImperialUnits) {
     return ListView(
       children: [
-        const SizedBox(height: 32.0),
-        BMIOverview(
-          bmiValue: userBMIEntity.bmiValue,
-          nutritionalStatus: userBMIEntity.nutritionalStatus,
-        ),
         const SizedBox(height: 32.0),
         ListTile(
           title: Text(

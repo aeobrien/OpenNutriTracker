@@ -1,58 +1,160 @@
-import 'package:opennutritracker/core/data/data_source/intake_data_source.dart';
+import 'package:drift/drift.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/data/dbo/intake_dbo.dart';
-import 'package:opennutritracker/core/data/dbo/intake_type_dbo.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 
 class IntakeRepository {
-  final IntakeDataSource _intakeDataSource;
+  final LogEntryDao _logEntryDao;
+  final FoodItemDao _foodItemDao;
+  final _log = Logger('IntakeRepository');
 
-  IntakeRepository(this._intakeDataSource);
+  IntakeRepository(this._logEntryDao, this._foodItemDao);
 
   Future<void> addIntake(IntakeEntity intakeEntity) async {
-    final intakeDBO = IntakeDBO.fromIntakeEntity(intakeEntity);
+    _log.fine('Adding intake: ${intakeEntity.id}');
+    final meal = intakeEntity.meal;
 
-    await _intakeDataSource.addIntake(intakeDBO);
+    // Upsert food item first
+    final foodItemId = meal.code ?? 'custom_${intakeEntity.id}';
+    await _foodItemDao.upsertFoodItem(FoodItemsCompanion(
+      id: Value(foodItemId),
+      source: Value(meal.source.name),
+      barcode: Value(meal.code),
+      name: Value(meal.name),
+      brand: Value(meal.brands),
+      mealQuantity: Value(meal.mealQuantity),
+      mealUnit: Value(meal.mealUnit),
+      servingQuantity: Value(meal.servingQuantity),
+      servingUnit: Value(meal.servingUnit),
+      servingSize: Value(meal.servingSize),
+      kcalPer100: Value(meal.nutriments.energyKcal100),
+      proteinPer100: Value(meal.nutriments.proteins100),
+      carbsPer100: Value(meal.nutriments.carbohydrates100),
+      fatPer100: Value(meal.nutriments.fat100),
+      fibrePer100: Value(meal.nutriments.fiber100),
+      sugarPer100: Value(meal.nutriments.sugars100),
+      saturatedFatPer100: Value(meal.nutriments.saturatedFat100),
+      thumbnailImageUrl: Value(meal.thumbnailImageUrl),
+      mainImageUrl: Value(meal.mainImageUrl),
+      url: Value(meal.url),
+      lastUsedAt: Value(intakeEntity.dateTime.millisecondsSinceEpoch),
+      lastUsedGrams: Value(intakeEntity.amount),
+    ));
+
+    // Insert log entry with snapshot values
+    await _logEntryDao.insertEntry(LogEntriesCompanion(
+      id: Value(intakeEntity.id),
+      timestamp: Value(intakeEntity.dateTime.millisecondsSinceEpoch),
+      mealSlot: Value(intakeEntity.type.name),
+      foodItemId: Value(foodItemId),
+      amount: Value(intakeEntity.amount),
+      unit: Value(intakeEntity.unit),
+      snapshotKcal: Value(intakeEntity.totalKcal),
+      snapshotProtein: Value(intakeEntity.totalProteinsGram),
+      snapshotCarbs: Value(intakeEntity.totalCarbsGram),
+      snapshotFat: Value(intakeEntity.totalFatsGram),
+    ));
   }
 
   Future<void> addAllIntakeDBOs(List<IntakeDBO> intakeDBOs) async {
-    await _intakeDataSource.addAllIntakes(intakeDBOs);
+    for (final dbo in intakeDBOs) {
+      final entity = IntakeEntity.fromIntakeDBO(dbo);
+      await addIntake(entity);
+    }
   }
 
   Future<void> deleteIntake(IntakeEntity intakeEntity) async {
-    await _intakeDataSource.deleteIntakeFromId(intakeEntity.id);
+    _log.fine('Deleting intake: ${intakeEntity.id}');
+    await _logEntryDao.deleteById(intakeEntity.id);
   }
 
   Future<IntakeEntity?> updateIntake(
       String intakeId, Map<String, dynamic> fields) async {
-    var result = await _intakeDataSource.updateIntake(intakeId, fields);
-    return result == null ? null : IntakeEntity.fromIntakeDBO(result);
-  }
+    _log.fine('Updating intake: $intakeId');
+    if (fields.containsKey('amount')) {
+      final row = await _logEntryDao.getById(intakeId);
+      if (row == null) return null;
 
-  Future<List<IntakeDBO>> getAllIntakesDBO() async {
-    return await _intakeDataSource.getAllIntakes();
+      final newAmount = fields['amount'] as double;
+      final foodItem = row.foodItem;
+      final energyPerUnit = (foodItem?.kcalPer100 ?? 0) / 100;
+      final proteinPerUnit = (foodItem?.proteinPer100 ?? 0) / 100;
+      final carbsPerUnit = (foodItem?.carbsPer100 ?? 0) / 100;
+      final fatPerUnit = (foodItem?.fatPer100 ?? 0) / 100;
+
+      await _logEntryDao.updateEntry(intakeId, LogEntriesCompanion(
+        amount: Value(newAmount),
+        snapshotKcal: Value(newAmount * energyPerUnit),
+        snapshotProtein: Value(newAmount * proteinPerUnit),
+        snapshotCarbs: Value(newAmount * carbsPerUnit),
+        snapshotFat: Value(newAmount * fatPerUnit),
+      ));
+
+      final updated = await _logEntryDao.getById(intakeId);
+      return updated != null ? IntakeEntity.fromLogEntry(updated) : null;
+    }
+    return null;
   }
 
   Future<List<IntakeEntity>> getIntakeByDateAndType(
       IntakeTypeEntity intakeType, DateTime date) async {
-    final intakeDBOList = await _intakeDataSource.getAllIntakesByDate(
-        IntakeTypeDBO.fromIntakeTypeEntity(intakeType), date);
-
-    return intakeDBOList
-        .map((intakeDBO) => IntakeEntity.fromIntakeDBO(intakeDBO))
-        .toList();
+    final rows =
+        await _logEntryDao.getByDateAndSlot(date, intakeType.name);
+    return rows.map((row) => IntakeEntity.fromLogEntry(row)).toList();
   }
 
   Future<List<IntakeEntity>> getRecentIntake() async {
-    final intakeList = await _intakeDataSource.getRecentlyAddedIntake();
-
-    return intakeList
-        .map((intakeDBO) => IntakeEntity.fromIntakeDBO(intakeDBO))
-        .toList();
+    final rows = await _logEntryDao.getRecentlyAdded();
+    return rows.map((row) => IntakeEntity.fromLogEntry(row)).toList();
   }
 
   Future<IntakeEntity?> getIntakeById(String intakeId) async {
-    final result = await _intakeDataSource.getIntakeById(intakeId);
-    return result == null ? null : IntakeEntity.fromIntakeDBO(result);
+    final row = await _logEntryDao.getById(intakeId);
+    return row != null ? IntakeEntity.fromLogEntry(row) : null;
+  }
+
+  // Export support: returns all log entries as IntakeDBO-compatible JSON
+  Future<List<Map<String, dynamic>>> getAllIntakesJson() async {
+    final rows = await _logEntryDao.getAll();
+    return rows.map((row) {
+      final entry = row.logEntry;
+      final food = row.foodItem;
+      return {
+        'id': entry.id,
+        'unit': entry.unit,
+        'amount': entry.amount,
+        'type': entry.mealSlot,
+        'dateTime': DateTime.fromMillisecondsSinceEpoch(entry.timestamp)
+            .toIso8601String(),
+        'meal': {
+          'code': food?.barcode ?? food?.id,
+          'name': food?.name,
+          'brands': food?.brand,
+          'thumbnailImageUrl': food?.thumbnailImageUrl,
+          'mainImageUrl': food?.mainImageUrl,
+          'url': food?.url,
+          'mealQuantity': food?.mealQuantity,
+          'mealUnit': food?.mealUnit,
+          'servingQuantity': food?.servingQuantity,
+          'servingUnit': food?.servingUnit,
+          'servingSize': food?.servingSize,
+          'source': food?.source ?? 'unknown',
+          'nutriments': {
+            'energyKcal100': food?.kcalPer100,
+            'carbohydrates100': food?.carbsPer100,
+            'fat100': food?.fatPer100,
+            'proteins100': food?.proteinPer100,
+            'sugars100': food?.sugarPer100,
+            'saturatedFat100': food?.saturatedFatPer100,
+            'fiber100': food?.fibrePer100,
+          },
+        },
+      };
+    }).toList();
   }
 }

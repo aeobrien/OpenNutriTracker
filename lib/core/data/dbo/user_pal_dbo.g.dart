@@ -8,7 +8,7 @@ part of 'user_pal_dbo.dart';
 
 class UserPALDBOAdapter extends TypeAdapter<UserPALDBO> {
   @override
-  final int typeId = 8;
+  final typeId = 8;
 
   @override
   UserPALDBO read(BinaryReader reader) {
@@ -31,16 +31,12 @@ class UserPALDBOAdapter extends TypeAdapter<UserPALDBO> {
     switch (obj) {
       case UserPALDBO.sedentary:
         writer.writeByte(0);
-        break;
       case UserPALDBO.lowActive:
         writer.writeByte(1);
-        break;
       case UserPALDBO.active:
         writer.writeByte(2);
-        break;
       case UserPALDBO.veryActive:
         writer.writeByte(3);
-        break;
     }
   }
 

@@ -1,4 +1,4 @@
-import 'package:hive/hive.dart';
+import 'package:hive_ce/hive_ce.dart';
 import 'package:opennutritracker/core/domain/entity/user_gender_entity.dart';
 
 part 'user_gender_dbo.g.dart';
