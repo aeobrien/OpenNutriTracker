@@ -70,4 +70,8 @@ class AddTrackedDayUsecase {
     await _trackedDayRepository.removeDayMacrosTracked(day,
         carbsTracked: carbsTracked, fatTracked: fatTracked, proteinTracked: proteinTracked);
   }
+
+  Future<void> deleteDayIfEmpty(DateTime day) async {
+    await _trackedDayRepository.deleteDayIfEmpty(day);
+  }
 }

@@ -168,6 +168,10 @@ class DailyStatsDao extends DatabaseAccessor<AppDatabase>
     );
   }
 
+  Future<void> deleteByDate(DateTime day) async {
+    await (delete(dailyStats)..where((t) => t.date.equals(_dateKey(day)))).go();
+  }
+
   Future<void> subtractFromGoals(
     DateTime day, {
     double? calorieAmount,

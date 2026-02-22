@@ -69,7 +69,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               state.dinnerIntakeList,
               state.snackIntakeList,
               state.userActivityList,
-              state.usesImperialUnits);
+              state.usesImperialUnits,
+              state.totalKcalBase,
+              state.totalKcalEarned,
+              state.weeklyRemaining);
         } else {
           return _getLoadingContent();
         }
@@ -110,7 +113,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       List<IntakeEntity> dinnerIntakeList,
       List<IntakeEntity> snackIntakeList,
       List<UserActivityEntity> userActivities,
-      bool usesImperialUnits) {
+      bool usesImperialUnits,
+      double totalKcalBase,
+      double totalKcalEarned,
+      double? weeklyRemaining) {
     if (showDisclaimerDialog) {
       _showDisclaimerDialog(context);
     }
@@ -127,6 +133,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           totalCarbsGoal: totalCarbsGoal,
           totalFatsGoal: totalFatsGoal,
           totalProteinsGoal: totalProteinsGoal,
+          totalKcalBase: totalKcalBase,
+          totalKcalEarned: totalKcalEarned,
+          weeklyRemaining: weeklyRemaining,
         ),
         ActivityVerticalList(
           day: DateTime.now(),

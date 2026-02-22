@@ -122,6 +122,14 @@ class TrackedDayRepository {
         carbs: carbsTracked, fat: fatTracked, protein: proteinTracked);
   }
 
+  Future<void> deleteDayIfEmpty(DateTime day) async {
+    final row = await _dailyStatsDao.getByDate(day);
+    if (row != null && row.caloriesTracked <= 0) {
+      _log.fine('Deleting empty tracked day for $day');
+      await _dailyStatsDao.deleteByDate(day);
+    }
+  }
+
   // Export support: returns all daily stats as TrackedDayDBO-compatible JSON
   Future<List<Map<String, dynamic>>> getAllTrackedDaysJson() async {
     final rows = await _dailyStatsDao.getAll();

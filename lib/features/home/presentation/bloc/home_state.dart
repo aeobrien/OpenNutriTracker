@@ -32,6 +32,9 @@ class HomeLoadedState extends HomeState {
   final List<IntakeEntity> dinnerIntakeList;
   final List<IntakeEntity> snackIntakeList;
   final bool usesImperialUnits;
+  final double totalKcalBase;
+  final double totalKcalEarned;
+  final double? weeklyRemaining;
 
   const HomeLoadedState({
     required this.showDisclaimerDialog,
@@ -51,6 +54,9 @@ class HomeLoadedState extends HomeState {
     required this.dinnerIntakeList,
     required this.snackIntakeList,
     required this.usesImperialUnits,
+    required this.totalKcalBase,
+    required this.totalKcalEarned,
+    this.weeklyRemaining,
   });
 
   @override
@@ -59,6 +65,9 @@ class HomeLoadedState extends HomeState {
         lunchIntakeList,
         dinnerIntakeList,
         snackIntakeList,
-        usesImperialUnits
+        usesImperialUnits,
+        totalKcalBase,
+        totalKcalEarned,
+        weeklyRemaining,
       ];
 }

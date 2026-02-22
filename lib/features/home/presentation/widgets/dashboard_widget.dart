@@ -1,10 +1,11 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/macro_nutriments_widget.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
-class DashboardWidget extends StatefulWidget {
+class DashboardWidget extends StatelessWidget {
   final double totalKcalDaily;
   final double totalKcalLeft;
   final double totalKcalSupplied;
@@ -15,40 +16,37 @@ class DashboardWidget extends StatefulWidget {
   final double totalCarbsGoal;
   final double totalFatsGoal;
   final double totalProteinsGoal;
+  final double totalKcalBase;
+  final double totalKcalEarned;
+  final double? weeklyRemaining;
 
-  const DashboardWidget(
-      {super.key,
-      required this.totalKcalSupplied,
-      required this.totalKcalBurned,
-      required this.totalKcalDaily,
-      required this.totalKcalLeft,
-      required this.totalCarbsIntake,
-      required this.totalFatsIntake,
-      required this.totalProteinsIntake,
-      required this.totalCarbsGoal,
-      required this.totalFatsGoal,
-      required this.totalProteinsGoal});
+  const DashboardWidget({
+    super.key,
+    required this.totalKcalSupplied,
+    required this.totalKcalBurned,
+    required this.totalKcalDaily,
+    required this.totalKcalLeft,
+    required this.totalCarbsIntake,
+    required this.totalFatsIntake,
+    required this.totalProteinsIntake,
+    required this.totalCarbsGoal,
+    required this.totalFatsGoal,
+    required this.totalProteinsGoal,
+    required this.totalKcalBase,
+    required this.totalKcalEarned,
+    this.weeklyRemaining,
+  });
 
-  @override
-  State<DashboardWidget> createState() => _DashboardWidgetState();
-}
-
-class _DashboardWidgetState extends State<DashboardWidget> {
   @override
   Widget build(BuildContext context) {
-    double kcalLeftLabel = 0;
-    double gaugeValue = 0;
-    if (widget.totalKcalLeft > widget.totalKcalDaily) {
-      kcalLeftLabel = widget.totalKcalDaily;
-      gaugeValue = 0;
-    } else if (widget.totalKcalLeft < 0) {
-      kcalLeftLabel = 0;
-      gaugeValue = 1;
-    } else {
-      kcalLeftLabel = widget.totalKcalLeft;
-      gaugeValue = (widget.totalKcalDaily - widget.totalKcalLeft) /
-          widget.totalKcalDaily;
-    }
+    final isOver = totalKcalLeft < 0;
+    final gaugeValue = _getGaugeValue();
+    final displayKcal = isOver ? totalKcalLeft.abs() : totalKcalLeft;
+
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final subdued = onSurface.withAlpha(153);
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Card(
@@ -57,101 +55,162 @@ class _DashboardWidgetState extends State<DashboardWidget> {
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  Column(
-                    children: [
-                      Icon(
-                        Icons.keyboard_arrow_up_outlined,
-                        color: Theme.of(context).colorScheme.onSurface,
+            children: [
+              // Date row
+              _buildDateRow(context, subdued),
+              const SizedBox(height: 12),
+              // Calorie circle
+              CircularPercentIndicator(
+                radius: 90.0,
+                lineWidth: 13.0,
+                animation: true,
+                percent: gaugeValue,
+                arcType: ArcType.FULL,
+                progressColor: theme.colorScheme.primary,
+                arcBackgroundColor:
+                    theme.colorScheme.primary.withAlpha(50),
+                center: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    AnimatedFlipCounter(
+                      duration: const Duration(milliseconds: 1000),
+                      value: displayKcal.toInt(),
+                      textStyle: theme.textTheme.headlineMedium?.copyWith(
+                        color: onSurface,
+                        letterSpacing: -1,
                       ),
-                      Text('${widget.totalKcalSupplied.toInt()}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface)),
-                      Text(S.of(context).suppliedLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface)),
-                    ],
-                  ),
-                  CircularPercentIndicator(
-                    radius: 90.0,
-                    lineWidth: 13.0,
-                    animation: true,
-                    percent: gaugeValue,
-                    arcType: ArcType.FULL,
-                    progressColor: Theme.of(context).colorScheme.primary,
-                    arcBackgroundColor:
-                        Theme.of(context).colorScheme.primary.withAlpha(50),
-                    center: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AnimatedFlipCounter(
-                            duration: const Duration(milliseconds: 1000),
-                            value: kcalLeftLabel.toInt(),
-                            textStyle: Theme.of(context)
-                                .textTheme
-                                .headlineMedium
-                                ?.copyWith(
-                                    color:
-                                        Theme.of(context).colorScheme.onSurface,
-                                    letterSpacing: -1)),
-                        Text(
-                          S.of(context).kcalLeftLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface),
-                        )
-                      ],
                     ),
-                    circularStrokeCap: CircularStrokeCap.round,
-                  ),
-                  Column(
-                    children: [
-                      Icon(Icons.keyboard_arrow_down_outlined,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      Text('${widget.totalKcalBurned.toInt()}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface)),
-                      Text(S.of(context).burnedLabel,
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleSmall
-                              ?.copyWith(
-                                  color:
-                                      Theme.of(context).colorScheme.onSurface)),
-                    ],
-                  ),
-                ],
+                    Text(
+                      isOver
+                          ? S.of(context).overTargetLabel
+                          : S.of(context).kcalLeftLabel,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+                circularStrokeCap: CircularStrokeCap.round,
               ),
+              const SizedBox(height: 12),
+              // Allowance breakdown row
+              _buildAllowanceRow(context, onSurface, subdued),
+              // Weekly context line
+              if (weeklyRemaining != null) ...[
+                const SizedBox(height: 8),
+                _buildWeeklyLine(context, subdued),
+              ],
+              const SizedBox(height: 8),
+              // Macro bars
               MacroNutrientsView(
-                  totalCarbsIntake: widget.totalCarbsIntake,
-                  totalFatsIntake: widget.totalFatsIntake,
-                  totalProteinsIntake: widget.totalProteinsIntake,
-                  totalCarbsGoal: widget.totalCarbsGoal,
-                  totalFatsGoal: widget.totalFatsGoal,
-                  totalProteinsGoal: widget.totalProteinsGoal),
+                totalCarbsIntake: totalCarbsIntake,
+                totalFatsIntake: totalFatsIntake,
+                totalProteinsIntake: totalProteinsIntake,
+                totalCarbsGoal: totalCarbsGoal,
+                totalFatsGoal: totalFatsGoal,
+                totalProteinsGoal: totalProteinsGoal,
+              ),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  double _getGaugeValue() {
+    if (totalKcalLeft > totalKcalDaily) return 0;
+    if (totalKcalLeft < 0) return 1;
+    if (totalKcalDaily <= 0) return 0;
+    return (totalKcalDaily - totalKcalLeft) / totalKcalDaily;
+  }
+
+  Widget _buildDateRow(BuildContext context, Color subdued) {
+    final now = DateTime.now();
+    final formatted = DateFormat('EEE d MMM').format(now);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          'Today',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: subdued,
+              ),
+        ),
+        Text(
+          formatted,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: subdued,
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAllowanceRow(
+      BuildContext context, Color onSurface, Color subdued) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildAllowanceColumn(
+          context,
+          '${totalKcalBase.toInt()}',
+          S.of(context).baseLabel,
+          onSurface,
+          subdued,
+        ),
+        _buildAllowanceColumn(
+          context,
+          '+${totalKcalEarned.toInt()}',
+          S.of(context).earnedLabel,
+          onSurface,
+          subdued,
+        ),
+        _buildAllowanceColumn(
+          context,
+          '${totalKcalSupplied.toInt()}',
+          S.of(context).eatenLabel,
+          onSurface,
+          subdued,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAllowanceColumn(
+    BuildContext context,
+    String value,
+    String label,
+    Color valueColor,
+    Color labelColor,
+  ) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                color: valueColor,
+              ),
+        ),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: labelColor,
+              ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildWeeklyLine(BuildContext context, Color subdued) {
+    final remaining = weeklyRemaining!;
+    final text = remaining >= 0
+        ? S.of(context).weeklyUnderLabel(remaining.abs().toInt().toString())
+        : S.of(context).weeklyOverLabel(remaining.abs().toInt().toString());
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: subdued,
+          ),
     );
   }
 }
