@@ -35,6 +35,9 @@ class HomeLoadedState extends HomeState {
   final double totalKcalBase;
   final double totalKcalEarned;
   final double? weeklyRemaining;
+  final double activeCaloriesToday;
+  final DateTime? activeCaloriesUpdatedAt;
+  final bool healthKitConnected;
 
   const HomeLoadedState({
     required this.showDisclaimerDialog,
@@ -57,6 +60,9 @@ class HomeLoadedState extends HomeState {
     required this.totalKcalBase,
     required this.totalKcalEarned,
     this.weeklyRemaining,
+    this.activeCaloriesToday = 0.0,
+    this.activeCaloriesUpdatedAt,
+    this.healthKitConnected = false,
   });
 
   @override
@@ -69,5 +75,8 @@ class HomeLoadedState extends HomeState {
         totalKcalBase,
         totalKcalEarned,
         weeklyRemaining,
+        activeCaloriesToday,
+        activeCaloriesUpdatedAt,
+        healthKitConnected,
       ];
 }

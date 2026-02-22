@@ -1256,6 +1256,27 @@ class MockDailyStatsDao extends _i1.Mock implements _i7.DailyStatsDao {
           as _i6.Future<void>);
 
   @override
+  _i6.Future<void> updateActiveCalories(String? date, double? calories) =>
+      (super.noSuchMethod(
+            Invocation.method(#updateActiveCalories, [date, calories]),
+            returnValue: _i6.Future<void>.value(),
+            returnValueForMissingStub: _i6.Future<void>.value(),
+          )
+          as _i6.Future<void>);
+
+  @override
+  _i6.Future<(double, DateTime?)> getActiveCalories(String? date) =>
+      (super.noSuchMethod(
+            Invocation.method(#getActiveCalories, [date]),
+            returnValue: _i6.Future<(double, DateTime?)>.value((0.0, null)),
+            returnValueForMissingStub: _i6.Future<(double, DateTime?)>.value((
+              0.0,
+              null,
+            )),
+          )
+          as _i6.Future<(double, DateTime?)>);
+
+  @override
   _i6.Future<void> subtractFromGoals(
     DateTime? day, {
     double? calorieAmount,

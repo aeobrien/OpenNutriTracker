@@ -172,6 +172,27 @@ class DailyStatsDao extends DatabaseAccessor<AppDatabase>
     await (delete(dailyStats)..where((t) => t.date.equals(_dateKey(day)))).go();
   }
 
+  Future<void> updateActiveCalories(String date, double calories) async {
+    await customStatement(
+      'UPDATE daily_stats SET active_calories_burned = ?, active_calories_updated_at = ? WHERE date = ?',
+      [calories, DateTime.now().millisecondsSinceEpoch ~/ 1000, date],
+    );
+  }
+
+  Future<(double, DateTime?)> getActiveCalories(String date) async {
+    final result = await customSelect(
+      'SELECT active_calories_burned, active_calories_updated_at FROM daily_stats WHERE date = ?',
+      variables: [Variable.withString(date)],
+    ).getSingleOrNull();
+    if (result == null) return (0.0, null);
+    final calories = result.read<double>('active_calories_burned');
+    final updatedAtEpoch = result.readNullable<int>('active_calories_updated_at');
+    final updatedAt = updatedAtEpoch != null
+        ? DateTime.fromMillisecondsSinceEpoch(updatedAtEpoch * 1000)
+        : null;
+    return (calories, updatedAt);
+  }
+
   Future<void> subtractFromGoals(
     DateTime day, {
     double? calorieAmount,

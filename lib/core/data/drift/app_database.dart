@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -74,6 +74,14 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await customStatement(
               'ALTER TABLE food_items ADD COLUMN favourite INTEGER NOT NULL DEFAULT 0',
+            );
+          }
+          if (from < 3) {
+            await customStatement(
+              'ALTER TABLE daily_stats ADD COLUMN active_calories_burned REAL NOT NULL DEFAULT 0.0',
+            );
+            await customStatement(
+              'ALTER TABLE daily_stats ADD COLUMN active_calories_updated_at INTEGER',
             );
           }
         },

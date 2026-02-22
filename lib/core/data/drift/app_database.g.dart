@@ -2053,6 +2053,29 @@ class $DailyStatsTable extends DailyStats
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _activeCaloriesBurnedMeta =
+      const VerificationMeta('activeCaloriesBurned');
+  @override
+  late final GeneratedColumn<double> activeCaloriesBurned =
+      GeneratedColumn<double>(
+        'active_calories_burned',
+        aliasedName,
+        false,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0.0),
+      );
+  static const VerificationMeta _activeCaloriesUpdatedAtMeta =
+      const VerificationMeta('activeCaloriesUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> activeCaloriesUpdatedAt =
+      GeneratedColumn<DateTime>(
+        'active_calories_updated_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     date,
@@ -2064,6 +2087,8 @@ class $DailyStatsTable extends DailyStats
     fatTracked,
     proteinGoal,
     proteinTracked,
+    activeCaloriesBurned,
+    activeCaloriesUpdatedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2150,6 +2175,24 @@ class $DailyStatsTable extends DailyStats
         ),
       );
     }
+    if (data.containsKey('active_calories_burned')) {
+      context.handle(
+        _activeCaloriesBurnedMeta,
+        activeCaloriesBurned.isAcceptableOrUnknown(
+          data['active_calories_burned']!,
+          _activeCaloriesBurnedMeta,
+        ),
+      );
+    }
+    if (data.containsKey('active_calories_updated_at')) {
+      context.handle(
+        _activeCaloriesUpdatedAtMeta,
+        activeCaloriesUpdatedAt.isAcceptableOrUnknown(
+          data['active_calories_updated_at']!,
+          _activeCaloriesUpdatedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2195,6 +2238,14 @@ class $DailyStatsTable extends DailyStats
         DriftSqlType.double,
         data['${effectivePrefix}protein_tracked'],
       ),
+      activeCaloriesBurned: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}active_calories_burned'],
+      )!,
+      activeCaloriesUpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}active_calories_updated_at'],
+      ),
     );
   }
 
@@ -2214,6 +2265,8 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
   final double? fatTracked;
   final double? proteinGoal;
   final double? proteinTracked;
+  final double activeCaloriesBurned;
+  final DateTime? activeCaloriesUpdatedAt;
   const DailyStat({
     required this.date,
     required this.calorieGoal,
@@ -2224,6 +2277,8 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
     this.fatTracked,
     this.proteinGoal,
     this.proteinTracked,
+    required this.activeCaloriesBurned,
+    this.activeCaloriesUpdatedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2248,6 +2303,12 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
     }
     if (!nullToAbsent || proteinTracked != null) {
       map['protein_tracked'] = Variable<double>(proteinTracked);
+    }
+    map['active_calories_burned'] = Variable<double>(activeCaloriesBurned);
+    if (!nullToAbsent || activeCaloriesUpdatedAt != null) {
+      map['active_calories_updated_at'] = Variable<DateTime>(
+        activeCaloriesUpdatedAt,
+      );
     }
     return map;
   }
@@ -2275,6 +2336,10 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
       proteinTracked: proteinTracked == null && nullToAbsent
           ? const Value.absent()
           : Value(proteinTracked),
+      activeCaloriesBurned: Value(activeCaloriesBurned),
+      activeCaloriesUpdatedAt: activeCaloriesUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(activeCaloriesUpdatedAt),
     );
   }
 
@@ -2293,6 +2358,12 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
       fatTracked: serializer.fromJson<double?>(json['fatTracked']),
       proteinGoal: serializer.fromJson<double?>(json['proteinGoal']),
       proteinTracked: serializer.fromJson<double?>(json['proteinTracked']),
+      activeCaloriesBurned: serializer.fromJson<double>(
+        json['activeCaloriesBurned'],
+      ),
+      activeCaloriesUpdatedAt: serializer.fromJson<DateTime?>(
+        json['activeCaloriesUpdatedAt'],
+      ),
     );
   }
   @override
@@ -2308,6 +2379,10 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
       'fatTracked': serializer.toJson<double?>(fatTracked),
       'proteinGoal': serializer.toJson<double?>(proteinGoal),
       'proteinTracked': serializer.toJson<double?>(proteinTracked),
+      'activeCaloriesBurned': serializer.toJson<double>(activeCaloriesBurned),
+      'activeCaloriesUpdatedAt': serializer.toJson<DateTime?>(
+        activeCaloriesUpdatedAt,
+      ),
     };
   }
 
@@ -2321,6 +2396,8 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
     Value<double?> fatTracked = const Value.absent(),
     Value<double?> proteinGoal = const Value.absent(),
     Value<double?> proteinTracked = const Value.absent(),
+    double? activeCaloriesBurned,
+    Value<DateTime?> activeCaloriesUpdatedAt = const Value.absent(),
   }) => DailyStat(
     date: date ?? this.date,
     calorieGoal: calorieGoal ?? this.calorieGoal,
@@ -2333,6 +2410,10 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
     proteinTracked: proteinTracked.present
         ? proteinTracked.value
         : this.proteinTracked,
+    activeCaloriesBurned: activeCaloriesBurned ?? this.activeCaloriesBurned,
+    activeCaloriesUpdatedAt: activeCaloriesUpdatedAt.present
+        ? activeCaloriesUpdatedAt.value
+        : this.activeCaloriesUpdatedAt,
   );
   DailyStat copyWithCompanion(DailyStatsCompanion data) {
     return DailyStat(
@@ -2357,6 +2438,12 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
       proteinTracked: data.proteinTracked.present
           ? data.proteinTracked.value
           : this.proteinTracked,
+      activeCaloriesBurned: data.activeCaloriesBurned.present
+          ? data.activeCaloriesBurned.value
+          : this.activeCaloriesBurned,
+      activeCaloriesUpdatedAt: data.activeCaloriesUpdatedAt.present
+          ? data.activeCaloriesUpdatedAt.value
+          : this.activeCaloriesUpdatedAt,
     );
   }
 
@@ -2371,7 +2458,9 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
           ..write('fatGoal: $fatGoal, ')
           ..write('fatTracked: $fatTracked, ')
           ..write('proteinGoal: $proteinGoal, ')
-          ..write('proteinTracked: $proteinTracked')
+          ..write('proteinTracked: $proteinTracked, ')
+          ..write('activeCaloriesBurned: $activeCaloriesBurned, ')
+          ..write('activeCaloriesUpdatedAt: $activeCaloriesUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -2387,6 +2476,8 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
     fatTracked,
     proteinGoal,
     proteinTracked,
+    activeCaloriesBurned,
+    activeCaloriesUpdatedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -2400,7 +2491,9 @@ class DailyStat extends DataClass implements Insertable<DailyStat> {
           other.fatGoal == this.fatGoal &&
           other.fatTracked == this.fatTracked &&
           other.proteinGoal == this.proteinGoal &&
-          other.proteinTracked == this.proteinTracked);
+          other.proteinTracked == this.proteinTracked &&
+          other.activeCaloriesBurned == this.activeCaloriesBurned &&
+          other.activeCaloriesUpdatedAt == this.activeCaloriesUpdatedAt);
 }
 
 class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
@@ -2413,6 +2506,8 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
   final Value<double?> fatTracked;
   final Value<double?> proteinGoal;
   final Value<double?> proteinTracked;
+  final Value<double> activeCaloriesBurned;
+  final Value<DateTime?> activeCaloriesUpdatedAt;
   final Value<int> rowid;
   const DailyStatsCompanion({
     this.date = const Value.absent(),
@@ -2424,6 +2519,8 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
     this.fatTracked = const Value.absent(),
     this.proteinGoal = const Value.absent(),
     this.proteinTracked = const Value.absent(),
+    this.activeCaloriesBurned = const Value.absent(),
+    this.activeCaloriesUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   DailyStatsCompanion.insert({
@@ -2436,6 +2533,8 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
     this.fatTracked = const Value.absent(),
     this.proteinGoal = const Value.absent(),
     this.proteinTracked = const Value.absent(),
+    this.activeCaloriesBurned = const Value.absent(),
+    this.activeCaloriesUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : date = Value(date),
        calorieGoal = Value(calorieGoal);
@@ -2449,6 +2548,8 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
     Expression<double>? fatTracked,
     Expression<double>? proteinGoal,
     Expression<double>? proteinTracked,
+    Expression<double>? activeCaloriesBurned,
+    Expression<DateTime>? activeCaloriesUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2461,6 +2562,10 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
       if (fatTracked != null) 'fat_tracked': fatTracked,
       if (proteinGoal != null) 'protein_goal': proteinGoal,
       if (proteinTracked != null) 'protein_tracked': proteinTracked,
+      if (activeCaloriesBurned != null)
+        'active_calories_burned': activeCaloriesBurned,
+      if (activeCaloriesUpdatedAt != null)
+        'active_calories_updated_at': activeCaloriesUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2475,6 +2580,8 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
     Value<double?>? fatTracked,
     Value<double?>? proteinGoal,
     Value<double?>? proteinTracked,
+    Value<double>? activeCaloriesBurned,
+    Value<DateTime?>? activeCaloriesUpdatedAt,
     Value<int>? rowid,
   }) {
     return DailyStatsCompanion(
@@ -2487,6 +2594,9 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
       fatTracked: fatTracked ?? this.fatTracked,
       proteinGoal: proteinGoal ?? this.proteinGoal,
       proteinTracked: proteinTracked ?? this.proteinTracked,
+      activeCaloriesBurned: activeCaloriesBurned ?? this.activeCaloriesBurned,
+      activeCaloriesUpdatedAt:
+          activeCaloriesUpdatedAt ?? this.activeCaloriesUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2521,6 +2631,16 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
     if (proteinTracked.present) {
       map['protein_tracked'] = Variable<double>(proteinTracked.value);
     }
+    if (activeCaloriesBurned.present) {
+      map['active_calories_burned'] = Variable<double>(
+        activeCaloriesBurned.value,
+      );
+    }
+    if (activeCaloriesUpdatedAt.present) {
+      map['active_calories_updated_at'] = Variable<DateTime>(
+        activeCaloriesUpdatedAt.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2539,6 +2659,8 @@ class DailyStatsCompanion extends UpdateCompanion<DailyStat> {
           ..write('fatTracked: $fatTracked, ')
           ..write('proteinGoal: $proteinGoal, ')
           ..write('proteinTracked: $proteinTracked, ')
+          ..write('activeCaloriesBurned: $activeCaloriesBurned, ')
+          ..write('activeCaloriesUpdatedAt: $activeCaloriesUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4913,6 +5035,8 @@ typedef $$DailyStatsTableCreateCompanionBuilder =
       Value<double?> fatTracked,
       Value<double?> proteinGoal,
       Value<double?> proteinTracked,
+      Value<double> activeCaloriesBurned,
+      Value<DateTime?> activeCaloriesUpdatedAt,
       Value<int> rowid,
     });
 typedef $$DailyStatsTableUpdateCompanionBuilder =
@@ -4926,6 +5050,8 @@ typedef $$DailyStatsTableUpdateCompanionBuilder =
       Value<double?> fatTracked,
       Value<double?> proteinGoal,
       Value<double?> proteinTracked,
+      Value<double> activeCaloriesBurned,
+      Value<DateTime?> activeCaloriesUpdatedAt,
       Value<int> rowid,
     });
 
@@ -4980,6 +5106,16 @@ class $$DailyStatsTableFilterComposer
 
   ColumnFilters<double> get proteinTracked => $composableBuilder(
     column: $table.proteinTracked,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get activeCaloriesBurned => $composableBuilder(
+    column: $table.activeCaloriesBurned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get activeCaloriesUpdatedAt => $composableBuilder(
+    column: $table.activeCaloriesUpdatedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5037,6 +5173,16 @@ class $$DailyStatsTableOrderingComposer
     column: $table.proteinTracked,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<double> get activeCaloriesBurned => $composableBuilder(
+    column: $table.activeCaloriesBurned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get activeCaloriesUpdatedAt => $composableBuilder(
+    column: $table.activeCaloriesUpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DailyStatsTableAnnotationComposer
@@ -5086,6 +5232,16 @@ class $$DailyStatsTableAnnotationComposer
     column: $table.proteinTracked,
     builder: (column) => column,
   );
+
+  GeneratedColumn<double> get activeCaloriesBurned => $composableBuilder(
+    column: $table.activeCaloriesBurned,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get activeCaloriesUpdatedAt => $composableBuilder(
+    column: $table.activeCaloriesUpdatedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$DailyStatsTableTableManager
@@ -5128,6 +5284,8 @@ class $$DailyStatsTableTableManager
                 Value<double?> fatTracked = const Value.absent(),
                 Value<double?> proteinGoal = const Value.absent(),
                 Value<double?> proteinTracked = const Value.absent(),
+                Value<double> activeCaloriesBurned = const Value.absent(),
+                Value<DateTime?> activeCaloriesUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyStatsCompanion(
                 date: date,
@@ -5139,6 +5297,8 @@ class $$DailyStatsTableTableManager
                 fatTracked: fatTracked,
                 proteinGoal: proteinGoal,
                 proteinTracked: proteinTracked,
+                activeCaloriesBurned: activeCaloriesBurned,
+                activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5152,6 +5312,8 @@ class $$DailyStatsTableTableManager
                 Value<double?> fatTracked = const Value.absent(),
                 Value<double?> proteinGoal = const Value.absent(),
                 Value<double?> proteinTracked = const Value.absent(),
+                Value<double> activeCaloriesBurned = const Value.absent(),
+                Value<DateTime?> activeCaloriesUpdatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => DailyStatsCompanion.insert(
                 date: date,
@@ -5163,6 +5325,8 @@ class $$DailyStatsTableTableManager
                 fatTracked: fatTracked,
                 proteinGoal: proteinGoal,
                 proteinTracked: proteinTracked,
+                activeCaloriesBurned: activeCaloriesBurned,
+                activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

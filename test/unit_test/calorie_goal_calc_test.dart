@@ -94,5 +94,29 @@ void main() {
     test('getRemaining negative (over target)', () {
       expect(CalorieGoalCalc.getRemaining(2000, 2500), -500);
     });
+
+    test('getEarnedCalories with multiplier 0.0 returns 0', () {
+      expect(
+          CalorieGoalCalc.getEarnedCalories(500, exerciseMultiplier: 0.0), 0.0);
+    });
+
+    test('getEarnedCalories with multiplier 1.0 returns full calories', () {
+      expect(
+          CalorieGoalCalc.getEarnedCalories(500, exerciseMultiplier: 1.0), 500.0);
+    });
+
+    test('getAllowance with active calories 0 gives base only', () {
+      final base = CalorieGoalCalc.getAllowance(user, 0.0);
+      final tdee = CalorieGoalCalc.getTdee(user);
+      expect(base, tdee); // goal adj = 0 for maintain weight
+    });
+
+    test('getAllowance with active calories and custom multiplier', () {
+      final result =
+          CalorieGoalCalc.getAllowance(user, 600.0, exerciseMultiplier: 0.5);
+      final tdee = CalorieGoalCalc.getTdee(user);
+      // earned = 600 * 0.5 = 300
+      expect(result, tdee + 300);
+    });
   });
 }

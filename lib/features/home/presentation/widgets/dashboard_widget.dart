@@ -19,6 +19,9 @@ class DashboardWidget extends StatelessWidget {
   final double totalKcalBase;
   final double totalKcalEarned;
   final double? weeklyRemaining;
+  final double activeCaloriesToday;
+  final DateTime? activeCaloriesUpdatedAt;
+  final bool healthKitConnected;
 
   const DashboardWidget({
     super.key,
@@ -35,6 +38,9 @@ class DashboardWidget extends StatelessWidget {
     required this.totalKcalBase,
     required this.totalKcalEarned,
     this.weeklyRemaining,
+    this.activeCaloriesToday = 0.0,
+    this.activeCaloriesUpdatedAt,
+    this.healthKitConnected = false,
   });
 
   @override
@@ -95,6 +101,11 @@ class DashboardWidget extends StatelessWidget {
               const SizedBox(height: 12),
               // Allowance breakdown row
               _buildAllowanceRow(context, onSurface, subdued),
+              // Active calories line (HealthKit)
+              if (healthKitConnected && activeCaloriesToday > 0) ...[
+                const SizedBox(height: 4),
+                _buildActiveCaloriesLine(context, subdued),
+              ],
               // Weekly context line
               if (weeklyRemaining != null) ...[
                 const SizedBox(height: 8),
@@ -198,6 +209,25 @@ class DashboardWidget extends StatelessWidget {
               ),
         ),
       ],
+    );
+  }
+
+  Widget _buildActiveCaloriesLine(BuildContext context, Color subdued) {
+    String text =
+        '${S.of(context).activeCaloriesLabel}: ${activeCaloriesToday.toInt()} kcal';
+    if (activeCaloriesUpdatedAt != null) {
+      final minutesAgo =
+          DateTime.now().difference(activeCaloriesUpdatedAt!).inMinutes;
+      if (minutesAgo > 15) {
+        text +=
+            ' (${S.of(context).lastUpdatedLabel('$minutesAgo min')})';
+      }
+    }
+    return Text(
+      text,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: subdued,
+          ),
     );
   }
 

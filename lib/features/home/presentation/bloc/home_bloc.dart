@@ -3,6 +3,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
+import 'package:opennutritracker/core/data/repository/config_repository.dart';
+import 'package:opennutritracker/core/data/repository/health_repository.dart';
 import 'package:opennutritracker/core/domain/usecase/add_config_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/add_tracked_day_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/delete_intake_usecase.dart';
@@ -14,6 +16,7 @@ import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart
 import 'package:opennutritracker/core/domain/usecase/get_tracked_day_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_user_activity_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/update_intake_usecase.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/utils/calc/calorie_goal_calc.dart';
 import 'package:opennutritracker/core/utils/calc/macro_calc.dart';
 import 'package:opennutritracker/core/utils/calc/weekly_calc.dart';
@@ -37,6 +40,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final GetKcalGoalUsecase _getKcalGoalUsecase;
   final GetMacroGoalUsecase _getMacroGoalUsecase;
   final GetTrackedDayUsecase _getTrackedDayUsecase;
+  final HealthRepository _healthRepository;
+  final ConfigRepository _configRepository;
+
+  final _log = Logger('HomeBloc');
 
   DateTime currentDay = DateTime.now();
 
@@ -51,7 +58,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       this._addTrackedDayUseCase,
       this._getKcalGoalUsecase,
       this._getMacroGoalUsecase,
-      this._getTrackedDayUsecase)
+      this._getTrackedDayUsecase,
+      this._healthRepository,
+      this._configRepository)
       : super(HomeInitial()) {
     on<LoadItemsEvent>((event, emit) async {
       emit(HomeLoadingState());
@@ -108,6 +117,33 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final totalKcalActivities =
           userActivities.map((activity) => activity.burnedKcal).toList().sum;
 
+      // HealthKit permission: request once if not yet asked
+      bool healthKitConnected = false;
+      double activeCaloriesToday = 0.0;
+      DateTime? activeCaloriesUpdatedAt;
+      try {
+        final hasAsked = await _configRepository.getHasAskedHealthPermission();
+        if (!hasAsked) {
+          final granted = await _healthRepository.requestPermission();
+          if (granted) {
+            // Only mark as asked if the dialog actually appeared
+            await _configRepository.setHasAskedHealthPermission(true);
+          }
+          healthKitConnected = granted;
+          _log.fine('HealthKit permission requested, granted: $granted');
+        } else {
+          healthKitConnected = await _healthRepository.hasPermission();
+        }
+        if (healthKitConnected) {
+          activeCaloriesToday =
+              await _healthRepository.fetchAndCacheActiveCalories();
+          final cached = await _healthRepository.getCachedActiveCalories();
+          activeCaloriesUpdatedAt = cached.$2;
+        }
+      } catch (e) {
+        _log.warning('Error during HealthKit check', e);
+      }
+
       final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
       final totalCarbsGoal =
           await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
@@ -159,7 +195,10 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           usesImperialUnits: usesImperialUnits,
           totalKcalBase: totalKcalBase,
           totalKcalEarned: totalKcalEarned,
-          weeklyRemaining: weeklyRemaining));
+          weeklyRemaining: weeklyRemaining,
+          activeCaloriesToday: activeCaloriesToday,
+          activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
+          healthKitConnected: healthKitConnected));
     });
   }
 

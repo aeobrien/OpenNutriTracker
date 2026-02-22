@@ -115,4 +115,12 @@ class ConfigRepository {
   Future<void> setExerciseMultiplier(double multiplier) async {
     await _configDao.setDouble('exerciseMultiplier', multiplier);
   }
+
+  Future<bool> getHasAskedHealthPermission() async {
+    return await _configDao.getBool('hasAskedHealthPermission');
+  }
+
+  Future<void> setHasAskedHealthPermission(bool value) async {
+    await _configDao.setBool('hasAskedHealthPermission', value);
+  }
 }

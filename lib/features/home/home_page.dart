@@ -72,7 +72,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               state.usesImperialUnits,
               state.totalKcalBase,
               state.totalKcalEarned,
-              state.weeklyRemaining);
+              state.weeklyRemaining,
+              state.activeCaloriesToday,
+              state.activeCaloriesUpdatedAt,
+              state.healthKitConnected);
         } else {
           return _getLoadingContent();
         }
@@ -116,7 +119,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       bool usesImperialUnits,
       double totalKcalBase,
       double totalKcalEarned,
-      double? weeklyRemaining) {
+      double? weeklyRemaining,
+      double activeCaloriesToday,
+      DateTime? activeCaloriesUpdatedAt,
+      bool healthKitConnected) {
     if (showDisclaimerDialog) {
       _showDisclaimerDialog(context);
     }
@@ -136,6 +142,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           totalKcalBase: totalKcalBase,
           totalKcalEarned: totalKcalEarned,
           weeklyRemaining: weeklyRemaining,
+          activeCaloriesToday: activeCaloriesToday,
+          activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
+          healthKitConnected: healthKitConnected,
         ),
         ActivityVerticalList(
           day: DateTime.now(),
@@ -259,10 +268,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     });
   }
 
-  /// Refresh page when day changes
+  /// Refresh page on resume (picks up HealthKit updates + day changes)
   void _refreshPageOnDayChange() {
-    if (!DateUtils.isSameDay(_homeBloc.currentDay, DateTime.now())) {
-      _homeBloc.add(const LoadItemsEvent());
-    }
+    _homeBloc.add(const LoadItemsEvent());
   }
 }

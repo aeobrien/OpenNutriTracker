@@ -25,16 +25,21 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m1(pctCarbs, pctFats, pctProteins) =>
       "${pctCarbs}% carbs, ${pctFats}% fats, ${pctProteins}% proteins";
 
-  static String m2(riskValue) => "Risk of comorbidities: ${riskValue}";
+  static String m2(time) => "updated ${time} ago";
 
-  static String m3(amount) => "This week: ${amount} kcal over target";
+  static String m3(riskValue) => "Risk of comorbidities: ${riskValue}";
 
-  static String m4(amount) => "This week: ${amount} kcal under target";
+  static String m4(amount) => "This week: ${amount} kcal over target";
 
-  static String m5(age) => "${age} years";
+  static String m5(amount) => "This week: ${amount} kcal under target";
+
+  static String m6(age) => "${age} years";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
+    "activeCaloriesLabel": MessageLookupByLibrary.simpleMessage(
+      "Active calories",
+    ),
     "activityExample": MessageLookupByLibrary.simpleMessage(
       "e.g. running, biking, yoga ...",
     ),
@@ -201,6 +206,15 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "gramMilliliterUnit": MessageLookupByLibrary.simpleMessage("g/ml"),
     "gramUnit": MessageLookupByLibrary.simpleMessage("g"),
+    "healthDeniedNote": MessageLookupByLibrary.simpleMessage(
+      "You can enable this later in Settings.",
+    ),
+    "healthPermissionBody": MessageLookupByLibrary.simpleMessage(
+      "FoodTracker can read your active calories to automatically adjust your daily allowance.",
+    ),
+    "healthPermissionTitle": MessageLookupByLibrary.simpleMessage(
+      "Connect Apple Health?",
+    ),
     "heightLabel": MessageLookupByLibrary.simpleMessage("Height"),
     "homeLabel": MessageLookupByLibrary.simpleMessage("Home"),
     "importAction": MessageLookupByLibrary.simpleMessage("Import"),
@@ -215,6 +229,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "kcalLabel": MessageLookupByLibrary.simpleMessage("kcal"),
     "kcalLeftLabel": MessageLookupByLibrary.simpleMessage("kcal left"),
     "kgLabel": MessageLookupByLibrary.simpleMessage("kg"),
+    "lastUpdatedLabel": m2,
     "lbsLabel": MessageLookupByLibrary.simpleMessage("lbs"),
     "lunchExample": MessageLookupByLibrary.simpleMessage(
       "e.g. pizza, salad, rice ...",
@@ -273,7 +288,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "nutritionalStatusRiskIncreased": MessageLookupByLibrary.simpleMessage(
       "Increased",
     ),
-    "nutritionalStatusRiskLabel": m2,
+    "nutritionalStatusRiskLabel": m3,
     "nutritionalStatusRiskLow": MessageLookupByLibrary.simpleMessage(
       "Low \n(but risk of other \nclinical problems increased)",
     ),
@@ -807,9 +822,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("supplied"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Undo"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Unit"),
-    "weeklyOverLabel": m3,
-    "weeklyUnderLabel": m4,
+    "weeklyOverLabel": m4,
+    "weeklyUnderLabel": m5,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Weight"),
-    "yearsLabel": m5,
+    "yearsLabel": m6,
   };
 }

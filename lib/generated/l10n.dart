@@ -1928,6 +1928,56 @@ class S {
     return Intl.message('Add food', name: 'addFoodLabel', desc: '', args: []);
   }
 
+  /// `Active calories`
+  String get activeCaloriesLabel {
+    return Intl.message(
+      'Active calories',
+      name: 'activeCaloriesLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `updated {time} ago`
+  String lastUpdatedLabel(Object time) {
+    return Intl.message(
+      'updated $time ago',
+      name: 'lastUpdatedLabel',
+      desc: '',
+      args: [time],
+    );
+  }
+
+  /// `Connect Apple Health?`
+  String get healthPermissionTitle {
+    return Intl.message(
+      'Connect Apple Health?',
+      name: 'healthPermissionTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `FoodTracker can read your active calories to automatically adjust your daily allowance.`
+  String get healthPermissionBody {
+    return Intl.message(
+      'FoodTracker can read your active calories to automatically adjust your daily allowance.',
+      name: 'healthPermissionBody',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `You can enable this later in Settings.`
+  String get healthDeniedNote {
+    return Intl.message(
+      'You can enable this later in Settings.',
+      name: 'healthDeniedNote',
+      desc: '',
+      args: [],
+    );
+  }
+
   /// `bicycling`
   String get paHeadingBicycling {
     return Intl.message(
