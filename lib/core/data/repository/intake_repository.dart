@@ -118,6 +118,15 @@ class IntakeRepository {
     return row != null ? IntakeEntity.fromLogEntry(row) : null;
   }
 
+  Future<void> toggleFavourite(String foodItemId, bool value) async {
+    await _foodItemDao.toggleFavourite(foodItemId, value);
+  }
+
+  Future<List<MealEntity>> getFavouriteMeals() async {
+    final rows = await _foodItemDao.getFavourites();
+    return rows.map((row) => MealEntity.fromFoodItem(row)).toList();
+  }
+
   // Export support: returns all log entries as IntakeDBO-compatible JSON
   Future<List<Map<String, dynamic>>> getAllIntakesJson() async {
     final rows = await _logEntryDao.getAll();

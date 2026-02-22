@@ -121,7 +121,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _showDisclaimerDialog(context);
     }
     return Stack(children: [
-      ListView(children: [
+      ListView(key: const PageStorageKey('home_list'), children: [
         DashboardWidget(
           totalKcalDaily: totalKcalDaily,
           totalKcalLeft: totalKcalLeft,

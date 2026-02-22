@@ -243,6 +243,21 @@ class $FoodItemsTable extends FoodItems
     type: DriftSqlType.double,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _favouriteMeta = const VerificationMeta(
+    'favourite',
+  );
+  @override
+  late final GeneratedColumn<bool> favourite = GeneratedColumn<bool>(
+    'favourite',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("favourite" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -267,6 +282,7 @@ class $FoodItemsTable extends FoodItems
     url,
     lastUsedAt,
     lastUsedGrams,
+    favourite,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -450,6 +466,12 @@ class $FoodItemsTable extends FoodItems
         ),
       );
     }
+    if (data.containsKey('favourite')) {
+      context.handle(
+        _favouriteMeta,
+        favourite.isAcceptableOrUnknown(data['favourite']!, _favouriteMeta),
+      );
+    }
     return context;
   }
 
@@ -547,6 +569,10 @@ class $FoodItemsTable extends FoodItems
         DriftSqlType.double,
         data['${effectivePrefix}last_used_grams'],
       ),
+      favourite: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}favourite'],
+      )!,
     );
   }
 
@@ -579,6 +605,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
   final String? url;
   final int? lastUsedAt;
   final double? lastUsedGrams;
+  final bool favourite;
   const FoodItem({
     required this.id,
     required this.source,
@@ -602,6 +629,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     this.url,
     this.lastUsedAt,
     this.lastUsedGrams,
+    required this.favourite,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -668,6 +696,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     if (!nullToAbsent || lastUsedGrams != null) {
       map['last_used_grams'] = Variable<double>(lastUsedGrams);
     }
+    map['favourite'] = Variable<bool>(favourite);
     return map;
   }
 
@@ -731,6 +760,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       lastUsedGrams: lastUsedGrams == null && nullToAbsent
           ? const Value.absent()
           : Value(lastUsedGrams),
+      favourite: Value(favourite),
     );
   }
 
@@ -766,6 +796,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       url: serializer.fromJson<String?>(json['url']),
       lastUsedAt: serializer.fromJson<int?>(json['lastUsedAt']),
       lastUsedGrams: serializer.fromJson<double?>(json['lastUsedGrams']),
+      favourite: serializer.fromJson<bool>(json['favourite']),
     );
   }
   @override
@@ -794,6 +825,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       'url': serializer.toJson<String?>(url),
       'lastUsedAt': serializer.toJson<int?>(lastUsedAt),
       'lastUsedGrams': serializer.toJson<double?>(lastUsedGrams),
+      'favourite': serializer.toJson<bool>(favourite),
     };
   }
 
@@ -820,6 +852,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     Value<String?> url = const Value.absent(),
     Value<int?> lastUsedAt = const Value.absent(),
     Value<double?> lastUsedGrams = const Value.absent(),
+    bool? favourite,
   }) => FoodItem(
     id: id ?? this.id,
     source: source ?? this.source,
@@ -853,6 +886,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     lastUsedGrams: lastUsedGrams.present
         ? lastUsedGrams.value
         : this.lastUsedGrams,
+    favourite: favourite ?? this.favourite,
   );
   FoodItem copyWithCompanion(FoodItemsCompanion data) {
     return FoodItem(
@@ -906,6 +940,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
       lastUsedGrams: data.lastUsedGrams.present
           ? data.lastUsedGrams.value
           : this.lastUsedGrams,
+      favourite: data.favourite.present ? data.favourite.value : this.favourite,
     );
   }
 
@@ -933,7 +968,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           ..write('mainImageUrl: $mainImageUrl, ')
           ..write('url: $url, ')
           ..write('lastUsedAt: $lastUsedAt, ')
-          ..write('lastUsedGrams: $lastUsedGrams')
+          ..write('lastUsedGrams: $lastUsedGrams, ')
+          ..write('favourite: $favourite')
           ..write(')'))
         .toString();
   }
@@ -962,6 +998,7 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
     url,
     lastUsedAt,
     lastUsedGrams,
+    favourite,
   ]);
   @override
   bool operator ==(Object other) =>
@@ -988,7 +1025,8 @@ class FoodItem extends DataClass implements Insertable<FoodItem> {
           other.mainImageUrl == this.mainImageUrl &&
           other.url == this.url &&
           other.lastUsedAt == this.lastUsedAt &&
-          other.lastUsedGrams == this.lastUsedGrams);
+          other.lastUsedGrams == this.lastUsedGrams &&
+          other.favourite == this.favourite);
 }
 
 class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
@@ -1014,6 +1052,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
   final Value<String?> url;
   final Value<int?> lastUsedAt;
   final Value<double?> lastUsedGrams;
+  final Value<bool> favourite;
   final Value<int> rowid;
   const FoodItemsCompanion({
     this.id = const Value.absent(),
@@ -1038,6 +1077,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.url = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.lastUsedGrams = const Value.absent(),
+    this.favourite = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FoodItemsCompanion.insert({
@@ -1063,6 +1103,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     this.url = const Value.absent(),
     this.lastUsedAt = const Value.absent(),
     this.lastUsedGrams = const Value.absent(),
+    this.favourite = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id);
   static Insertable<FoodItem> custom({
@@ -1088,6 +1129,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Expression<String>? url,
     Expression<int>? lastUsedAt,
     Expression<double>? lastUsedGrams,
+    Expression<bool>? favourite,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1114,6 +1156,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       if (url != null) 'url': url,
       if (lastUsedAt != null) 'last_used_at': lastUsedAt,
       if (lastUsedGrams != null) 'last_used_grams': lastUsedGrams,
+      if (favourite != null) 'favourite': favourite,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1141,6 +1184,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     Value<String?>? url,
     Value<int?>? lastUsedAt,
     Value<double?>? lastUsedGrams,
+    Value<bool>? favourite,
     Value<int>? rowid,
   }) {
     return FoodItemsCompanion(
@@ -1166,6 +1210,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
       url: url ?? this.url,
       lastUsedAt: lastUsedAt ?? this.lastUsedAt,
       lastUsedGrams: lastUsedGrams ?? this.lastUsedGrams,
+      favourite: favourite ?? this.favourite,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1239,6 +1284,9 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
     if (lastUsedGrams.present) {
       map['last_used_grams'] = Variable<double>(lastUsedGrams.value);
     }
+    if (favourite.present) {
+      map['favourite'] = Variable<bool>(favourite.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1270,6 +1318,7 @@ class FoodItemsCompanion extends UpdateCompanion<FoodItem> {
           ..write('url: $url, ')
           ..write('lastUsedAt: $lastUsedAt, ')
           ..write('lastUsedGrams: $lastUsedGrams, ')
+          ..write('favourite: $favourite, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3784,6 +3833,7 @@ typedef $$FoodItemsTableCreateCompanionBuilder =
       Value<String?> url,
       Value<int?> lastUsedAt,
       Value<double?> lastUsedGrams,
+      Value<bool> favourite,
       Value<int> rowid,
     });
 typedef $$FoodItemsTableUpdateCompanionBuilder =
@@ -3810,6 +3860,7 @@ typedef $$FoodItemsTableUpdateCompanionBuilder =
       Value<String?> url,
       Value<int?> lastUsedAt,
       Value<double?> lastUsedGrams,
+      Value<bool> favourite,
       Value<int> rowid,
     });
 
@@ -3952,6 +4003,11 @@ class $$FoodItemsTableFilterComposer
 
   ColumnFilters<double> get lastUsedGrams => $composableBuilder(
     column: $table.lastUsedGrams,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get favourite => $composableBuilder(
+    column: $table.favourite,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4099,6 +4155,11 @@ class $$FoodItemsTableOrderingComposer
     column: $table.lastUsedGrams,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get favourite => $composableBuilder(
+    column: $table.favourite,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$FoodItemsTableAnnotationComposer
@@ -4204,6 +4265,9 @@ class $$FoodItemsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<bool> get favourite =>
+      $composableBuilder(column: $table.favourite, builder: (column) => column);
+
   Expression<T> logEntriesRefs<T extends Object>(
     Expression<T> Function($$LogEntriesTableAnnotationComposer a) f,
   ) {
@@ -4280,6 +4344,7 @@ class $$FoodItemsTableTableManager
                 Value<String?> url = const Value.absent(),
                 Value<int?> lastUsedAt = const Value.absent(),
                 Value<double?> lastUsedGrams = const Value.absent(),
+                Value<bool> favourite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion(
                 id: id,
@@ -4304,6 +4369,7 @@ class $$FoodItemsTableTableManager
                 url: url,
                 lastUsedAt: lastUsedAt,
                 lastUsedGrams: lastUsedGrams,
+                favourite: favourite,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4330,6 +4396,7 @@ class $$FoodItemsTableTableManager
                 Value<String?> url = const Value.absent(),
                 Value<int?> lastUsedAt = const Value.absent(),
                 Value<double?> lastUsedGrams = const Value.absent(),
+                Value<bool> favourite = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => FoodItemsCompanion.insert(
                 id: id,
@@ -4354,6 +4421,7 @@ class $$FoodItemsTableTableManager
                 url: url,
                 lastUsedAt: lastUsedAt,
                 lastUsedGrams: lastUsedGrams,
+                favourite: favourite,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

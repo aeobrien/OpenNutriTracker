@@ -13,3 +13,14 @@ class LoadRecentMealEvent extends RecentMealEvent {
   @override
   List<Object?> get props => [];
 }
+
+class ToggleFavouriteEvent extends RecentMealEvent {
+  final String foodItemId;
+  final bool currentValue;
+
+  const ToggleFavouriteEvent(
+      {required this.foodItemId, required this.currentValue});
+
+  @override
+  List<Object?> get props => [foodItemId, currentValue];
+}

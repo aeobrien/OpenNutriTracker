@@ -39,6 +39,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "z. B. Laufen, Radfahren, Yoga ...",
     ),
     "activityLabel": MessageLookupByLibrary.simpleMessage("Aktivität"),
+    "addFoodLabel": MessageLookupByLibrary.simpleMessage("Essen hinzufügen"),
     "addItemLabel": MessageLookupByLibrary.simpleMessage(
       "Neuen Eintrag hinzufügen:",
     ),
@@ -190,6 +191,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Export / Import erfolgreich",
     ),
     "fatLabel": MessageLookupByLibrary.simpleMessage("Fett"),
+    "favouritesLabel": MessageLookupByLibrary.simpleMessage("Favoriten"),
     "fiberLabel": MessageLookupByLibrary.simpleMessage("Ballaststoffe"),
     "flOzUnit": MessageLookupByLibrary.simpleMessage("fl.oz"),
     "genderFemaleLabel": MessageLookupByLibrary.simpleMessage("♀ weiblich"),
@@ -820,6 +822,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "snackLabel": MessageLookupByLibrary.simpleMessage("Snack"),
     "sugarLabel": MessageLookupByLibrary.simpleMessage("Zucker"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("zugeführt"),
+    "undoLabel": MessageLookupByLibrary.simpleMessage("Rückgängig"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Einheit"),
     "weeklyOverLabel": m3,
     "weeklyUnderLabel": m4,

@@ -1908,6 +1908,26 @@ class S {
     return Intl.message('Retry', name: 'retryLabel', desc: '', args: []);
   }
 
+  /// `Favourites`
+  String get favouritesLabel {
+    return Intl.message(
+      'Favourites',
+      name: 'favouritesLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Undo`
+  String get undoLabel {
+    return Intl.message('Undo', name: 'undoLabel', desc: '', args: []);
+  }
+
+  /// `Add food`
+  String get addFoodLabel {
+    return Intl.message('Add food', name: 'addFoodLabel', desc: '', args: []);
+  }
+
   /// `bicycling`
   String get paHeadingBicycling {
     return Intl.message(

@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -69,6 +69,13 @@ class AppDatabase extends _$AppDatabase {
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_user_activities_date ON user_activities(date)',
           );
+        },
+        onUpgrade: (Migrator m, int from, int to) async {
+          if (from < 2) {
+            await customStatement(
+              'ALTER TABLE food_items ADD COLUMN favourite INTEGER NOT NULL DEFAULT 0',
+            );
+          }
         },
       );
 

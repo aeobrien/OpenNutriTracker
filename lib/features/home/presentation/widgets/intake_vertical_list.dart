@@ -166,6 +166,8 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                       intake: intakeEntity,
                       onItemLongPressed: widget.onItemLongPressedCallback,
                       onItemTapped: widget.onItemTappedCallback,
+                      onItemDismissed: (intake) =>
+                          _onItemDismissed(context, intake),
                       firstListElement: firstListElement,
                       usesImperialUnits: widget.usesImperialUnits,
                     );
@@ -182,6 +184,33 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
   void _onPlaceholderCardTapped(BuildContext context) {
     Navigator.pushNamed(context, NavigationOptions.addMealRoute,
         arguments: AddMealScreenArguments(widget.addMealType, widget.day));
+  }
+
+  void _onItemDismissed(BuildContext context, IntakeEntity intake) {
+    widget.onDeleteIntakeCallback(intake, widget.trackedDayEntity);
+    locator<HomeBloc>().add(const LoadItemsEvent());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(S.of(context).itemDeletedSnackbar),
+        action: SnackBarAction(
+          label: S.of(context).undoLabel,
+          onPressed: () {
+            // Re-add the intake to restore it
+            _mealDetailBloc.addIntake(
+                context,
+                intake.unit,
+                intake.amount.toString(),
+                widget.addMealType.getIntakeType(),
+                intake.meal,
+                intake.dateTime);
+            locator<HomeBloc>().add(const LoadItemsEvent());
+            locator<DiaryBloc>().add(const LoadDiaryYearEvent());
+            locator<CalendarDayBloc>().add(RefreshCalendarDayEvent());
+          },
+        ),
+      ),
+    );
   }
 
   void _onItemDropped(IntakeEntity entity) {

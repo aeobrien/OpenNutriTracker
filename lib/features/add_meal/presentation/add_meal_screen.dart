@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/error_dialog.dart';
+import 'package:opennutritracker/core/utils/calc/meal_slot_calc.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
@@ -13,7 +15,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/no_results_widget.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/meal_item_card.dart';
 import 'package:opennutritracker/features/add_meal/presentation/bloc/products_bloc.dart';
+import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
+import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_screen.dart';
+import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
+import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/features/scanner/scanner_screen.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -54,9 +60,23 @@ class _AddMealScreenState extends State<AddMealScreen>
   void didChangeDependencies() {
     final args =
         ModalRoute.of(context)?.settings.arguments as AddMealScreenArguments;
-    _mealType = args.mealType;
+    _mealType = args.mealType ?? _suggestMealType();
     _day = args.day;
     super.didChangeDependencies();
+  }
+
+  AddMealType _suggestMealType() {
+    final slot = MealSlotCalc.suggestSlot(DateTime.now());
+    switch (slot) {
+      case 'breakfast':
+        return AddMealType.breakfastType;
+      case 'lunch':
+        return AddMealType.lunchType;
+      case 'dinner':
+        return AddMealType.dinnerType;
+      default:
+        return AddMealType.snackType;
+    }
   }
 
   @override
@@ -197,53 +217,114 @@ class _AddMealScreenState extends State<AddMealScreen>
                       )
                     ],
                   ),
-                  Column(
-                    children: [
-                      BlocBuilder<RecentMealBloc, RecentMealState>(
-                          bloc: _recentMealBloc,
-                          builder: (context, state) {
-                            if (state is RecentMealInitial) {
-                              _recentMealBloc.add(
-                                  const LoadRecentMealEvent(searchString: ""));
-                              return const SizedBox();
-                            } else if (state is RecentMealLoadingState) {
-                              return const Padding(
-                                padding: EdgeInsets.only(top: 32),
-                                child: CircularProgressIndicator(),
-                              );
-                            } else if (state is RecentMealLoadedState) {
-                              return state.recentMeals.isNotEmpty
-                                  ? Flexible(
-                                      child: ListView.builder(
-                                          itemCount: state.recentMeals.length,
-                                          itemBuilder: (context, index) {
-                                            return MealItemCard(
-                                              day: _day,
-                                              mealEntity:
-                                                  state.recentMeals[index],
-                                              addMealType: _mealType,
-                                              usesImperialUnits:
-                                                  state.usesImperialUnits,
-                                            );
-                                          }))
-                                  : const NoResultsWidget();
-                            } else if (state is RecentMealFailedState) {
-                              return ErrorDialog(
-                                errorText:
-                                    S.of(context).noMealsRecentlyAddedLabel,
-                                onRefreshPressed:
-                                    _onRecentMealsRefreshButtonPressed,
-                              );
-                            }
-                            return const SizedBox();
-                          })
-                    ],
-                  )
+                  _buildRecentlyTab(),
                 ]),
               )
             ],
           ),
         ));
+  }
+
+  Widget _buildRecentlyTab() {
+    return BlocBuilder<RecentMealBloc, RecentMealState>(
+        bloc: _recentMealBloc,
+        builder: (context, state) {
+          if (state is RecentMealInitial) {
+            _recentMealBloc
+                .add(const LoadRecentMealEvent(searchString: ""));
+            return const SizedBox();
+          } else if (state is RecentMealLoadingState) {
+            return const Padding(
+              padding: EdgeInsets.only(top: 32),
+              child: CircularProgressIndicator(),
+            );
+          } else if (state is RecentMealLoadedState) {
+            final hasFavourites = state.favouriteMeals.isNotEmpty;
+            final hasRecents = state.recentMeals.isNotEmpty;
+
+            if (!hasFavourites && !hasRecents) {
+              return const NoResultsWidget();
+            }
+
+            return Flexible(
+              child: ListView(
+                children: [
+                  if (hasFavourites) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          left: 8.0, top: 8.0, bottom: 4.0),
+                      child: Text(S.of(context).favouritesLabel,
+                          style:
+                              Theme.of(context).textTheme.titleMedium),
+                    ),
+                    ...state.favouriteMeals.map((meal) => MealItemCard(
+                          day: _day,
+                          mealEntity: meal,
+                          addMealType: _mealType,
+                          usesImperialUnits: state.usesImperialUnits,
+                          onToggleFavourite: _onToggleFavourite,
+                          onQuickAdd: _onQuickAdd,
+                        )),
+                    const Divider(),
+                  ],
+                  if (hasRecents) ...[
+                    Padding(
+                      padding: const EdgeInsets.only(
+                          left: 8.0, top: 8.0, bottom: 4.0),
+                      child: Text(S.of(context).recentlyAddedLabel,
+                          style:
+                              Theme.of(context).textTheme.titleMedium),
+                    ),
+                    ...state.recentMeals.map((meal) => MealItemCard(
+                          day: _day,
+                          mealEntity: meal,
+                          addMealType: _mealType,
+                          usesImperialUnits: state.usesImperialUnits,
+                          onToggleFavourite: _onToggleFavourite,
+                          onQuickAdd: _onQuickAdd,
+                        )),
+                  ],
+                ],
+              ),
+            );
+          } else if (state is RecentMealFailedState) {
+            return ErrorDialog(
+              errorText: S.of(context).noMealsRecentlyAddedLabel,
+              onRefreshPressed: _onRecentMealsRefreshButtonPressed,
+            );
+          }
+          return const SizedBox();
+        });
+  }
+
+  void _onToggleFavourite(MealEntity meal) {
+    final foodItemId = meal.code;
+    if (foodItemId != null) {
+      _recentMealBloc.add(ToggleFavouriteEvent(
+          foodItemId: foodItemId, currentValue: meal.favourite));
+    }
+  }
+
+  void _onQuickAdd(MealEntity meal) {
+    if (meal.lastUsedGrams == null || meal.lastUsedGrams! <= 0) return;
+
+    final mealDetailBloc = locator<MealDetailBloc>();
+    // Use grams unit for quick re-log
+    final unit = meal.isLiquid
+        ? UnitDropdownItem.ml.toString()
+        : UnitDropdownItem.g.toString();
+    mealDetailBloc.addIntake(context, unit,
+        meal.lastUsedGrams!.toString(), _mealType.getIntakeType(), meal, _day);
+
+    // Refresh pages
+    locator<HomeBloc>().add(const LoadItemsEvent());
+    locator<DiaryBloc>().add(const LoadDiaryYearEvent());
+    locator<CalendarDayBloc>().add(RefreshCalendarDayEvent());
+
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.of(context).infoAddedIntakeLabel)));
+    Navigator.of(context)
+        .popUntil(ModalRoute.withName(NavigationOptions.mainRoute));
   }
 
   void _onProductsRefreshButtonPressed() {
@@ -297,7 +378,6 @@ class _AddMealScreenState extends State<AddMealScreen>
   }
 
   void _openEditMealScreen(bool usesImperialUnits) {
-    // TODO
     Navigator.of(context).pushNamed(NavigationOptions.editMealRoute,
         arguments: EditMealScreenArguments(
           _day,
@@ -309,7 +389,7 @@ class _AddMealScreenState extends State<AddMealScreen>
 }
 
 class AddMealScreenArguments {
-  final AddMealType mealType;
+  final AddMealType? mealType;
   final DateTime day;
 
   AddMealScreenArguments(this.mealType, this.day);

@@ -38,6 +38,9 @@ class MealEntity extends Equatable {
 
   get hasServingValues => servingQuantity != null && servingUnit != null;
 
+  final double? lastUsedGrams;
+  final bool favourite;
+
   final MealSourceEntity source;
 
   final MealNutrimentsEntity nutriments;
@@ -59,7 +62,9 @@ class MealEntity extends Equatable {
       required this.servingUnit,
       required this.servingSize,
       required this.nutriments,
-      required this.source});
+      required this.source,
+      this.lastUsedGrams,
+      this.favourite = false});
 
   factory MealEntity.empty() => MealEntity(
       code: IdGenerator.getUniqueID(),
@@ -71,7 +76,9 @@ class MealEntity extends Equatable {
       servingUnit: 'gml',
       servingSize: '',
       nutriments: MealNutrimentsEntity.empty(),
-      source: MealSourceEntity.custom);
+      source: MealSourceEntity.custom,
+      lastUsedGrams: null,
+      favourite: false);
 
   factory MealEntity.fromFoodItem(drift.FoodItem row) => MealEntity(
       code: row.barcode ?? row.id,
@@ -88,7 +95,9 @@ class MealEntity extends Equatable {
       nutriments: MealNutrimentsEntity.fromFoodItem(row),
       source: MealSourceEntity.values.firstWhere(
           (e) => e.name == row.source,
-          orElse: () => MealSourceEntity.unknown));
+          orElse: () => MealSourceEntity.unknown),
+      lastUsedGrams: row.lastUsedGrams,
+      favourite: row.favourite);
 
   factory MealEntity.fromMealDBO(MealDBO mealDBO) => MealEntity(
       code: mealDBO.code,
@@ -176,6 +185,24 @@ class MealEntity extends Equatable {
       return "g";
     }
   }
+
+  /// Returns a copy with the favourite flag toggled.
+  MealEntity copyWithFavourite(bool value) => MealEntity(
+      code: code,
+      name: name,
+      brands: brands,
+      thumbnailImageUrl: thumbnailImageUrl,
+      mainImageUrl: mainImageUrl,
+      url: url,
+      mealQuantity: mealQuantity,
+      mealUnit: mealUnit,
+      servingQuantity: servingQuantity,
+      servingUnit: servingUnit,
+      servingSize: servingSize,
+      nutriments: nutriments,
+      source: source,
+      lastUsedGrams: lastUsedGrams,
+      favourite: value);
 
   @override
   List<Object?> get props => [code, name];

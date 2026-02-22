@@ -1,6 +1,7 @@
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 
 class GetIntakeUsecase {
   final IntakeRepository _intakeRepository;
@@ -42,5 +43,13 @@ class GetIntakeUsecase {
 
   Future<IntakeEntity?> getIntakeById(String intakeId) async {
     return _intakeRepository.getIntakeById(intakeId);
+  }
+
+  Future<List<MealEntity>> getFavouriteMeals() async {
+    return _intakeRepository.getFavouriteMeals();
+  }
+
+  Future<void> toggleFavourite(String foodItemId, bool value) async {
+    return _intakeRepository.toggleFavourite(foodItemId, value);
   }
 }

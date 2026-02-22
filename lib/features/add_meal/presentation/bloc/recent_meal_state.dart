@@ -16,13 +16,16 @@ class RecentMealLoadingState extends RecentMealState {
 
 class RecentMealLoadedState extends RecentMealState {
   final List<MealEntity> recentMeals;
+  final List<MealEntity> favouriteMeals;
   final bool usesImperialUnits;
 
   const RecentMealLoadedState(
-      {required this.recentMeals, this.usesImperialUnits = false});
+      {required this.recentMeals,
+      this.favouriteMeals = const [],
+      this.usesImperialUnits = false});
 
   @override
-  List<Object?> get props => [recentMeals, usesImperialUnits];
+  List<Object?> get props => [recentMeals, favouriteMeals, usesImperialUnits];
 }
 
 class RecentMealFailedState extends RecentMealState {

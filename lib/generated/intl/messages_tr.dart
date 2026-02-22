@@ -39,6 +39,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "ör. koşu, bisiklet, yoga ...",
     ),
     "activityLabel": MessageLookupByLibrary.simpleMessage("Aktivite"),
+    "addFoodLabel": MessageLookupByLibrary.simpleMessage("Yemek ekle"),
     "addItemLabel": MessageLookupByLibrary.simpleMessage("Yeni Öğe Ekle:"),
     "addLabel": MessageLookupByLibrary.simpleMessage("Ekle"),
     "additionalInfoLabelCompendium2011": MessageLookupByLibrary.simpleMessage(
@@ -184,6 +185,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Dışa Aktarma / İçe Aktarma başarılı",
     ),
     "fatLabel": MessageLookupByLibrary.simpleMessage("yağ"),
+    "favouritesLabel": MessageLookupByLibrary.simpleMessage("Favoriler"),
     "fiberLabel": MessageLookupByLibrary.simpleMessage("lif"),
     "flOzUnit": MessageLookupByLibrary.simpleMessage("fl.oz"),
     "ftLabel": MessageLookupByLibrary.simpleMessage("ft"),
@@ -802,6 +804,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "snackLabel": MessageLookupByLibrary.simpleMessage("Atıştırmalık"),
     "sugarLabel": MessageLookupByLibrary.simpleMessage("şeker"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("tüketilen"),
+    "undoLabel": MessageLookupByLibrary.simpleMessage("Geri al"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Birim"),
     "weeklyOverLabel": m3,
     "weeklyUnderLabel": m4,

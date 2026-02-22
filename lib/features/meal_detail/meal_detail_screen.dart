@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/domain/usecase/get_intake_usecase.dart';
 import 'package:opennutritracker/core/presentation/widgets/meal_value_unit_text.dart';
 import 'package:opennutritracker/core/presentation/widgets/image_full_screen.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
@@ -41,6 +42,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   late MealEntity meal;
   late DateTime _day;
   late IntakeTypeEntity intakeTypeEntity;
+  bool _isFavourite = false;
 
   final quantityTextController = TextEditingController();
   late bool _usesImperialUnits;
@@ -63,6 +65,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     _day = args.day;
     intakeTypeEntity = args.intakeTypeEntity;
     _usesImperialUnits = args.usesImperialUnits;
+    _isFavourite = meal.favourite;
 
     // Set initial unit
     if (_initialUnit == "") {
@@ -84,9 +87,16 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
           .add(UpdateKcalEvent(meal: meal, selectedUnit: _initialUnit));
     }
 
-    // Set initial quantity
+    // Set initial quantity — prefer last-used amount when available
     if (_initialQuantity == "") {
-      if (meal.hasServingValues) {
+      if (meal.lastUsedGrams != null && meal.lastUsedGrams! > 0) {
+        final lastGrams = meal.lastUsedGrams!;
+        // Show whole number if no decimals, otherwise 1 decimal place
+        _initialQuantity = lastGrams == lastGrams.roundToDouble()
+            ? lastGrams.toInt().toString()
+            : lastGrams.toStringAsFixed(1);
+        quantityTextController.text = _initialQuantity;
+      } else if (meal.hasServingValues) {
         _initialQuantity = "1";
         quantityTextController.text = "1";
       } else if (_usesImperialUnits) {
@@ -175,6 +185,9 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                             : const SizedBox()));
           }),
           actions: [
+            IconButton(
+                onPressed: _toggleFavourite,
+                icon: Icon(_isFavourite ? Icons.star : Icons.star_border)),
             IconButton(
                 onPressed: () {
                   Navigator.of(context)
@@ -276,6 +289,16 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
         ]))
       ],
     );
+  }
+
+  void _toggleFavourite() async {
+    final foodItemId = meal.code;
+    if (foodItemId == null) return;
+    final newValue = !_isFavourite;
+    await locator<GetIntakeUsecase>().toggleFavourite(foodItemId, newValue);
+    setState(() {
+      _isFavourite = newValue;
+    });
   }
 
   void onQuantityOrUnitChanged(String? quantityString, String? unit) {

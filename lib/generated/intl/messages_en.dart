@@ -39,6 +39,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "e.g. running, biking, yoga ...",
     ),
     "activityLabel": MessageLookupByLibrary.simpleMessage("Activity"),
+    "addFoodLabel": MessageLookupByLibrary.simpleMessage("Add food"),
     "addItemLabel": MessageLookupByLibrary.simpleMessage("Add new Item:"),
     "addLabel": MessageLookupByLibrary.simpleMessage("Add"),
     "additionalInfoLabelCompendium2011": MessageLookupByLibrary.simpleMessage(
@@ -185,6 +186,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Export / Import successful",
     ),
     "fatLabel": MessageLookupByLibrary.simpleMessage("fat"),
+    "favouritesLabel": MessageLookupByLibrary.simpleMessage("Favourites"),
     "fiberLabel": MessageLookupByLibrary.simpleMessage("fiber"),
     "flOzUnit": MessageLookupByLibrary.simpleMessage("fl.oz"),
     "ftLabel": MessageLookupByLibrary.simpleMessage("ft"),
@@ -803,6 +805,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "snackLabel": MessageLookupByLibrary.simpleMessage("Snack"),
     "sugarLabel": MessageLookupByLibrary.simpleMessage("sugar"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("supplied"),
+    "undoLabel": MessageLookupByLibrary.simpleMessage("Undo"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Unit"),
     "weeklyOverLabel": m3,
     "weeklyUnderLabel": m4,

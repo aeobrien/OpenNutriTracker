@@ -14,13 +14,17 @@ class MealItemCard extends StatelessWidget {
   final AddMealType addMealType;
   final MealEntity mealEntity;
   final bool usesImperialUnits;
+  final Function(MealEntity meal)? onToggleFavourite;
+  final Function(MealEntity meal)? onQuickAdd;
 
   const MealItemCard(
       {super.key,
       required this.day,
       required this.mealEntity,
       required this.addMealType,
-      required this.usesImperialUnits});
+      required this.usesImperialUnits,
+      this.onToggleFavourite,
+      this.onQuickAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -73,23 +77,77 @@ class MealItemCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis),
-            subtitle: mealEntity.mealQuantity != null
-                ? MealValueUnitText(
-                    value: double.parse(mealEntity.mealQuantity ?? "0"),
-                    meal: mealEntity,
-                    usesImperialUnits: usesImperialUnits)
-                : const SizedBox(),
-            trailing: IconButton(
-              style: IconButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onSurface,
-              ),
-              icon: const Icon(Icons.add_outlined),
-              onPressed: () => _onItemPressed(context),
-            ),
+            subtitle: _buildSubtitle(context),
+            trailing: _buildTrailing(context),
           )),
         ),
         onTap: () => _onItemPressed(context),
       ),
+    );
+  }
+
+  Widget _buildSubtitle(BuildContext context) {
+    // Show last-used grams if available
+    if (mealEntity.lastUsedGrams != null && mealEntity.lastUsedGrams! > 0) {
+      final grams = mealEntity.lastUsedGrams!;
+      final gramsText = grams == grams.roundToDouble()
+          ? '${grams.toInt()}g'
+          : '${grams.toStringAsFixed(1)}g';
+      return Text(
+        'last: $gramsText',
+        style: Theme.of(context)
+            .textTheme
+            .bodySmall
+            ?.copyWith(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6)),
+      );
+    }
+    if (mealEntity.mealQuantity != null) {
+      return MealValueUnitText(
+          value: double.parse(mealEntity.mealQuantity ?? "0"),
+          meal: mealEntity,
+          usesImperialUnits: usesImperialUnits);
+    }
+    return const SizedBox();
+  }
+
+  Widget _buildTrailing(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (onToggleFavourite != null)
+          IconButton(
+            icon: Icon(
+              mealEntity.favourite ? Icons.star : Icons.star_border,
+              color: mealEntity.favourite
+                  ? Theme.of(context).colorScheme.primary
+                  : null,
+            ),
+            onPressed: () => onToggleFavourite!(mealEntity),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          ),
+        if (onQuickAdd != null &&
+            mealEntity.lastUsedGrams != null &&
+            mealEntity.lastUsedGrams! > 0)
+          IconButton(
+            icon: const Icon(Icons.add_circle),
+            onPressed: () => onQuickAdd!(mealEntity),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+          )
+        else
+          IconButton(
+            style: IconButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.onSurface,
+            ),
+            icon: const Icon(Icons.add_outlined),
+            onPressed: () => _onItemPressed(context),
+          ),
+      ],
     );
   }
 

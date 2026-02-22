@@ -44,4 +44,25 @@ class FoodItemDao extends DatabaseAccessor<AppDatabase>
   Future<List<FoodItem>> getAll() async {
     return select(foodItems).get();
   }
+
+  Future<void> toggleFavourite(String id, bool value) async {
+    await (update(foodItems)..where((t) => t.id.equals(id))).write(
+      FoodItemsCompanion(favourite: Value(value)),
+    );
+  }
+
+  Future<List<FoodItem>> getFavourites() async {
+    return (select(foodItems)
+          ..where((t) => t.favourite.equals(true))
+          ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)]))
+        .get();
+  }
+
+  Future<List<FoodItem>> getRecentlyUsed({int limit = 50}) async {
+    return (select(foodItems)
+          ..where((t) => t.lastUsedAt.isNotNull())
+          ..orderBy([(t) => OrderingTerm.desc(t.lastUsedAt)])
+          ..limit(limit))
+        .get();
+  }
 }

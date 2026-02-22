@@ -105,6 +105,14 @@ class MealDetailBottomSheet extends StatelessWidget {
                                   }))
                         ],
                       ),
+                      const SizedBox(height: 8.0),
+                      _IncrementChips(
+                        product: product,
+                        quantityTextController: quantityTextController,
+                        selectedUnit: selectedUnit,
+                        onQuantityOrUnitChanged: onQuantityOrUnitChanged,
+                      ),
+                      const SizedBox(height: 8.0),
                       SizedBox(
                         width: double.infinity, // Make button full width
                         child: ElevatedButton.icon(
@@ -226,5 +234,85 @@ class MealDetailBottomSheet extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               maxLines: 1)),
     ];
+  }
+}
+
+class _IncrementChips extends StatelessWidget {
+  final MealEntity product;
+  final TextEditingController quantityTextController;
+  final String selectedUnit;
+  final Function(String?, String?) onQuantityOrUnitChanged;
+
+  const _IncrementChips({
+    required this.product,
+    required this.quantityTextController,
+    required this.selectedUnit,
+    required this.onQuantityOrUnitChanged,
+  });
+
+  void _changeAmount(double delta) {
+    final current =
+        double.tryParse(quantityTextController.text.replaceAll(',', '.')) ??
+            0.0;
+    final newVal = (current + delta).clamp(0.0, double.infinity);
+    final text = newVal == newVal.roundToDouble()
+        ? newVal.toInt().toString()
+        : newVal.toStringAsFixed(1);
+    quantityTextController.text = text;
+    onQuantityOrUnitChanged(text, selectedUnit);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isServing = selectedUnit == UnitDropdownItem.serving.toString();
+    final isLiquid = product.isLiquid;
+    final unitLabel = isLiquid ? 'ml' : 'g';
+
+    return Wrap(
+      spacing: 8.0,
+      runSpacing: 4.0,
+      children: [
+        if (!isServing) ...[
+          ActionChip(
+            label: Text('-100$unitLabel'),
+            onPressed: () => _changeAmount(-100),
+          ),
+          ActionChip(
+            label: Text('-50$unitLabel'),
+            onPressed: () => _changeAmount(-50),
+          ),
+          ActionChip(
+            label: Text('-10$unitLabel'),
+            onPressed: () => _changeAmount(-10),
+          ),
+          ActionChip(
+            label: Text('+10$unitLabel'),
+            onPressed: () => _changeAmount(10),
+          ),
+          ActionChip(
+            label: Text('+50$unitLabel'),
+            onPressed: () => _changeAmount(50),
+          ),
+          ActionChip(
+            label: Text('+100$unitLabel'),
+            onPressed: () => _changeAmount(100),
+          ),
+        ],
+        if (isServing) ...[
+          ActionChip(
+            label: const Text('-0.5 srv'),
+            onPressed: () => _changeAmount(-0.5),
+          ),
+          ActionChip(
+            label: const Text('+0.5 srv'),
+            onPressed: () => _changeAmount(0.5),
+          ),
+          ActionChip(
+            label: const Text('+1 srv'),
+            onPressed: () => _changeAmount(1),
+          ),
+        ],
+      ],
+    );
   }
 }

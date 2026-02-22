@@ -27,6 +27,7 @@ class FoodItems extends Table {
 
   IntColumn get lastUsedAt => integer().nullable()();
   RealColumn get lastUsedGrams => real().nullable()();
+  BoolColumn get favourite => boolean().withDefault(const Constant(false))();
 
   @override
   Set<Column> get primaryKey => {id};

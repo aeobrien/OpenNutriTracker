@@ -23,23 +23,54 @@ class RecentMealBloc extends Bloc<RecentMealEvent, RecentMealState> {
       try {
         final config = await _getConfigUsecase.getConfig();
         final recentIntake = await _getIntakeUsecase.getRecentIntake();
+        final favouriteMeals = await _getIntakeUsecase.getFavouriteMeals();
         final searchString = (event.searchString).toLowerCase();
 
+        List<MealEntity> recentMeals;
+        List<MealEntity> filteredFavourites;
+
         if (searchString.isEmpty) {
-          emit(RecentMealLoadedState(
-              recentMeals: recentIntake.map((intake) => intake.meal).toList(),
-              usesImperialUnits: config.usesImperialUnits));
+          recentMeals =
+              recentIntake.map((intake) => intake.meal).toList();
+          filteredFavourites = favouriteMeals;
         } else {
-          emit(RecentMealLoadedState(
-              recentMeals: recentIntake
-                  .where(matchesSearchString(searchString))
-                  .map((intake) => intake.meal)
-                  .toList(),
-              usesImperialUnits: config.usesImperialUnits));
+          recentMeals = recentIntake
+              .where(matchesSearchString(searchString))
+              .map((intake) => intake.meal)
+              .toList();
+          filteredFavourites = favouriteMeals
+              .where((meal) => _mealMatchesSearch(meal, searchString))
+              .toList();
         }
+
+        emit(RecentMealLoadedState(
+            recentMeals: recentMeals,
+            favouriteMeals: filteredFavourites,
+            usesImperialUnits: config.usesImperialUnits));
       } catch (error) {
         log.severe(error);
         emit(RecentMealFailedState());
+      }
+    });
+
+    on<ToggleFavouriteEvent>((event, emit) async {
+      try {
+        await _getIntakeUsecase.toggleFavourite(
+            event.foodItemId, !event.currentValue);
+        // Reload to reflect the change
+        final currentState = state;
+        if (currentState is RecentMealLoadedState) {
+          final favouriteMeals =
+              await _getIntakeUsecase.getFavouriteMeals();
+          final recentIntake = await _getIntakeUsecase.getRecentIntake();
+          emit(RecentMealLoadedState(
+              recentMeals:
+                  recentIntake.map((intake) => intake.meal).toList(),
+              favouriteMeals: favouriteMeals,
+              usesImperialUnits: currentState.usesImperialUnits));
+        }
+      } catch (error) {
+        log.severe('Error toggling favourite: $error');
       }
     });
   }
@@ -48,5 +79,10 @@ class RecentMealBloc extends Bloc<RecentMealEvent, RecentMealState> {
     return (intake) =>
         (intake.meal.name?.toLowerCase().contains(searchString) ?? false) ||
         (intake.meal.brands?.toLowerCase().contains(searchString) ?? false);
+  }
+
+  bool _mealMatchesSearch(MealEntity meal, String searchString) {
+    return (meal.name?.toLowerCase().contains(searchString) ?? false) ||
+        (meal.brands?.toLowerCase().contains(searchString) ?? false);
   }
 }

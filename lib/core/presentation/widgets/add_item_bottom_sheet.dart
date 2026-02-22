@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
+import 'package:opennutritracker/core/utils/calc/meal_slot_calc.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/add_activity/presentation/add_activity_screen.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
@@ -28,6 +29,31 @@ class AddItemBottomSheet extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onSurface),
             ),
           ),
+          ListTile(
+            title: Text(
+              S.of(context).addFoodLabel,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            subtitle: Text(
+              _suggestedMealLabel(context),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            ),
+            leading: Container(
+                height: double.infinity,
+                child: Icon(Icons.restaurant,
+                    color: Theme.of(context).colorScheme.primary)),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed(NavigationOptions.addMealRoute,
+                  arguments: AddMealScreenArguments(null, day));
+            },
+          ),
+          const Divider(indent: 16, endIndent: 16),
           ListTile(
             title: Text(
               S.of(context).activityLabel,
@@ -145,6 +171,20 @@ class AddItemBottomSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _suggestedMealLabel(BuildContext context) {
+    final slot = MealSlotCalc.suggestSlot(DateTime.now());
+    switch (slot) {
+      case 'breakfast':
+        return S.of(context).breakfastLabel;
+      case 'lunch':
+        return S.of(context).lunchLabel;
+      case 'dinner':
+        return S.of(context).dinnerLabel;
+      default:
+        return S.of(context).snackLabel;
+    }
   }
 
   void _showAddItemScreen(BuildContext context, AddMealType itemType) {
