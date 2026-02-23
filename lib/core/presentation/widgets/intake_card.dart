@@ -62,21 +62,28 @@ class IntakeCard extends StatelessWidget {
                     : null,
                 child: Stack(
                   children: [
-                    intake.meal.mainImageUrl != null
-                        ? CachedNetworkImage(
-                            cacheManager: locator<CacheManager>(),
-                            imageUrl: intake.meal.mainImageUrl ?? "",
-                            imageBuilder: (context, imageProvider) => Container(
-                              decoration: BoxDecoration(
-                                  image: DecorationImage(
-                                image: imageProvider,
-                                fit: BoxFit.cover,
-                              )),
-                            ),
-                          )
-                        : Center(
-                            child: Icon(Icons.restaurant_outlined,
-                                color: Theme.of(context).colorScheme.secondary)),
+                    intake.isQuickAdd
+                        ? Center(
+                            child: Icon(Icons.bolt,
+                                size: 36,
+                                color: Theme.of(context).colorScheme.primary))
+                        : intake.meal.mainImageUrl != null
+                            ? CachedNetworkImage(
+                                cacheManager: locator<CacheManager>(),
+                                imageUrl: intake.meal.mainImageUrl ?? "",
+                                imageBuilder: (context, imageProvider) =>
+                                    Container(
+                                  decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                    image: imageProvider,
+                                    fit: BoxFit.cover,
+                                  )),
+                                ),
+                              )
+                            : Center(
+                                child: Icon(Icons.restaurant_outlined,
+                                    color:
+                                        Theme.of(context).colorScheme.secondary)),
                     Container(
                       // Add color shade
                       decoration: BoxDecoration(
@@ -111,7 +118,9 @@ class IntakeCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             AutoSizeText(
-                              intake.meal.name ?? "?",
+                              intake.isQuickAdd
+                                  ? (intake.quickAddLabel ?? 'Quick add')
+                                  : (intake.meal.name ?? "?"),
                               style: Theme.of(context)
                                   .textTheme
                                   .titleMedium
@@ -123,19 +132,20 @@ class IntakeCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            MealValueUnitText(
-                              value: intake.amount,
-                              meal: intake.meal,
-                              usesImperialUnits: usesImperialUnits,
-                              textStyle: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSecondaryContainer
-                                          .withValues(alpha: 0.7)),
-                            ),
+                            if (!intake.isQuickAdd)
+                              MealValueUnitText(
+                                value: intake.amount,
+                                meal: intake.meal,
+                                usesImperialUnits: usesImperialUnits,
+                                textStyle: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSecondaryContainer
+                                            .withValues(alpha: 0.7)),
+                              ),
                           ],
                         ))
                   ],

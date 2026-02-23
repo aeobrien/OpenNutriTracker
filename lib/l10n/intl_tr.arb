@@ -422,5 +422,10 @@
   "paSkiingGeneral": "kayak",
   "paSkiingGeneralDesc": "genel",
   "paSnowShovingModerate": "kar küreme",
-  "paSnowShovingModerateDesc": "elle, orta derecede çaba"
+  "paSnowShovingModerateDesc": "elle, orta derecede çaba",
+  "quickAddLabel": "Hızlı Ekle",
+  "quickAddSubtitle": "Sadece kalori girin",
+  "quickAddCaloriesHint": "Kalori",
+  "quickAddLabelHint": "Etiket (isteğe bağlı)",
+  "quickAddSaved": "Hızlı ekleme kaydedildi"
 }

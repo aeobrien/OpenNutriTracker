@@ -732,6 +732,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileLabel": MessageLookupByLibrary.simpleMessage("Profil"),
     "proteinLabel": MessageLookupByLibrary.simpleMessage("protein"),
     "quantityLabel": MessageLookupByLibrary.simpleMessage("Miktar"),
+    "quickAddCaloriesHint": MessageLookupByLibrary.simpleMessage("Kalori"),
+    "quickAddLabel": MessageLookupByLibrary.simpleMessage("Hızlı Ekle"),
+    "quickAddLabelHint": MessageLookupByLibrary.simpleMessage(
+      "Etiket (isteğe bağlı)",
+    ),
+    "quickAddSaved": MessageLookupByLibrary.simpleMessage(
+      "Hızlı ekleme kaydedildi",
+    ),
+    "quickAddSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Sadece kalori girin",
+    ),
     "readLabel": MessageLookupByLibrary.simpleMessage(
       "Gizlilik politikasını okudum ve kabul ediyorum.",
     ),

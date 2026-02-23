@@ -61,6 +61,51 @@ class IntakeRepository {
     ));
   }
 
+  Future<IntakeEntity> addQuickAddIntake({
+    required String id,
+    required double kcal,
+    double protein = 0,
+    double carbs = 0,
+    double fat = 0,
+    String? label,
+    required String mealSlot,
+    required DateTime dateTime,
+  }) async {
+    _log.fine('Adding quick-add intake: $id, kcal=$kcal, label=$label');
+
+    await _logEntryDao.insertEntry(LogEntriesCompanion(
+      id: Value(id),
+      timestamp: Value(dateTime.millisecondsSinceEpoch),
+      mealSlot: Value(mealSlot),
+      foodItemId: const Value(null),
+      amount: const Value(1.0),
+      unit: const Value('serving'),
+      snapshotKcal: Value(kcal),
+      snapshotProtein: Value(protein),
+      snapshotCarbs: Value(carbs),
+      snapshotFat: Value(fat),
+      entryType: const Value('quickAdd'),
+      quickAddLabel: Value(label),
+    ));
+
+    return IntakeEntity(
+      id: id,
+      unit: 'serving',
+      amount: 1.0,
+      type: IntakeTypeEntity.values.firstWhere(
+          (e) => e.name == mealSlot,
+          orElse: () => IntakeTypeEntity.snack),
+      meal: MealEntity.empty(),
+      dateTime: dateTime,
+      entryType: 'quickAdd',
+      quickAddLabel: label,
+      snapshotKcal: kcal,
+      snapshotProtein: protein,
+      snapshotCarbs: carbs,
+      snapshotFat: fat,
+    );
+  }
+
   Future<void> addAllIntakeDBOs(List<IntakeDBO> intakeDBOs) async {
     for (final dbo in intakeDBOs) {
       final entity = IntakeEntity.fromIntakeDBO(dbo);
@@ -79,6 +124,9 @@ class IntakeRepository {
     if (fields.containsKey('amount')) {
       final row = await _logEntryDao.getById(intakeId);
       if (row == null) return null;
+
+      // Quick-add entries cannot be updated via amount change
+      if (row.logEntry.entryType == 'quickAdd') return null;
 
       final newAmount = fields['amount'] as double;
       final foodItem = row.foodItem;

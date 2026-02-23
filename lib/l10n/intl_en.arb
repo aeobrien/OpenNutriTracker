@@ -425,5 +425,10 @@
   "paSkiingGeneral": "skiing",
   "paSkiingGeneralDesc": "general",
   "paSnowShovingModerate": "snow shoveling",
-  "paSnowShovingModerateDesc": "by hand, moderate effort"
+  "paSnowShovingModerateDesc": "by hand, moderate effort",
+  "quickAddLabel": "Quick Add",
+  "quickAddSubtitle": "Just enter calories",
+  "quickAddCaloriesHint": "Calories",
+  "quickAddLabelHint": "Label (optional)",
+  "quickAddSaved": "Quick add saved"
 }

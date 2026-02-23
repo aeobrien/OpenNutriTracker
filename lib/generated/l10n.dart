@@ -3752,6 +3752,51 @@ class S {
       args: [],
     );
   }
+
+  /// `Quick Add`
+  String get quickAddLabel {
+    return Intl.message('Quick Add', name: 'quickAddLabel', desc: '', args: []);
+  }
+
+  /// `Just enter calories`
+  String get quickAddSubtitle {
+    return Intl.message(
+      'Just enter calories',
+      name: 'quickAddSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Calories`
+  String get quickAddCaloriesHint {
+    return Intl.message(
+      'Calories',
+      name: 'quickAddCaloriesHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Label (optional)`
+  String get quickAddLabelHint {
+    return Intl.message(
+      'Label (optional)',
+      name: 'quickAddLabelHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Quick add saved`
+  String get quickAddSaved {
+    return Intl.message(
+      'Quick add saved',
+      name: 'quickAddSaved',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

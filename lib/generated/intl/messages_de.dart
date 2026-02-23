@@ -761,6 +761,17 @@ class MessageLookup extends MessageLookupByLibrary {
     "profileLabel": MessageLookupByLibrary.simpleMessage("Profil"),
     "proteinLabel": MessageLookupByLibrary.simpleMessage("Protein"),
     "quantityLabel": MessageLookupByLibrary.simpleMessage("Menge"),
+    "quickAddCaloriesHint": MessageLookupByLibrary.simpleMessage("Kalorien"),
+    "quickAddLabel": MessageLookupByLibrary.simpleMessage("Schnell hinzufügen"),
+    "quickAddLabelHint": MessageLookupByLibrary.simpleMessage(
+      "Bezeichnung (optional)",
+    ),
+    "quickAddSaved": MessageLookupByLibrary.simpleMessage(
+      "Schnell-Eintrag gespeichert",
+    ),
+    "quickAddSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Nur Kalorien eingeben",
+    ),
     "readLabel": MessageLookupByLibrary.simpleMessage(
       "Ich habe die Datenschutzbestimmungen gelesen und akzeptiere sie.",
     ),

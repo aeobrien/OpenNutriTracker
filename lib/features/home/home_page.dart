@@ -218,21 +218,34 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void onIntakeItemLongPressed(
       BuildContext context, IntakeEntity intakeEntity) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final deletedText = S.of(context).itemDeletedSnackbar;
+
     final deleteIntake = await showDialog<bool>(
         context: context, builder: (context) => const DeleteDialog());
 
     if (deleteIntake != null) {
       _homeBloc.deleteIntakeItem(intakeEntity);
       _homeBloc.add(const LoadItemsEvent());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context).itemDeletedSnackbar)));
-      }
+      messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(days: 1),
+            content: Text(deletedText),
+          ));
+      Future.delayed(const Duration(seconds: 4), () {
+        messenger.hideCurrentSnackBar();
+      });
     }
   }
 
   void onIntakeItemTapped(BuildContext context, IntakeEntity intakeEntity,
       bool usesImperialUnits) async {
+    // Quick-add entries cannot be edited via amount dialog
+    if (intakeEntity.isQuickAdd) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final updatedText = S.of(context).itemUpdatedSnackbar;
+
     final changeIntakeAmount = await showDialog<double>(
         context: context,
         builder: (context) => EditDialog(
@@ -241,10 +254,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _homeBloc
           .updateIntakeItem(intakeEntity.id, {'amount': changeIntakeAmount});
       _homeBloc.add(const LoadItemsEvent());
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context).itemUpdatedSnackbar)));
-      }
+      messenger.showSnackBar(
+          SnackBar(
+            duration: const Duration(days: 1),
+            content: Text(updatedText),
+          ));
+      Future.delayed(const Duration(seconds: 4), () {
+        messenger.hideCurrentSnackBar();
+      });
     }
   }
 

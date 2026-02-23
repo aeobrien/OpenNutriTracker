@@ -415,5 +415,10 @@
   "paSkiingGeneral": "Skifahren",
   "paSkiingGeneralDesc": "allgemein",
   "paSnowShovingModerate": "Schnee schaufeln",
-  "paSnowShovingModerateDesc": "manuell, mäßige Anstrengung"
+  "paSnowShovingModerateDesc": "manuell, mäßige Anstrengung",
+  "quickAddLabel": "Schnell hinzufügen",
+  "quickAddSubtitle": "Nur Kalorien eingeben",
+  "quickAddCaloriesHint": "Kalorien",
+  "quickAddLabelHint": "Bezeichnung (optional)",
+  "quickAddSaved": "Schnell-Eintrag gespeichert"
 }

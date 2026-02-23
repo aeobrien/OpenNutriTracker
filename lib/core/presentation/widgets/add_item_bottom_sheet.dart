@@ -6,6 +6,7 @@ import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/add_activity/presentation/add_activity_screen.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
+import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen_arguments.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class AddItemBottomSheet extends StatelessWidget {
@@ -51,6 +52,32 @@ class AddItemBottomSheet extends StatelessWidget {
               Navigator.of(context).pop();
               Navigator.of(context).pushNamed(NavigationOptions.addMealRoute,
                   arguments: AddMealScreenArguments(null, day));
+            },
+          ),
+          const Divider(indent: 16, endIndent: 16),
+          ListTile(
+            title: Text(
+              S.of(context).quickAddLabel,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            subtitle: Text(
+              S.of(context).quickAddSubtitle,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            ),
+            leading: Container(
+                height: double.infinity,
+                child: Icon(Icons.bolt,
+                    color: Theme.of(context).colorScheme.primary)),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushNamed(
+                  NavigationOptions.quickAddRoute,
+                  arguments: QuickAddScreenArguments(day));
             },
           ),
           const Divider(indent: 16, endIndent: 16),

@@ -29,7 +29,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -82,6 +82,38 @@ class AppDatabase extends _$AppDatabase {
             );
             await customStatement(
               'ALTER TABLE daily_stats ADD COLUMN active_calories_updated_at INTEGER',
+            );
+          }
+          if (from < 4) {
+            // Recreate log_entries to make food_item_id nullable + add entry_type, quick_add_label
+            await customStatement('''
+              CREATE TABLE log_entries_new (
+                id TEXT NOT NULL PRIMARY KEY,
+                timestamp INTEGER NOT NULL,
+                meal_slot TEXT NOT NULL,
+                food_item_id TEXT REFERENCES food_items(id),
+                amount REAL NOT NULL,
+                unit TEXT NOT NULL,
+                snapshot_kcal REAL NOT NULL DEFAULT 0.0,
+                snapshot_protein REAL NOT NULL DEFAULT 0.0,
+                snapshot_carbs REAL NOT NULL DEFAULT 0.0,
+                snapshot_fat REAL NOT NULL DEFAULT 0.0,
+                entry_type TEXT NOT NULL DEFAULT 'food',
+                quick_add_label TEXT
+              )
+            ''');
+            await customStatement('''
+              INSERT INTO log_entries_new (id, timestamp, meal_slot, food_item_id, amount, unit, snapshot_kcal, snapshot_protein, snapshot_carbs, snapshot_fat, entry_type)
+              SELECT id, timestamp, meal_slot, food_item_id, amount, unit, snapshot_kcal, snapshot_protein, snapshot_carbs, snapshot_fat, 'food'
+              FROM log_entries
+            ''');
+            await customStatement('DROP TABLE log_entries');
+            await customStatement('ALTER TABLE log_entries_new RENAME TO log_entries');
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_log_entries_timestamp ON log_entries(timestamp)',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_log_entries_meal_slot ON log_entries(meal_slot)',
             );
           }
         },

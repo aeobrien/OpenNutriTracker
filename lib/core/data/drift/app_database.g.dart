@@ -1369,9 +1369,9 @@ class $LogEntriesTable extends LogEntries
   late final GeneratedColumn<String> foodItemId = GeneratedColumn<String>(
     'food_item_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
     defaultConstraints: GeneratedColumn.constraintIsAlways(
       'REFERENCES food_items (id)',
     ),
@@ -1442,6 +1442,29 @@ class $LogEntriesTable extends LogEntries
     requiredDuringInsert: false,
     defaultValue: const Constant(0.0),
   );
+  static const VerificationMeta _entryTypeMeta = const VerificationMeta(
+    'entryType',
+  );
+  @override
+  late final GeneratedColumn<String> entryType = GeneratedColumn<String>(
+    'entry_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('food'),
+  );
+  static const VerificationMeta _quickAddLabelMeta = const VerificationMeta(
+    'quickAddLabel',
+  );
+  @override
+  late final GeneratedColumn<String> quickAddLabel = GeneratedColumn<String>(
+    'quick_add_label',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1454,6 +1477,8 @@ class $LogEntriesTable extends LogEntries
     snapshotProtein,
     snapshotCarbs,
     snapshotFat,
+    entryType,
+    quickAddLabel,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1496,8 +1521,6 @@ class $LogEntriesTable extends LogEntries
           _foodItemIdMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_foodItemIdMeta);
     }
     if (data.containsKey('amount')) {
       context.handle(
@@ -1551,6 +1574,21 @@ class $LogEntriesTable extends LogEntries
         ),
       );
     }
+    if (data.containsKey('entry_type')) {
+      context.handle(
+        _entryTypeMeta,
+        entryType.isAcceptableOrUnknown(data['entry_type']!, _entryTypeMeta),
+      );
+    }
+    if (data.containsKey('quick_add_label')) {
+      context.handle(
+        _quickAddLabelMeta,
+        quickAddLabel.isAcceptableOrUnknown(
+          data['quick_add_label']!,
+          _quickAddLabelMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1575,7 +1613,7 @@ class $LogEntriesTable extends LogEntries
       foodItemId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}food_item_id'],
-      )!,
+      ),
       amount: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}amount'],
@@ -1600,6 +1638,14 @@ class $LogEntriesTable extends LogEntries
         DriftSqlType.double,
         data['${effectivePrefix}snapshot_fat'],
       )!,
+      entryType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entry_type'],
+      )!,
+      quickAddLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quick_add_label'],
+      ),
     );
   }
 
@@ -1613,24 +1659,28 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
   final String id;
   final int timestamp;
   final String mealSlot;
-  final String foodItemId;
+  final String? foodItemId;
   final double amount;
   final String unit;
   final double snapshotKcal;
   final double snapshotProtein;
   final double snapshotCarbs;
   final double snapshotFat;
+  final String entryType;
+  final String? quickAddLabel;
   const LogEntry({
     required this.id,
     required this.timestamp,
     required this.mealSlot,
-    required this.foodItemId,
+    this.foodItemId,
     required this.amount,
     required this.unit,
     required this.snapshotKcal,
     required this.snapshotProtein,
     required this.snapshotCarbs,
     required this.snapshotFat,
+    required this.entryType,
+    this.quickAddLabel,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1638,13 +1688,19 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     map['id'] = Variable<String>(id);
     map['timestamp'] = Variable<int>(timestamp);
     map['meal_slot'] = Variable<String>(mealSlot);
-    map['food_item_id'] = Variable<String>(foodItemId);
+    if (!nullToAbsent || foodItemId != null) {
+      map['food_item_id'] = Variable<String>(foodItemId);
+    }
     map['amount'] = Variable<double>(amount);
     map['unit'] = Variable<String>(unit);
     map['snapshot_kcal'] = Variable<double>(snapshotKcal);
     map['snapshot_protein'] = Variable<double>(snapshotProtein);
     map['snapshot_carbs'] = Variable<double>(snapshotCarbs);
     map['snapshot_fat'] = Variable<double>(snapshotFat);
+    map['entry_type'] = Variable<String>(entryType);
+    if (!nullToAbsent || quickAddLabel != null) {
+      map['quick_add_label'] = Variable<String>(quickAddLabel);
+    }
     return map;
   }
 
@@ -1653,13 +1709,19 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       id: Value(id),
       timestamp: Value(timestamp),
       mealSlot: Value(mealSlot),
-      foodItemId: Value(foodItemId),
+      foodItemId: foodItemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(foodItemId),
       amount: Value(amount),
       unit: Value(unit),
       snapshotKcal: Value(snapshotKcal),
       snapshotProtein: Value(snapshotProtein),
       snapshotCarbs: Value(snapshotCarbs),
       snapshotFat: Value(snapshotFat),
+      entryType: Value(entryType),
+      quickAddLabel: quickAddLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quickAddLabel),
     );
   }
 
@@ -1672,13 +1734,15 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       id: serializer.fromJson<String>(json['id']),
       timestamp: serializer.fromJson<int>(json['timestamp']),
       mealSlot: serializer.fromJson<String>(json['mealSlot']),
-      foodItemId: serializer.fromJson<String>(json['foodItemId']),
+      foodItemId: serializer.fromJson<String?>(json['foodItemId']),
       amount: serializer.fromJson<double>(json['amount']),
       unit: serializer.fromJson<String>(json['unit']),
       snapshotKcal: serializer.fromJson<double>(json['snapshotKcal']),
       snapshotProtein: serializer.fromJson<double>(json['snapshotProtein']),
       snapshotCarbs: serializer.fromJson<double>(json['snapshotCarbs']),
       snapshotFat: serializer.fromJson<double>(json['snapshotFat']),
+      entryType: serializer.fromJson<String>(json['entryType']),
+      quickAddLabel: serializer.fromJson<String?>(json['quickAddLabel']),
     );
   }
   @override
@@ -1688,13 +1752,15 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       'id': serializer.toJson<String>(id),
       'timestamp': serializer.toJson<int>(timestamp),
       'mealSlot': serializer.toJson<String>(mealSlot),
-      'foodItemId': serializer.toJson<String>(foodItemId),
+      'foodItemId': serializer.toJson<String?>(foodItemId),
       'amount': serializer.toJson<double>(amount),
       'unit': serializer.toJson<String>(unit),
       'snapshotKcal': serializer.toJson<double>(snapshotKcal),
       'snapshotProtein': serializer.toJson<double>(snapshotProtein),
       'snapshotCarbs': serializer.toJson<double>(snapshotCarbs),
       'snapshotFat': serializer.toJson<double>(snapshotFat),
+      'entryType': serializer.toJson<String>(entryType),
+      'quickAddLabel': serializer.toJson<String?>(quickAddLabel),
     };
   }
 
@@ -1702,24 +1768,30 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     String? id,
     int? timestamp,
     String? mealSlot,
-    String? foodItemId,
+    Value<String?> foodItemId = const Value.absent(),
     double? amount,
     String? unit,
     double? snapshotKcal,
     double? snapshotProtein,
     double? snapshotCarbs,
     double? snapshotFat,
+    String? entryType,
+    Value<String?> quickAddLabel = const Value.absent(),
   }) => LogEntry(
     id: id ?? this.id,
     timestamp: timestamp ?? this.timestamp,
     mealSlot: mealSlot ?? this.mealSlot,
-    foodItemId: foodItemId ?? this.foodItemId,
+    foodItemId: foodItemId.present ? foodItemId.value : this.foodItemId,
     amount: amount ?? this.amount,
     unit: unit ?? this.unit,
     snapshotKcal: snapshotKcal ?? this.snapshotKcal,
     snapshotProtein: snapshotProtein ?? this.snapshotProtein,
     snapshotCarbs: snapshotCarbs ?? this.snapshotCarbs,
     snapshotFat: snapshotFat ?? this.snapshotFat,
+    entryType: entryType ?? this.entryType,
+    quickAddLabel: quickAddLabel.present
+        ? quickAddLabel.value
+        : this.quickAddLabel,
   );
   LogEntry copyWithCompanion(LogEntriesCompanion data) {
     return LogEntry(
@@ -1743,6 +1815,10 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       snapshotFat: data.snapshotFat.present
           ? data.snapshotFat.value
           : this.snapshotFat,
+      entryType: data.entryType.present ? data.entryType.value : this.entryType,
+      quickAddLabel: data.quickAddLabel.present
+          ? data.quickAddLabel.value
+          : this.quickAddLabel,
     );
   }
 
@@ -1758,7 +1834,9 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           ..write('snapshotKcal: $snapshotKcal, ')
           ..write('snapshotProtein: $snapshotProtein, ')
           ..write('snapshotCarbs: $snapshotCarbs, ')
-          ..write('snapshotFat: $snapshotFat')
+          ..write('snapshotFat: $snapshotFat, ')
+          ..write('entryType: $entryType, ')
+          ..write('quickAddLabel: $quickAddLabel')
           ..write(')'))
         .toString();
   }
@@ -1775,6 +1853,8 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     snapshotProtein,
     snapshotCarbs,
     snapshotFat,
+    entryType,
+    quickAddLabel,
   );
   @override
   bool operator ==(Object other) =>
@@ -1789,20 +1869,24 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           other.snapshotKcal == this.snapshotKcal &&
           other.snapshotProtein == this.snapshotProtein &&
           other.snapshotCarbs == this.snapshotCarbs &&
-          other.snapshotFat == this.snapshotFat);
+          other.snapshotFat == this.snapshotFat &&
+          other.entryType == this.entryType &&
+          other.quickAddLabel == this.quickAddLabel);
 }
 
 class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
   final Value<String> id;
   final Value<int> timestamp;
   final Value<String> mealSlot;
-  final Value<String> foodItemId;
+  final Value<String?> foodItemId;
   final Value<double> amount;
   final Value<String> unit;
   final Value<double> snapshotKcal;
   final Value<double> snapshotProtein;
   final Value<double> snapshotCarbs;
   final Value<double> snapshotFat;
+  final Value<String> entryType;
+  final Value<String?> quickAddLabel;
   final Value<int> rowid;
   const LogEntriesCompanion({
     this.id = const Value.absent(),
@@ -1815,24 +1899,27 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     this.snapshotProtein = const Value.absent(),
     this.snapshotCarbs = const Value.absent(),
     this.snapshotFat = const Value.absent(),
+    this.entryType = const Value.absent(),
+    this.quickAddLabel = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LogEntriesCompanion.insert({
     required String id,
     required int timestamp,
     required String mealSlot,
-    required String foodItemId,
+    this.foodItemId = const Value.absent(),
     required double amount,
     required String unit,
     this.snapshotKcal = const Value.absent(),
     this.snapshotProtein = const Value.absent(),
     this.snapshotCarbs = const Value.absent(),
     this.snapshotFat = const Value.absent(),
+    this.entryType = const Value.absent(),
+    this.quickAddLabel = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        timestamp = Value(timestamp),
        mealSlot = Value(mealSlot),
-       foodItemId = Value(foodItemId),
        amount = Value(amount),
        unit = Value(unit);
   static Insertable<LogEntry> custom({
@@ -1846,6 +1933,8 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     Expression<double>? snapshotProtein,
     Expression<double>? snapshotCarbs,
     Expression<double>? snapshotFat,
+    Expression<String>? entryType,
+    Expression<String>? quickAddLabel,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1859,6 +1948,8 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
       if (snapshotProtein != null) 'snapshot_protein': snapshotProtein,
       if (snapshotCarbs != null) 'snapshot_carbs': snapshotCarbs,
       if (snapshotFat != null) 'snapshot_fat': snapshotFat,
+      if (entryType != null) 'entry_type': entryType,
+      if (quickAddLabel != null) 'quick_add_label': quickAddLabel,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1867,13 +1958,15 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     Value<String>? id,
     Value<int>? timestamp,
     Value<String>? mealSlot,
-    Value<String>? foodItemId,
+    Value<String?>? foodItemId,
     Value<double>? amount,
     Value<String>? unit,
     Value<double>? snapshotKcal,
     Value<double>? snapshotProtein,
     Value<double>? snapshotCarbs,
     Value<double>? snapshotFat,
+    Value<String>? entryType,
+    Value<String?>? quickAddLabel,
     Value<int>? rowid,
   }) {
     return LogEntriesCompanion(
@@ -1887,6 +1980,8 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
       snapshotProtein: snapshotProtein ?? this.snapshotProtein,
       snapshotCarbs: snapshotCarbs ?? this.snapshotCarbs,
       snapshotFat: snapshotFat ?? this.snapshotFat,
+      entryType: entryType ?? this.entryType,
+      quickAddLabel: quickAddLabel ?? this.quickAddLabel,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1924,6 +2019,12 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     if (snapshotFat.present) {
       map['snapshot_fat'] = Variable<double>(snapshotFat.value);
     }
+    if (entryType.present) {
+      map['entry_type'] = Variable<String>(entryType.value);
+    }
+    if (quickAddLabel.present) {
+      map['quick_add_label'] = Variable<String>(quickAddLabel.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1943,6 +2044,8 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
           ..write('snapshotProtein: $snapshotProtein, ')
           ..write('snapshotCarbs: $snapshotCarbs, ')
           ..write('snapshotFat: $snapshotFat, ')
+          ..write('entryType: $entryType, ')
+          ..write('quickAddLabel: $quickAddLabel, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4607,13 +4710,15 @@ typedef $$LogEntriesTableCreateCompanionBuilder =
       required String id,
       required int timestamp,
       required String mealSlot,
-      required String foodItemId,
+      Value<String?> foodItemId,
       required double amount,
       required String unit,
       Value<double> snapshotKcal,
       Value<double> snapshotProtein,
       Value<double> snapshotCarbs,
       Value<double> snapshotFat,
+      Value<String> entryType,
+      Value<String?> quickAddLabel,
       Value<int> rowid,
     });
 typedef $$LogEntriesTableUpdateCompanionBuilder =
@@ -4621,13 +4726,15 @@ typedef $$LogEntriesTableUpdateCompanionBuilder =
       Value<String> id,
       Value<int> timestamp,
       Value<String> mealSlot,
-      Value<String> foodItemId,
+      Value<String?> foodItemId,
       Value<double> amount,
       Value<String> unit,
       Value<double> snapshotKcal,
       Value<double> snapshotProtein,
       Value<double> snapshotCarbs,
       Value<double> snapshotFat,
+      Value<String> entryType,
+      Value<String?> quickAddLabel,
       Value<int> rowid,
     });
 
@@ -4640,9 +4747,9 @@ final class $$LogEntriesTableReferences
         $_aliasNameGenerator(db.logEntries.foodItemId, db.foodItems.id),
       );
 
-  $$FoodItemsTableProcessedTableManager get foodItemId {
-    final $_column = $_itemColumn<String>('food_item_id')!;
-
+  $$FoodItemsTableProcessedTableManager? get foodItemId {
+    final $_column = $_itemColumn<String>('food_item_id');
+    if ($_column == null) return null;
     final manager = $$FoodItemsTableTableManager(
       $_db,
       $_db.foodItems,
@@ -4706,6 +4813,16 @@ class $$LogEntriesTableFilterComposer
 
   ColumnFilters<double> get snapshotFat => $composableBuilder(
     column: $table.snapshotFat,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entryType => $composableBuilder(
+    column: $table.entryType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get quickAddLabel => $composableBuilder(
+    column: $table.quickAddLabel,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4787,6 +4904,16 @@ class $$LogEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get entryType => $composableBuilder(
+    column: $table.entryType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get quickAddLabel => $composableBuilder(
+    column: $table.quickAddLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FoodItemsTableOrderingComposer get foodItemId {
     final $$FoodItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -4855,6 +4982,14 @@ class $$LogEntriesTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get entryType =>
+      $composableBuilder(column: $table.entryType, builder: (column) => column);
+
+  GeneratedColumn<String> get quickAddLabel => $composableBuilder(
+    column: $table.quickAddLabel,
+    builder: (column) => column,
+  );
+
   $$FoodItemsTableAnnotationComposer get foodItemId {
     final $$FoodItemsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -4910,13 +5045,15 @@ class $$LogEntriesTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<int> timestamp = const Value.absent(),
                 Value<String> mealSlot = const Value.absent(),
-                Value<String> foodItemId = const Value.absent(),
+                Value<String?> foodItemId = const Value.absent(),
                 Value<double> amount = const Value.absent(),
                 Value<String> unit = const Value.absent(),
                 Value<double> snapshotKcal = const Value.absent(),
                 Value<double> snapshotProtein = const Value.absent(),
                 Value<double> snapshotCarbs = const Value.absent(),
                 Value<double> snapshotFat = const Value.absent(),
+                Value<String> entryType = const Value.absent(),
+                Value<String?> quickAddLabel = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogEntriesCompanion(
                 id: id,
@@ -4929,6 +5066,8 @@ class $$LogEntriesTableTableManager
                 snapshotProtein: snapshotProtein,
                 snapshotCarbs: snapshotCarbs,
                 snapshotFat: snapshotFat,
+                entryType: entryType,
+                quickAddLabel: quickAddLabel,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4936,13 +5075,15 @@ class $$LogEntriesTableTableManager
                 required String id,
                 required int timestamp,
                 required String mealSlot,
-                required String foodItemId,
+                Value<String?> foodItemId = const Value.absent(),
                 required double amount,
                 required String unit,
                 Value<double> snapshotKcal = const Value.absent(),
                 Value<double> snapshotProtein = const Value.absent(),
                 Value<double> snapshotCarbs = const Value.absent(),
                 Value<double> snapshotFat = const Value.absent(),
+                Value<String> entryType = const Value.absent(),
+                Value<String?> quickAddLabel = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogEntriesCompanion.insert(
                 id: id,
@@ -4955,6 +5096,8 @@ class $$LogEntriesTableTableManager
                 snapshotProtein: snapshotProtein,
                 snapshotCarbs: snapshotCarbs,
                 snapshotFat: snapshotFat,
+                entryType: entryType,
+                quickAddLabel: quickAddLabel,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

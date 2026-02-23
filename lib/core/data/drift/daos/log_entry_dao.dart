@@ -85,7 +85,10 @@ class LogEntryDao extends DatabaseAccessor<AppDatabase>
 
     for (final row in rows) {
       final entry = row.readTable(logEntries);
-      if (seen.add(entry.foodItemId)) {
+      // Skip quick-add entries — they have no food item to show in "recent"
+      if (entry.entryType == 'quickAdd') continue;
+      final fid = entry.foodItemId;
+      if (fid != null && seen.add(fid)) {
         results.add(LogEntryWithFoodItem(
           logEntry: entry,
           foodItem: row.readTableOrNull(foodItems),

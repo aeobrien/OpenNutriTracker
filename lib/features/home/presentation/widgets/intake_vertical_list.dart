@@ -162,7 +162,7 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                   } else {
                     final intakeEntity = widget.intakeList[index];
                     return IntakeCard(
-                      key: ValueKey(intakeEntity.meal.code),
+                      key: ValueKey(intakeEntity.id),
                       intake: intakeEntity,
                       onItemLongPressed: widget.onItemLongPressedCallback,
                       onItemTapped: widget.onItemTappedCallback,
@@ -187,16 +187,24 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
   }
 
   void _onItemDismissed(BuildContext context, IntakeEntity intake) {
+    final messenger = ScaffoldMessenger.of(context);
+    final deletedText = S.of(context).itemDeletedSnackbar;
+    final undoText = S.of(context).undoLabel;
+
     widget.onDeleteIntakeCallback(intake, widget.trackedDayEntity);
     locator<HomeBloc>().add(const LoadItemsEvent());
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    // SnackBar's internal animation timer doesn't fire after widget tree
+    // rebuilds (Flutter 3.41 bug). Use Future.delayed as workaround.
+    messenger.showSnackBar(
       SnackBar(
-        content: Text(S.of(context).itemDeletedSnackbar),
+        // Set very long duration so the SnackBar doesn't try to auto-dismiss
+        // via its broken internal timer — we handle dismissal ourselves.
+        duration: const Duration(days: 1),
+        content: Text(deletedText),
         action: SnackBarAction(
-          label: S.of(context).undoLabel,
+          label: undoText,
           onPressed: () {
-            // Re-add the intake to restore it
             _mealDetailBloc.addIntake(
                 context,
                 intake.unit,
@@ -211,6 +219,9 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
         ),
       ),
     );
+    Future.delayed(const Duration(seconds: 5), () {
+      messenger.hideCurrentSnackBar();
+    });
   }
 
   void _onItemDropped(IntakeEntity entity) {

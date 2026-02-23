@@ -11,6 +11,16 @@ class IntakeEntity extends Equatable {
   final double amount;
   final IntakeTypeEntity type;
   final DateTime dateTime;
+  final String entryType;
+  final String? quickAddLabel;
+
+  /// Snapshot values from the log entry row. For quick-add entries (amount=1),
+  /// these are the user-provided totals. For food entries, these are computed
+  /// from the food item nutriments at log time.
+  final double snapshotKcal;
+  final double snapshotProtein;
+  final double snapshotCarbs;
+  final double snapshotFat;
 
   final MealEntity meal;
 
@@ -20,7 +30,15 @@ class IntakeEntity extends Equatable {
       required this.amount,
       required this.type,
       required this.meal,
-      required this.dateTime});
+      required this.dateTime,
+      this.entryType = 'food',
+      this.quickAddLabel,
+      this.snapshotKcal = 0,
+      this.snapshotProtein = 0,
+      this.snapshotCarbs = 0,
+      this.snapshotFat = 0});
+
+  bool get isQuickAdd => entryType == 'quickAdd';
 
   factory IntakeEntity.fromLogEntry(LogEntryWithFoodItem row) {
     final entry = row.logEntry;
@@ -36,7 +54,13 @@ class IntakeEntity extends Equatable {
             ? MealEntity.fromFoodItem(foodItem)
             : MealEntity.empty(),
         dateTime:
-            DateTime.fromMillisecondsSinceEpoch(entry.timestamp));
+            DateTime.fromMillisecondsSinceEpoch(entry.timestamp),
+        entryType: entry.entryType,
+        quickAddLabel: entry.quickAddLabel,
+        snapshotKcal: entry.snapshotKcal,
+        snapshotProtein: entry.snapshotProtein,
+        snapshotCarbs: entry.snapshotCarbs,
+        snapshotFat: entry.snapshotFat);
   }
 
   factory IntakeEntity.fromIntakeDBO(IntakeDBO intakeDBO) {
@@ -49,16 +73,24 @@ class IntakeEntity extends Equatable {
         dateTime: intakeDBO.dateTime);
   }
 
-  double get totalKcal => amount * (meal.nutriments.energyPerUnit ?? 0);
+  /// For quick-add entries, use snapshot values directly (amount is always 1).
+  /// For food entries, compute from the meal's nutriments.
+  double get totalKcal => isQuickAdd
+      ? snapshotKcal
+      : amount * (meal.nutriments.energyPerUnit ?? 0);
 
-  double get totalCarbsGram =>
-      amount * (meal.nutriments.carbohydratesPerUnit ?? 0);
+  double get totalCarbsGram => isQuickAdd
+      ? snapshotCarbs
+      : amount * (meal.nutriments.carbohydratesPerUnit ?? 0);
 
-  double get totalFatsGram => amount * (meal.nutriments.fatPerUnit ?? 0);
+  double get totalFatsGram => isQuickAdd
+      ? snapshotFat
+      : amount * (meal.nutriments.fatPerUnit ?? 0);
 
-  double get totalProteinsGram =>
-      amount * (meal.nutriments.proteinsPerUnit ?? 0);
+  double get totalProteinsGram => isQuickAdd
+      ? snapshotProtein
+      : amount * (meal.nutriments.proteinsPerUnit ?? 0);
 
   @override
-  List<Object?> get props => [id, unit, amount, type, dateTime];
+  List<Object?> get props => [id, unit, amount, type, dateTime, entryType];
 }
