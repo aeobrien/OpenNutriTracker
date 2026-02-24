@@ -302,6 +302,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "missingProductInfo": MessageLookupByLibrary.simpleMessage(
       "Üründe gerekli kcal veya makro besin bilgileri eksik",
     ),
+    "monthViewLabel": MessageLookupByLibrary.simpleMessage("Ay"),
     "newRecipeLabel": MessageLookupByLibrary.simpleMessage("Yeni Tarif"),
     "noActivityRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Son zamanlarda eklenen aktivite yok",
@@ -318,6 +319,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noRecipesLabel": MessageLookupByLibrary.simpleMessage("Henüz tarif yok"),
     "noResultsFound": MessageLookupByLibrary.simpleMessage("Sonuç bulunamadı"),
     "notAvailableLabel": MessageLookupByLibrary.simpleMessage("Mevcut Değil"),
+    "notTrackedLabel": MessageLookupByLibrary.simpleMessage("—"),
     "nothingAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Hiçbir şey eklenmedi",
     ),
@@ -826,6 +828,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Tarif kaydedildi",
     ),
     "recipesLabel": MessageLookupByLibrary.simpleMessage("Tarifler"),
+    "remindersLabel": MessageLookupByLibrary.simpleMessage("Hatırlatmalar"),
     "reportErrorDialogText": MessageLookupByLibrary.simpleMessage(
       "Geliştiriciye bir hata bildirmek istiyor musunuz?",
     ),
@@ -924,6 +927,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "suggestedLabel": MessageLookupByLibrary.simpleMessage("Önerilen"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("tüketilen"),
     "takePhoto": MessageLookupByLibrary.simpleMessage("Fotoğraf Çek"),
+    "trackedLabel": MessageLookupByLibrary.simpleMessage("Takip edildi"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Geri al"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Birim"),
     "unresolvedLabel": MessageLookupByLibrary.simpleMessage("Bulunamadı"),
@@ -931,7 +935,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Değerler tutarlı görünüyor",
     ),
     "valuesMayNeedReview": m7,
+    "weekViewLabel": MessageLookupByLibrary.simpleMessage("Hafta"),
+    "weeklyNetLabel": MessageLookupByLibrary.simpleMessage("Net"),
     "weeklyOverLabel": m8,
+    "weeklyTargetLabel": MessageLookupByLibrary.simpleMessage("Hedef"),
+    "weeklyTotalLabel": MessageLookupByLibrary.simpleMessage("Toplam"),
     "weeklyUnderLabel": m9,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Kilo"),
     "yearsLabel": m10,

@@ -20,6 +20,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:opennutritracker/features/settings/presentation/health_debug_screen.dart';
 import 'package:opennutritracker/features/settings/presentation/widgets/calculations_dialog.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
+import 'package:opennutritracker/core/data/repository/config_repository.dart';
+import 'package:opennutritracker/core/utils/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -72,6 +74,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   leading: const Icon(Icons.calculate_outlined),
                   title: Text(S.of(context).settingsCalculationsLabel),
                   onTap: () => _showCalculationsDialog(context),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: Text(S.of(context).remindersLabel),
+                  onTap: () => _showNotificationSettingsDialog(context),
                 ),
                 ListTile(
                   leading: const Icon(Icons.brightness_medium_outlined),
@@ -217,6 +224,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showDialog(
       context: context,
       builder: (context) => ExportImportDialog(),
+    );
+  }
+
+  void _showNotificationSettingsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const _NotificationSettingsDialog(),
     );
   }
 
@@ -531,5 +545,140 @@ class _ApiKeyTileState extends State<_ApiKeyTile> {
       await widget.setKey(result.trim());
       _checkKey();
     }
+  }
+}
+
+class _NotificationSettingsDialog extends StatefulWidget {
+  const _NotificationSettingsDialog();
+
+  @override
+  State<_NotificationSettingsDialog> createState() =>
+      _NotificationSettingsDialogState();
+}
+
+class _NotificationSettingsDialogState
+    extends State<_NotificationSettingsDialog> {
+  final _configRepo = locator<ConfigRepository>();
+  final _notifService = locator<NotificationService>();
+
+  static const _slots = ['breakfast', 'lunch', 'dinner', 'snack'];
+
+  final Map<String, bool> _enabled = {};
+  final Map<String, TimeOfDay> _times = {};
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  Future<void> _loadSettings() async {
+    for (final slot in _slots) {
+      _enabled[slot] = await _configRepo.getNotifEnabled(slot);
+      final hour = await _configRepo.getNotifHour(slot);
+      final minute = await _configRepo.getNotifMinute(slot);
+      _times[slot] = TimeOfDay(hour: hour, minute: minute);
+    }
+    if (mounted) setState(() => _loading = false);
+  }
+
+  String _slotLabel(String slot) {
+    switch (slot) {
+      case 'breakfast':
+        return S.of(context).breakfastLabel;
+      case 'lunch':
+        return S.of(context).lunchLabel;
+      case 'dinner':
+        return S.of(context).dinnerLabel;
+      case 'snack':
+        return S.of(context).snackLabel;
+      default:
+        return slot;
+    }
+  }
+
+  String _formatTime(TimeOfDay t) {
+    final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+    final minute = t.minute.toString().padLeft(2, '0');
+    final period = t.period == DayPeriod.am ? 'AM' : 'PM';
+    return '$hour:$minute $period';
+  }
+
+  Future<void> _onToggle(String slot, bool value) async {
+    setState(() => _enabled[slot] = value);
+    await _configRepo.setNotifEnabled(slot, value);
+    if (value) {
+      final time = _times[slot]!;
+      await _notifService.scheduleMealReminder(slot, time.hour, time.minute);
+    } else {
+      await _notifService.cancelMealReminder(slot);
+    }
+  }
+
+  Future<void> _onTimeTap(String slot) async {
+    final current = _times[slot]!;
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: current,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: const TextScaler.linear(1.0),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && mounted) {
+      setState(() => _times[slot] = picked);
+      await _configRepo.setNotifTime(slot, picked.hour, picked.minute);
+      if (_enabled[slot] == true) {
+        await _notifService.scheduleMealReminder(
+            slot, picked.hour, picked.minute);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(S.of(context).remindersLabel),
+      content: _loading
+          ? const SizedBox(
+              height: 100,
+              child: Center(child: CircularProgressIndicator()),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: _slots.map((slot) {
+                final isOn = _enabled[slot] ?? false;
+                final time = _times[slot] ?? const TimeOfDay(hour: 12, minute: 0);
+                return SwitchListTile(
+                  title: Text(_slotLabel(slot)),
+                  subtitle: isOn
+                      ? GestureDetector(
+                          onTap: () => _onTimeTap(slot),
+                          child: Text(
+                            _formatTime(time),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        )
+                      : null,
+                  value: isOn,
+                  onChanged: (val) => _onToggle(slot, val),
+                );
+              }).toList(),
+            ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(S.of(context).dialogOKLabel),
+        ),
+      ],
+    );
   }
 }

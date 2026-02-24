@@ -9,6 +9,7 @@ class DiaryTableCalendar extends StatefulWidget {
   final DateTime focusedDate;
   final DateTime currentDate;
   final DateTime selectedDate;
+  final CalendarFormat calendarFormat;
 
   final Map<String, TrackedDayEntity> trackedDaysMap;
 
@@ -19,7 +20,8 @@ class DiaryTableCalendar extends StatefulWidget {
       required this.focusedDate,
       required this.currentDate,
       required this.selectedDate,
-      required this.trackedDaysMap});
+      required this.trackedDaysMap,
+      this.calendarFormat = CalendarFormat.month});
 
   @override
   State<DiaryTableCalendar> createState() => _DiaryTableCalendarState();
@@ -29,6 +31,7 @@ class _DiaryTableCalendarState extends State<DiaryTableCalendar> {
   @override
   Widget build(BuildContext context) {
     return TableCalendar(
+      calendarFormat: widget.calendarFormat,
       headerStyle:
           const HeaderStyle(titleCentered: true, formatButtonVisible: false),
       focusedDay: widget.focusedDate,

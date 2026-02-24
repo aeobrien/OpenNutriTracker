@@ -11,6 +11,7 @@ import 'package:opennutritracker/core/styles/fonts.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/logger_config.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
+import 'package:opennutritracker/core/utils/notification_service.dart';
 import 'package:opennutritracker/core/utils/theme_mode_provider.dart';
 import 'package:opennutritracker/features/activity_detail/activity_detail_screen.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
@@ -36,6 +37,9 @@ Future<void> main() async {
   final savedAppTheme = await configRepo.getConfigAppTheme();
   final log = Logger('main');
 
+  final notificationService = locator<NotificationService>();
+  await notificationService.init();
+
   log.info('Starting App ...');
   runAppWithChangeNotifiers(isUserInitialized, savedAppTheme);
 }
@@ -46,14 +50,28 @@ void runAppWithChangeNotifiers(
         create: (_) => ThemeModeProvider(appTheme: savedAppTheme),
         child: OpenNutriTrackerApp(userInitialized: userInitialized)));
 
-class OpenNutriTrackerApp extends StatelessWidget {
+class OpenNutriTrackerApp extends StatefulWidget {
   final bool userInitialized;
 
   const OpenNutriTrackerApp({super.key, required this.userInitialized});
 
   @override
+  State<OpenNutriTrackerApp> createState() => _OpenNutriTrackerAppState();
+}
+
+class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    locator<NotificationService>().setNavigatorKey(_navigatorKey);
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       onGenerateTitle: (context) => S.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -72,7 +90,7 @@ class OpenNutriTrackerApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
-      initialRoute: userInitialized
+      initialRoute: widget.userInitialized
           ? NavigationOptions.mainRoute
           : NavigationOptions.onboardingRoute,
       routes: {

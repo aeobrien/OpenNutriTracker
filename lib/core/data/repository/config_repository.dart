@@ -123,4 +123,39 @@ class ConfigRepository {
   Future<void> setHasAskedHealthPermission(bool value) async {
     await _configDao.setBool('hasAskedHealthPermission', value);
   }
+
+  // --- Notification settings ---
+
+  static const _notifSlots = ['breakfast', 'lunch', 'dinner', 'snack'];
+  static const _defaultHours = {
+    'breakfast': 9,
+    'lunch': 13,
+    'dinner': 19,
+    'snack': 15,
+  };
+
+  Future<bool> getNotifEnabled(String slot) async {
+    return await _configDao.getBool('notif${_cap(slot)}Enabled');
+  }
+
+  Future<void> setNotifEnabled(String slot, bool value) async {
+    await _configDao.setBool('notif${_cap(slot)}Enabled', value);
+  }
+
+  Future<int> getNotifHour(String slot) async {
+    final val = await _configDao.getDouble('notif${_cap(slot)}Hour');
+    return val?.toInt() ?? _defaultHours[slot] ?? 12;
+  }
+
+  Future<int> getNotifMinute(String slot) async {
+    final val = await _configDao.getDouble('notif${_cap(slot)}Minute');
+    return val?.toInt() ?? 0;
+  }
+
+  Future<void> setNotifTime(String slot, int hour, int minute) async {
+    await _configDao.setDouble('notif${_cap(slot)}Hour', hour.toDouble());
+    await _configDao.setDouble('notif${_cap(slot)}Minute', minute.toDouble());
+  }
+
+  String _cap(String s) => s[0].toUpperCase() + s.substring(1);
 }

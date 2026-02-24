@@ -298,6 +298,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "missingProductInfo": MessageLookupByLibrary.simpleMessage(
       "Product missing required kcal or macronutrients information",
     ),
+    "monthViewLabel": MessageLookupByLibrary.simpleMessage("Month"),
     "newRecipeLabel": MessageLookupByLibrary.simpleMessage("New Recipe"),
     "noActivityRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "No activity recently added",
@@ -314,6 +315,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "noRecipesLabel": MessageLookupByLibrary.simpleMessage("No recipes yet"),
     "noResultsFound": MessageLookupByLibrary.simpleMessage("No results found"),
     "notAvailableLabel": MessageLookupByLibrary.simpleMessage("N/A"),
+    "notTrackedLabel": MessageLookupByLibrary.simpleMessage("—"),
     "nothingAddedLabel": MessageLookupByLibrary.simpleMessage("Nothing added"),
     "nutritionInfoLabel": MessageLookupByLibrary.simpleMessage(
       "Nutrition Information",
@@ -820,6 +822,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "recipeNameHint": MessageLookupByLibrary.simpleMessage("Recipe name"),
     "recipeSavedLabel": MessageLookupByLibrary.simpleMessage("Recipe saved"),
     "recipesLabel": MessageLookupByLibrary.simpleMessage("Recipes"),
+    "remindersLabel": MessageLookupByLibrary.simpleMessage("Reminders"),
     "reportErrorDialogText": MessageLookupByLibrary.simpleMessage(
       "Do you want to report an error to the developer?",
     ),
@@ -916,6 +919,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "suggestedLabel": MessageLookupByLibrary.simpleMessage("Suggested"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("supplied"),
     "takePhoto": MessageLookupByLibrary.simpleMessage("Take Photo"),
+    "trackedLabel": MessageLookupByLibrary.simpleMessage("Tracked"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Undo"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Unit"),
     "unresolvedLabel": MessageLookupByLibrary.simpleMessage("Not found"),
@@ -923,7 +927,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Values look consistent",
     ),
     "valuesMayNeedReview": m7,
+    "weekViewLabel": MessageLookupByLibrary.simpleMessage("Week"),
+    "weeklyNetLabel": MessageLookupByLibrary.simpleMessage("Net"),
     "weeklyOverLabel": m8,
+    "weeklyTargetLabel": MessageLookupByLibrary.simpleMessage("Target"),
+    "weeklyTotalLabel": MessageLookupByLibrary.simpleMessage("Total"),
     "weeklyUnderLabel": m9,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Weight"),
     "yearsLabel": m10,

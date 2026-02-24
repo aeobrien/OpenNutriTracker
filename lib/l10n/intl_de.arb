@@ -494,5 +494,15 @@
   "manualEntryLabel": "Manuell eingeben",
   "manualNutritionPer100gLabel": "Nährwerte pro 100g",
   "confirmLabel": "Bestätigen",
-  "scanLabel": "Scannen"
+  "scanLabel": "Scannen",
+
+  "remindersLabel": "Erinnerungen",
+
+  "weekViewLabel": "Woche",
+  "monthViewLabel": "Monat",
+  "weeklyTotalLabel": "Gesamt",
+  "weeklyTargetLabel": "Ziel",
+  "weeklyNetLabel": "Netto",
+  "trackedLabel": "Erfasst",
+  "notTrackedLabel": "—"
 }

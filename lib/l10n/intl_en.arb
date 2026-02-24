@@ -504,5 +504,15 @@
   "manualEntryLabel": "Enter manually",
   "manualNutritionPer100gLabel": "Nutrition per 100g",
   "confirmLabel": "Confirm",
-  "scanLabel": "Scan"
+  "scanLabel": "Scan",
+
+  "remindersLabel": "Reminders",
+
+  "weekViewLabel": "Week",
+  "monthViewLabel": "Month",
+  "weeklyTotalLabel": "Total",
+  "weeklyTargetLabel": "Target",
+  "weeklyNetLabel": "Net",
+  "trackedLabel": "Tracked",
+  "notTrackedLabel": "—"
 }

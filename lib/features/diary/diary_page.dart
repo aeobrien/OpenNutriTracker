@@ -11,8 +11,12 @@ import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_b
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/diary/presentation/widgets/diary_table_calendar.dart';
 import 'package:opennutritracker/features/diary/presentation/widgets/day_info_widget.dart';
+import 'package:opennutritracker/features/diary/presentation/widgets/weekly_summary_card.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
+import 'package:table_calendar/table_calendar.dart';
+
+enum _DiaryViewMode { week, month }
 
 class DiaryPage extends StatefulWidget {
   const DiaryPage({super.key});
@@ -32,6 +36,7 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
   final _currentDate = DateTime.now();
   var _selectedDate = DateTime.now();
   var _focusedDate = DateTime.now();
+  var _viewMode = _DiaryViewMode.month;
 
   @override
   void initState() {
@@ -82,6 +87,38 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
       Map<String, TrackedDayEntity> trackedDaysMap, bool usesImperialUnits) {
     return ListView(
       children: [
+        // View mode toggle
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: SegmentedButton<_DiaryViewMode>(
+            segments: [
+              ButtonSegment(
+                value: _DiaryViewMode.week,
+                label: Text(S.of(context).weekViewLabel),
+                icon: const Icon(Icons.view_week_outlined),
+              ),
+              ButtonSegment(
+                value: _DiaryViewMode.month,
+                label: Text(S.of(context).monthViewLabel),
+                icon: const Icon(Icons.calendar_month_outlined),
+              ),
+            ],
+            selected: {_viewMode},
+            onSelectionChanged: (selected) {
+              setState(() {
+                _viewMode = selected.first;
+                if (_viewMode == _DiaryViewMode.week) {
+                  _calendarDayBloc.add(
+                      LoadCalendarWeekEvent(_weekStart(_selectedDate)));
+                } else {
+                  _calendarDayBloc
+                      .add(LoadCalendarDayEvent(_selectedDate));
+                }
+              });
+            },
+          ),
+        ),
+
         DiaryTableCalendar(
           trackedDaysMap: trackedDaysMap,
           onDateSelected: _onDateSelected,
@@ -89,15 +126,28 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
           currentDate: _currentDate,
           selectedDate: _selectedDate,
           focusedDate: _focusedDate,
+          calendarFormat: _viewMode == _DiaryViewMode.week
+              ? CalendarFormat.week
+              : CalendarFormat.month,
         ),
         const SizedBox(height: 16.0),
         BlocBuilder<CalendarDayBloc, CalendarDayState>(
           bloc: _calendarDayBloc,
           builder: (context, state) {
             if (state is CalendarDayInitial) {
-              _calendarDayBloc.add(LoadCalendarDayEvent(_selectedDate));
+              if (_viewMode == _DiaryViewMode.week) {
+                _calendarDayBloc.add(
+                    LoadCalendarWeekEvent(_weekStart(_selectedDate)));
+              } else {
+                _calendarDayBloc.add(LoadCalendarDayEvent(_selectedDate));
+              }
             } else if (state is CalendarDayLoading) {
               return _getLoadingContent();
+            } else if (state is CalendarWeekLoaded) {
+              return WeeklySummaryCard(
+                summary: state.summary,
+                dailyRows: state.dailyRows,
+              );
             } else if (state is CalendarDayLoaded) {
               return DayInfoWidget(
                 trackedDayEntity: state.trackedDayEntity,
@@ -175,14 +225,29 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
     setState(() {
       _selectedDate = newDate;
       _focusedDate = newDate;
-      _calendarDayBloc.add(LoadCalendarDayEvent(newDate));
+      if (_viewMode == _DiaryViewMode.week) {
+        _calendarDayBloc.add(LoadCalendarWeekEvent(_weekStart(newDate)));
+      } else {
+        _calendarDayBloc.add(LoadCalendarDayEvent(newDate));
+      }
     });
   }
 
   void _refreshPageOnDayChange() {
     if (DateUtils.isSameDay(_selectedDate, DateTime.now())) {
-      _calendarDayBloc.add(LoadCalendarDayEvent(_selectedDate));
+      if (_viewMode == _DiaryViewMode.week) {
+        _calendarDayBloc
+            .add(LoadCalendarWeekEvent(_weekStart(_selectedDate)));
+      } else {
+        _calendarDayBloc.add(LoadCalendarDayEvent(_selectedDate));
+      }
       _diaryBloc.add(const LoadDiaryYearEvent());
     }
+  }
+
+  /// Returns Monday of the week containing [date].
+  DateTime _weekStart(DateTime date) {
+    final diff = date.weekday - DateTime.monday;
+    return DateTime(date.year, date.month, date.day - diff);
   }
 }

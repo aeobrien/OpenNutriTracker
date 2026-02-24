@@ -20,3 +20,12 @@ class RefreshCalendarDayEvent extends CalendarDayEvent {
   @override
   List<Object?> get props => [];
 }
+
+class LoadCalendarWeekEvent extends CalendarDayEvent {
+  final DateTime weekStart;
+
+  const LoadCalendarWeekEvent(this.weekStart);
+
+  @override
+  List<Object?> get props => [weekStart];
+}

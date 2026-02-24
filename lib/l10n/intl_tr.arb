@@ -501,5 +501,15 @@
   "manualEntryLabel": "Manuel giriş",
   "manualNutritionPer100gLabel": "100g başına besin değeri",
   "confirmLabel": "Onayla",
-  "scanLabel": "Tara"
+  "scanLabel": "Tara",
+
+  "remindersLabel": "Hatırlatmalar",
+
+  "weekViewLabel": "Hafta",
+  "monthViewLabel": "Ay",
+  "weeklyTotalLabel": "Toplam",
+  "weeklyTargetLabel": "Hedef",
+  "weeklyNetLabel": "Net",
+  "trackedLabel": "Takip edildi",
+  "notTrackedLabel": "—"
 }

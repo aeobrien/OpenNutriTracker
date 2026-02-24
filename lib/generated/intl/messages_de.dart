@@ -318,6 +318,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "missingProductInfo": MessageLookupByLibrary.simpleMessage(
       "Produkt fehlen die erforderlichen Angaben zu Kalorien oder Makronährstoffen",
     ),
+    "monthViewLabel": MessageLookupByLibrary.simpleMessage("Monat"),
     "newRecipeLabel": MessageLookupByLibrary.simpleMessage("Neues Rezept"),
     "noActivityRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Keine kürzlich hinzugefügten Aktivitäten",
@@ -338,6 +339,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Keine Ergebnisse gefunden",
     ),
     "notAvailableLabel": MessageLookupByLibrary.simpleMessage("N/A"),
+    "notTrackedLabel": MessageLookupByLibrary.simpleMessage("—"),
     "nothingAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Nichts hinzugefügt",
     ),
@@ -865,6 +867,7 @@ class MessageLookup extends MessageLookupByLibrary {
       "Rezept gespeichert",
     ),
     "recipesLabel": MessageLookupByLibrary.simpleMessage("Rezepte"),
+    "remindersLabel": MessageLookupByLibrary.simpleMessage("Erinnerungen"),
     "reportErrorDialogText": MessageLookupByLibrary.simpleMessage(
       "Möchten Sie einen Fehler an den Entwickler melden?",
     ),
@@ -954,6 +957,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "suggestedLabel": MessageLookupByLibrary.simpleMessage("Vorgeschlagen"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("zugeführt"),
     "takePhoto": MessageLookupByLibrary.simpleMessage("Foto aufnehmen"),
+    "trackedLabel": MessageLookupByLibrary.simpleMessage("Erfasst"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Rückgängig"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Einheit"),
     "unresolvedLabel": MessageLookupByLibrary.simpleMessage("Nicht gefunden"),
@@ -961,7 +965,11 @@ class MessageLookup extends MessageLookupByLibrary {
       "Werte sehen konsistent aus",
     ),
     "valuesMayNeedReview": m7,
+    "weekViewLabel": MessageLookupByLibrary.simpleMessage("Woche"),
+    "weeklyNetLabel": MessageLookupByLibrary.simpleMessage("Netto"),
     "weeklyOverLabel": m8,
+    "weeklyTargetLabel": MessageLookupByLibrary.simpleMessage("Ziel"),
+    "weeklyTotalLabel": MessageLookupByLibrary.simpleMessage("Gesamt"),
     "weeklyUnderLabel": m9,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Gewicht"),
     "yearsLabel": m10,

@@ -4252,6 +4252,56 @@ class S {
   String get scanLabel {
     return Intl.message('Scan', name: 'scanLabel', desc: '', args: []);
   }
+
+  /// `Reminders`
+  String get remindersLabel {
+    return Intl.message(
+      'Reminders',
+      name: 'remindersLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Week`
+  String get weekViewLabel {
+    return Intl.message('Week', name: 'weekViewLabel', desc: '', args: []);
+  }
+
+  /// `Month`
+  String get monthViewLabel {
+    return Intl.message('Month', name: 'monthViewLabel', desc: '', args: []);
+  }
+
+  /// `Total`
+  String get weeklyTotalLabel {
+    return Intl.message('Total', name: 'weeklyTotalLabel', desc: '', args: []);
+  }
+
+  /// `Target`
+  String get weeklyTargetLabel {
+    return Intl.message(
+      'Target',
+      name: 'weeklyTargetLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Net`
+  String get weeklyNetLabel {
+    return Intl.message('Net', name: 'weeklyNetLabel', desc: '', args: []);
+  }
+
+  /// `Tracked`
+  String get trackedLabel {
+    return Intl.message('Tracked', name: 'trackedLabel', desc: '', args: []);
+  }
+
+  /// `—`
+  String get notTrackedLabel {
+    return Intl.message('—', name: 'notTrackedLabel', desc: '', args: []);
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

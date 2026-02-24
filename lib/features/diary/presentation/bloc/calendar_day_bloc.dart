@@ -48,6 +48,11 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
         await _loadCalendarDay(_currentDay!, emit);
       }
     });
+
+    on<LoadCalendarWeekEvent>((event, emit) async {
+      emit(CalendarDayLoading());
+      await _loadCalendarWeek(event.weekStart, emit);
+    });
   }
 
   Future<void> _loadCalendarDay(
@@ -71,6 +76,71 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
         lunchIntakeList,
         dinnerIntakeList,
         snackIntakeList));
+  }
+
+  Future<void> _loadCalendarWeek(
+      DateTime weekStart, Emitter<CalendarDayState> emit) async {
+    final weekEnd = weekStart.add(const Duration(days: 6));
+    final trackedDays =
+        await _getTrackedDayUsecase.getTrackedDaysByRange(weekStart, weekEnd);
+
+    final trackedMap = <String, TrackedDayEntity>{};
+    for (final td in trackedDays) {
+      final key =
+          '${td.day.year}-${td.day.month.toString().padLeft(2, '0')}-${td.day.day.toString().padLeft(2, '0')}';
+      trackedMap[key] = td;
+    }
+
+    double totalIntake = 0;
+    double totalTarget = 0;
+    double totalProtein = 0;
+    double totalCarbs = 0;
+    double totalFat = 0;
+    double proteinTarget = 0;
+    double carbsTarget = 0;
+    double fatTarget = 0;
+
+    final dailyRows = <DailyRow>[];
+    for (int i = 0; i < 7; i++) {
+      final date = weekStart.add(Duration(days: i));
+      final key =
+          '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+      final td = trackedMap[key];
+      final tracked = td != null;
+      final intake = td?.caloriesTracked ?? 0;
+      final target = td?.calorieGoal ?? 0;
+
+      totalIntake += intake;
+      totalTarget += target;
+      totalProtein += td?.proteinTracked ?? 0;
+      totalCarbs += td?.carbsTracked ?? 0;
+      totalFat += td?.fatTracked ?? 0;
+      proteinTarget += td?.proteinGoal ?? 0;
+      carbsTarget += td?.carbsGoal ?? 0;
+      fatTarget += td?.fatGoal ?? 0;
+
+      dailyRows.add(DailyRow(
+        date: date,
+        kcalIntake: intake,
+        kcalTarget: target,
+        net: intake - target,
+        tracked: tracked,
+      ));
+    }
+
+    final summary = WeeklySummary(
+      totalIntake: totalIntake,
+      totalTarget: totalTarget,
+      totalNet: totalIntake - totalTarget,
+      totalProtein: totalProtein,
+      totalCarbs: totalCarbs,
+      totalFat: totalFat,
+      proteinTarget: proteinTarget,
+      carbsTarget: carbsTarget,
+      fatTarget: fatTarget,
+    );
+
+    emit(CalendarWeekLoaded(summary, dailyRows));
   }
 
   Future<void> deleteIntakeItem(
