@@ -7,12 +7,14 @@ import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/recipe_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_activity_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
 import 'package:opennutritracker/core/data/drift/migration/hive_to_drift_migrator.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/health_repository.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
+import 'package:opennutritracker/core/data/repository/recipe_repository.dart';
 import 'package:opennutritracker/core/data/repository/physical_activity_repository.dart';
 import 'package:opennutritracker/core/data/repository/tracked_day_repository.dart';
 import 'package:opennutritracker/core/data/repository/user_activity_repository.dart';
@@ -60,6 +62,12 @@ import 'package:opennutritracker/features/scanner/presentation/scanner_bloc.dart
 import 'package:opennutritracker/features/label_scan/data/data_source/openai_data_source.dart';
 import 'package:opennutritracker/features/label_scan/domain/usecase/extract_nutrition_usecase.dart';
 import 'package:opennutritracker/features/label_scan/presentation/bloc/label_scan_bloc.dart';
+import 'package:opennutritracker/features/recipes/presentation/bloc/recipe_list_bloc.dart';
+import 'package:opennutritracker/features/recipes/presentation/bloc/recipe_builder_bloc.dart';
+import 'package:opennutritracker/features/recipes/presentation/bloc/recipe_log_bloc.dart';
+import 'package:opennutritracker/features/recipes/presentation/bloc/llm_recipe_bloc.dart';
+import 'package:opennutritracker/features/recipes/data/data_source/claude_recipe_data_source.dart';
+import 'package:opennutritracker/features/recipes/domain/usecase/resolve_ingredients_usecase.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/export_data_usecase.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/import_data_usecase.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/export_import_bloc.dart';
@@ -89,6 +97,7 @@ Future<void> initLocator() async {
   final dailyStatsDao = DailyStatsDao(appDatabase);
   final userProfileDao = UserProfileDao(appDatabase);
   final userActivityDao = UserActivityDao(appDatabase);
+  final recipeDao = RecipeDao(appDatabase);
 
   // Run Hive → drift migration if needed
   final migrator = HiveToDriftMigrator(appDatabase, configDao);
@@ -97,6 +106,10 @@ Future<void> initLocator() async {
   } catch (e) {
     log.severe('Hive migration failed, continuing with empty database', e);
   }
+
+  // Register DAOs for direct access
+  locator.registerLazySingleton<FoodItemDao>(() => foodItemDao);
+  locator.registerLazySingleton<RecipeDao>(() => recipeDao);
 
   // Cache manager
   locator
@@ -142,6 +155,17 @@ Future<void> initLocator() async {
       .registerFactory<ProductsBloc>(() => ProductsBloc(locator(), locator()));
   locator.registerFactory<FoodBloc>(() => FoodBloc(locator(), locator()));
   locator.registerFactory(() => RecentMealBloc(locator(), locator()));
+
+  // Recipe BLoCs
+  locator.registerLazySingleton<RecipeListBloc>(() => RecipeListBloc(locator()));
+  locator.registerFactory<RecipeBuilderBloc>(
+      () => RecipeBuilderBloc(locator()));
+  locator.registerFactory<RecipeLogBloc>(
+      () => RecipeLogBloc(locator(), locator(), locator()));
+  locator.registerLazySingleton<ResolveIngredientsUsecase>(
+      () => ResolveIngredientsUsecase(foodItemDao, locator()));
+  locator.registerFactory<LlmRecipeBloc>(() => LlmRecipeBloc(
+      locator(), locator(), locator(), secureAppStorageProvider));
 
   // UseCases
   locator.registerLazySingleton<GetConfigUsecase>(
@@ -202,6 +226,8 @@ Future<void> initLocator() async {
       () => TrackedDayRepository(dailyStatsDao));
   locator.registerLazySingleton<HealthRepository>(
       () => HealthRepository(locator(), dailyStatsDao));
+  locator.registerLazySingleton<RecipeRepository>(
+      () => RecipeRepository(recipeDao));
 
   // DataSources (only non-Hive ones remain)
   locator.registerLazySingleton<PhysicalActivityDataSource>(
@@ -210,6 +236,8 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<FDCDataSource>(() => FDCDataSource());
   locator.registerLazySingleton<HealthDataSource>(() => HealthDataSource());
   locator.registerLazySingleton<OpenAiDataSource>(() => OpenAiDataSource());
+  locator.registerLazySingleton<ClaudeRecipeDataSource>(
+      () => ClaudeRecipeDataSource());
 
   // Label scan
   locator.registerLazySingleton<ExtractNutritionUsecase>(

@@ -6,12 +6,15 @@ import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/recipe_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_activity_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
 import 'package:opennutritracker/core/data/drift/tables/config.dart';
 import 'package:opennutritracker/core/data/drift/tables/daily_stats.dart';
 import 'package:opennutritracker/core/data/drift/tables/food_items.dart';
 import 'package:opennutritracker/core/data/drift/tables/log_entries.dart';
+import 'package:opennutritracker/core/data/drift/tables/recipe_ingredients.dart';
+import 'package:opennutritracker/core/data/drift/tables/recipes.dart';
 import 'package:opennutritracker/core/data/drift/tables/user_activities.dart';
 import 'package:opennutritracker/core/data/drift/tables/user_profile.dart';
 import 'package:path/path.dart' as p;
@@ -22,14 +25,14 @@ import 'package:sqlite3/sqlite3.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities],
-  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao],
+  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients],
+  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -114,6 +117,46 @@ class AppDatabase extends _$AppDatabase {
             );
             await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_log_entries_meal_slot ON log_entries(meal_slot)',
+            );
+          }
+          if (from < 5) {
+            await customStatement('''
+              CREATE TABLE IF NOT EXISTS recipes (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT NOT NULL,
+                servings REAL NOT NULL DEFAULT 1.0,
+                created_at INTEGER NOT NULL,
+                updated_at INTEGER NOT NULL,
+                last_used_at INTEGER,
+                favourite INTEGER NOT NULL DEFAULT 0,
+                kcal_per_serving REAL NOT NULL DEFAULT 0.0,
+                protein_per_serving REAL NOT NULL DEFAULT 0.0,
+                carbs_per_serving REAL NOT NULL DEFAULT 0.0,
+                fat_per_serving REAL NOT NULL DEFAULT 0.0
+              )
+            ''');
+            await customStatement('''
+              CREATE TABLE IF NOT EXISTS recipe_ingredients (
+                id TEXT NOT NULL PRIMARY KEY,
+                recipe_id TEXT NOT NULL REFERENCES recipes(id),
+                food_item_id TEXT REFERENCES food_items(id),
+                name TEXT NOT NULL,
+                grams REAL NOT NULL,
+                kcal_per100 REAL NOT NULL DEFAULT 0.0,
+                protein_per100 REAL NOT NULL DEFAULT 0.0,
+                carbs_per100 REAL NOT NULL DEFAULT 0.0,
+                fat_per100 REAL NOT NULL DEFAULT 0.0,
+                sort_order INTEGER NOT NULL DEFAULT 0
+              )
+            ''');
+            await customStatement(
+              'ALTER TABLE log_entries ADD COLUMN recipe_id TEXT',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe_id ON recipe_ingredients(recipe_id)',
+            );
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_log_entries_recipe_id ON log_entries(recipe_id)',
             );
           }
         },

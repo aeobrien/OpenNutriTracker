@@ -11,4 +11,6 @@ class NavigationOptions {
   static const imageFullScreenRoute = "imageFullScreen";
   static const quickAddRoute = "quickAdd";
   static const labelScanRoute = "labelScan";
+  static const recipeLogRoute = "recipeLog";
+  static const llmRecipeRoute = "llmRecipe";
 }

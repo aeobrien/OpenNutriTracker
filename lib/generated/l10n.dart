@@ -1358,10 +1358,10 @@ class S {
     return Intl.message('Serving', name: 'servingLabel', desc: '', args: []);
   }
 
-  /// `Per Serving`
+  /// `Per serving`
   String get perServingLabel {
     return Intl.message(
-      'Per Serving',
+      'Per serving',
       name: 'perServingLabel',
       desc: '',
       args: [],
@@ -3966,6 +3966,291 @@ class S {
       desc: '',
       args: [],
     );
+  }
+
+  /// `Recipes`
+  String get recipesLabel {
+    return Intl.message('Recipes', name: 'recipesLabel', desc: '', args: []);
+  }
+
+  /// `New Recipe`
+  String get newRecipeLabel {
+    return Intl.message(
+      'New Recipe',
+      name: 'newRecipeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recipe name`
+  String get recipeNameHint {
+    return Intl.message(
+      'Recipe name',
+      name: 'recipeNameHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Servings`
+  String get servingsLabel {
+    return Intl.message('Servings', name: 'servingsLabel', desc: '', args: []);
+  }
+
+  /// `Add Ingredient`
+  String get addIngredientLabel {
+    return Intl.message(
+      'Add Ingredient',
+      name: 'addIngredientLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Save Recipe`
+  String get saveRecipeLabel {
+    return Intl.message(
+      'Save Recipe',
+      name: 'saveRecipeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recipe saved`
+  String get recipeSavedLabel {
+    return Intl.message(
+      'Recipe saved',
+      name: 'recipeSavedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recipe deleted`
+  String get recipeDeletedLabel {
+    return Intl.message(
+      'Recipe deleted',
+      name: 'recipeDeletedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No recipes yet`
+  String get noRecipesLabel {
+    return Intl.message(
+      'No recipes yet',
+      name: 'noRecipesLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Edit Recipe`
+  String get editRecipeLabel {
+    return Intl.message(
+      'Edit Recipe',
+      name: 'editRecipeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete Recipe`
+  String get deleteRecipeLabel {
+    return Intl.message(
+      'Delete Recipe',
+      name: 'deleteRecipeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Delete this recipe? Past diary entries will be preserved.`
+  String get deleteRecipeConfirmLabel {
+    return Intl.message(
+      'Delete this recipe? Past diary entries will be preserved.',
+      name: 'deleteRecipeConfirmLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Ingredients`
+  String get ingredientsLabel {
+    return Intl.message(
+      'Ingredients',
+      name: 'ingredientsLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `g`
+  String get gramsShortLabel {
+    return Intl.message('g', name: 'gramsShortLabel', desc: '', args: []);
+  }
+
+  /// `Search foods...`
+  String get searchIngredientsHint {
+    return Intl.message(
+      'Search foods...',
+      name: 'searchIngredientsHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `No ingredients added`
+  String get noIngredientsLabel {
+    return Intl.message(
+      'No ingredients added',
+      name: 'noIngredientsLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Recipe logged`
+  String get recipeLoggedLabel {
+    return Intl.message(
+      'Recipe logged',
+      name: 'recipeLoggedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `{multiplier} servings`
+  String servingMultiplierLabel(Object multiplier) {
+    return Intl.message(
+      '$multiplier servings',
+      name: 'servingMultiplierLabel',
+      desc: '',
+      args: [multiplier],
+    );
+  }
+
+  /// `Create from text`
+  String get createFromTextLabel {
+    return Intl.message(
+      'Create from text',
+      name: 'createFromTextLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Import from URL`
+  String get createFromUrlLabel {
+    return Intl.message(
+      'Import from URL',
+      name: 'createFromUrlLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste ingredient list...`
+  String get pasteIngredientsHint {
+    return Intl.message(
+      'Paste ingredient list...',
+      name: 'pasteIngredientsHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Paste recipe URL...`
+  String get pasteUrlHint {
+    return Intl.message(
+      'Paste recipe URL...',
+      name: 'pasteUrlHint',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Parse`
+  String get parseLabel {
+    return Intl.message('Parse', name: 'parseLabel', desc: '', args: []);
+  }
+
+  /// `Import`
+  String get importLabel {
+    return Intl.message('Import', name: 'importLabel', desc: '', args: []);
+  }
+
+  /// `Parsing...`
+  String get parsingLabel {
+    return Intl.message('Parsing...', name: 'parsingLabel', desc: '', args: []);
+  }
+
+  /// `Matched`
+  String get resolvedLabel {
+    return Intl.message('Matched', name: 'resolvedLabel', desc: '', args: []);
+  }
+
+  /// `Suggested`
+  String get suggestedLabel {
+    return Intl.message(
+      'Suggested',
+      name: 'suggestedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not found`
+  String get unresolvedLabel {
+    return Intl.message(
+      'Not found',
+      name: 'unresolvedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Log Recipe`
+  String get logRecipeLabel {
+    return Intl.message(
+      'Log Recipe',
+      name: 'logRecipeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Enter manually`
+  String get manualEntryLabel {
+    return Intl.message(
+      'Enter manually',
+      name: 'manualEntryLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Nutrition per 100g`
+  String get manualNutritionPer100gLabel {
+    return Intl.message(
+      'Nutrition per 100g',
+      name: 'manualNutritionPer100gLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Confirm`
+  String get confirmLabel {
+    return Intl.message('Confirm', name: 'confirmLabel', desc: '', args: []);
+  }
+
+  /// `Scan`
+  String get scanLabel {
+    return Intl.message('Scan', name: 'scanLabel', desc: '', args: []);
   }
 }
 

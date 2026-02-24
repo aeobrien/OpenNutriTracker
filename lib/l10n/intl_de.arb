@@ -453,5 +453,46 @@
   "openAiApiKeyNotSet": "Nicht gesetzt",
   "claudeApiKeyLabel": "Claude API-Schlüssel",
   "claudeApiKeyConfigured": "Konfiguriert",
-  "claudeApiKeyNotSet": "Nicht gesetzt"
+  "claudeApiKeyNotSet": "Nicht gesetzt",
+
+  "recipesLabel": "Rezepte",
+  "newRecipeLabel": "Neues Rezept",
+  "recipeNameHint": "Rezeptname",
+  "servingsLabel": "Portionen",
+  "addIngredientLabel": "Zutat hinzufügen",
+  "perServingLabel": "Pro Portion",
+  "saveRecipeLabel": "Rezept speichern",
+  "recipeSavedLabel": "Rezept gespeichert",
+  "recipeDeletedLabel": "Rezept gelöscht",
+  "noRecipesLabel": "Noch keine Rezepte",
+  "editRecipeLabel": "Rezept bearbeiten",
+  "deleteRecipeLabel": "Rezept löschen",
+  "deleteRecipeConfirmLabel": "Dieses Rezept löschen? Vergangene Tagebucheinträge bleiben erhalten.",
+  "ingredientsLabel": "Zutaten",
+  "gramsShortLabel": "g",
+  "searchIngredientsHint": "Lebensmittel suchen...",
+  "noIngredientsLabel": "Keine Zutaten hinzugefügt",
+  "recipeLoggedLabel": "Rezept protokolliert",
+  "servingMultiplierLabel": "{multiplier} Portionen",
+  "@servingMultiplierLabel": {
+    "placeholders": {
+      "multiplier": {}
+    }
+  },
+  "createFromTextLabel": "Aus Text erstellen",
+  "createFromUrlLabel": "Von URL importieren",
+  "pasteIngredientsHint": "Zutatenliste einfügen...",
+  "pasteUrlHint": "Rezept-URL einfügen...",
+  "parseLabel": "Analysieren",
+  "importLabel": "Importieren",
+  "parsingLabel": "Analysiere...",
+  "resolvedLabel": "Gefunden",
+  "suggestedLabel": "Vorgeschlagen",
+  "unresolvedLabel": "Nicht gefunden",
+  "logRecipeLabel": "Rezept protokollieren",
+  "favouritesLabel": "Favoriten",
+  "manualEntryLabel": "Manuell eingeben",
+  "manualNutritionPer100gLabel": "Nährwerte pro 100g",
+  "confirmLabel": "Bestätigen",
+  "scanLabel": "Scannen"
 }

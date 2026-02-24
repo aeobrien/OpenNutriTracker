@@ -463,5 +463,46 @@
   "openAiApiKeyNotSet": "Not set",
   "claudeApiKeyLabel": "Claude API Key",
   "claudeApiKeyConfigured": "Configured",
-  "claudeApiKeyNotSet": "Not set"
+  "claudeApiKeyNotSet": "Not set",
+
+  "recipesLabel": "Recipes",
+  "newRecipeLabel": "New Recipe",
+  "recipeNameHint": "Recipe name",
+  "servingsLabel": "Servings",
+  "addIngredientLabel": "Add Ingredient",
+  "perServingLabel": "Per serving",
+  "saveRecipeLabel": "Save Recipe",
+  "recipeSavedLabel": "Recipe saved",
+  "recipeDeletedLabel": "Recipe deleted",
+  "noRecipesLabel": "No recipes yet",
+  "editRecipeLabel": "Edit Recipe",
+  "deleteRecipeLabel": "Delete Recipe",
+  "deleteRecipeConfirmLabel": "Delete this recipe? Past diary entries will be preserved.",
+  "ingredientsLabel": "Ingredients",
+  "gramsShortLabel": "g",
+  "searchIngredientsHint": "Search foods...",
+  "noIngredientsLabel": "No ingredients added",
+  "recipeLoggedLabel": "Recipe logged",
+  "servingMultiplierLabel": "{multiplier} servings",
+  "@servingMultiplierLabel": {
+    "placeholders": {
+      "multiplier": {}
+    }
+  },
+  "createFromTextLabel": "Create from text",
+  "createFromUrlLabel": "Import from URL",
+  "pasteIngredientsHint": "Paste ingredient list...",
+  "pasteUrlHint": "Paste recipe URL...",
+  "parseLabel": "Parse",
+  "importLabel": "Import",
+  "parsingLabel": "Parsing...",
+  "resolvedLabel": "Matched",
+  "suggestedLabel": "Suggested",
+  "unresolvedLabel": "Not found",
+  "logRecipeLabel": "Log Recipe",
+  "favouritesLabel": "Favourites",
+  "manualEntryLabel": "Enter manually",
+  "manualNutritionPer100gLabel": "Nutrition per 100g",
+  "confirmLabel": "Confirm",
+  "scanLabel": "Scan"
 }

@@ -15,6 +15,38 @@ class IntakeRepository {
 
   IntakeRepository(this._logEntryDao, this._foodItemDao);
 
+  /// Save a food item to the local database without creating a log entry.
+  /// Used by label scan in ingredient mode so scanned items are available
+  /// for future searches.
+  Future<String> saveFoodItemOnly(MealEntity meal) async {
+    final foodItemId = meal.code ?? 'custom_${DateTime.now().millisecondsSinceEpoch}';
+    await _foodItemDao.upsertFoodItem(FoodItemsCompanion(
+      id: Value(foodItemId),
+      source: Value(meal.source.name),
+      barcode: Value(meal.code),
+      name: Value(meal.name),
+      brand: Value(meal.brands),
+      mealQuantity: Value(meal.mealQuantity),
+      mealUnit: Value(meal.mealUnit),
+      servingQuantity: Value(meal.servingQuantity),
+      servingUnit: Value(meal.servingUnit),
+      servingSize: Value(meal.servingSize),
+      kcalPer100: Value(meal.nutriments.energyKcal100),
+      proteinPer100: Value(meal.nutriments.proteins100),
+      carbsPer100: Value(meal.nutriments.carbohydrates100),
+      fatPer100: Value(meal.nutriments.fat100),
+      fibrePer100: Value(meal.nutriments.fiber100),
+      sugarPer100: Value(meal.nutriments.sugars100),
+      saturatedFatPer100: Value(meal.nutriments.saturatedFat100),
+      thumbnailImageUrl: Value(meal.thumbnailImageUrl),
+      mainImageUrl: Value(meal.mainImageUrl),
+      url: Value(meal.url),
+      lastUsedAt: Value(DateTime.now().millisecondsSinceEpoch),
+    ));
+    _log.fine('Saved food item only: $foodItemId (${meal.name})');
+    return foodItemId;
+  }
+
   Future<void> addIntake(IntakeEntity intakeEntity) async {
     _log.fine('Adding intake: ${intakeEntity.id}');
     final meal = intakeEntity.meal;
@@ -99,6 +131,55 @@ class IntakeRepository {
       dateTime: dateTime,
       entryType: 'quickAdd',
       quickAddLabel: label,
+      snapshotKcal: kcal,
+      snapshotProtein: protein,
+      snapshotCarbs: carbs,
+      snapshotFat: fat,
+    );
+  }
+
+  Future<IntakeEntity> addRecipeIntake({
+    required String id,
+    required String recipeId,
+    required String recipeName,
+    required double multiplier,
+    required double kcal,
+    required double protein,
+    required double carbs,
+    required double fat,
+    required String mealSlot,
+    required DateTime dateTime,
+  }) async {
+    _log.fine('Adding recipe intake: $id, recipe=$recipeId, multiplier=$multiplier');
+
+    await _logEntryDao.insertEntry(LogEntriesCompanion(
+      id: Value(id),
+      timestamp: Value(dateTime.millisecondsSinceEpoch),
+      mealSlot: Value(mealSlot),
+      foodItemId: const Value(null),
+      amount: Value(multiplier),
+      unit: const Value('serving'),
+      snapshotKcal: Value(kcal),
+      snapshotProtein: Value(protein),
+      snapshotCarbs: Value(carbs),
+      snapshotFat: Value(fat),
+      entryType: const Value('recipe'),
+      quickAddLabel: Value(recipeName),
+      recipeId: Value(recipeId),
+    ));
+
+    return IntakeEntity(
+      id: id,
+      unit: 'serving',
+      amount: multiplier,
+      type: IntakeTypeEntity.values.firstWhere(
+          (e) => e.name == mealSlot,
+          orElse: () => IntakeTypeEntity.snack),
+      meal: MealEntity.empty(),
+      dateTime: dateTime,
+      entryType: 'recipe',
+      quickAddLabel: recipeName,
+      recipeId: recipeId,
       snapshotKcal: kcal,
       snapshotProtein: protein,
       snapshotCarbs: carbs,

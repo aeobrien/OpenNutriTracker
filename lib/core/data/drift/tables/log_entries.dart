@@ -16,6 +16,7 @@ class LogEntries extends Table {
 
   TextColumn get entryType => text().withDefault(const Constant('food'))();
   TextColumn get quickAddLabel => text().nullable()();
+  TextColumn get recipeId => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -13,6 +13,7 @@ class IntakeEntity extends Equatable {
   final DateTime dateTime;
   final String entryType;
   final String? quickAddLabel;
+  final String? recipeId;
 
   /// Snapshot values from the log entry row. For quick-add entries (amount=1),
   /// these are the user-provided totals. For food entries, these are computed
@@ -33,12 +34,14 @@ class IntakeEntity extends Equatable {
       required this.dateTime,
       this.entryType = 'food',
       this.quickAddLabel,
+      this.recipeId,
       this.snapshotKcal = 0,
       this.snapshotProtein = 0,
       this.snapshotCarbs = 0,
       this.snapshotFat = 0});
 
   bool get isQuickAdd => entryType == 'quickAdd';
+  bool get isRecipe => entryType == 'recipe';
 
   factory IntakeEntity.fromLogEntry(LogEntryWithFoodItem row) {
     final entry = row.logEntry;
@@ -57,6 +60,7 @@ class IntakeEntity extends Equatable {
             DateTime.fromMillisecondsSinceEpoch(entry.timestamp),
         entryType: entry.entryType,
         quickAddLabel: entry.quickAddLabel,
+        recipeId: entry.recipeId,
         snapshotKcal: entry.snapshotKcal,
         snapshotProtein: entry.snapshotProtein,
         snapshotCarbs: entry.snapshotCarbs,
@@ -75,22 +79,24 @@ class IntakeEntity extends Equatable {
 
   /// For quick-add entries, use snapshot values directly (amount is always 1).
   /// For food entries, compute from the meal's nutriments.
-  double get totalKcal => isQuickAdd
+  bool get _usesSnapshot => isQuickAdd || isRecipe;
+
+  double get totalKcal => _usesSnapshot
       ? snapshotKcal
       : amount * (meal.nutriments.energyPerUnit ?? 0);
 
-  double get totalCarbsGram => isQuickAdd
+  double get totalCarbsGram => _usesSnapshot
       ? snapshotCarbs
       : amount * (meal.nutriments.carbohydratesPerUnit ?? 0);
 
-  double get totalFatsGram => isQuickAdd
+  double get totalFatsGram => _usesSnapshot
       ? snapshotFat
       : amount * (meal.nutriments.fatPerUnit ?? 0);
 
-  double get totalProteinsGram => isQuickAdd
+  double get totalProteinsGram => _usesSnapshot
       ? snapshotProtein
       : amount * (meal.nutriments.proteinsPerUnit ?? 0);
 
   @override
-  List<Object?> get props => [id, unit, amount, type, dateTime, entryType];
+  List<Object?> get props => [id, unit, amount, type, dateTime, entryType, recipeId];
 }

@@ -67,7 +67,12 @@ class IntakeCard extends StatelessWidget {
                             child: Icon(Icons.bolt,
                                 size: 36,
                                 color: Theme.of(context).colorScheme.primary))
-                        : intake.meal.mainImageUrl != null
+                        : intake.isRecipe
+                            ? Center(
+                                child: Icon(Icons.restaurant_menu,
+                                    size: 36,
+                                    color: Theme.of(context).colorScheme.primary))
+                            : intake.meal.mainImageUrl != null
                             ? CachedNetworkImage(
                                 cacheManager: locator<CacheManager>(),
                                 imageUrl: intake.meal.mainImageUrl ?? "",
@@ -118,8 +123,8 @@ class IntakeCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             AutoSizeText(
-                              intake.isQuickAdd
-                                  ? (intake.quickAddLabel ?? 'Quick add')
+                              intake.isQuickAdd || intake.isRecipe
+                                  ? (intake.quickAddLabel ?? (intake.isRecipe ? 'Recipe' : 'Quick add'))
                                   : (intake.meal.name ?? "?"),
                               style: Theme.of(context)
                                   .textTheme
@@ -132,7 +137,7 @@ class IntakeCard extends StatelessWidget {
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            if (!intake.isQuickAdd)
+                            if (!intake.isQuickAdd && !intake.isRecipe)
                               MealValueUnitText(
                                 value: intake.amount,
                                 meal: intake.meal,

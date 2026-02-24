@@ -5,6 +5,7 @@ import 'package:opennutritracker/core/presentation/widgets/home_appbar.dart';
 import 'package:opennutritracker/features/home/home_page.dart';
 import 'package:opennutritracker/core/presentation/widgets/main_appbar.dart';
 import 'package:opennutritracker/features/profile/profile_page.dart';
+import 'package:opennutritracker/features/recipes/recipes_page.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class MainScreen extends StatefulWidget {
@@ -25,11 +26,15 @@ class _MainScreenState extends State<MainScreen> {
     _bodyPages = [
       const HomePage(),
       const DiaryPage(),
+      const RecipesPage(),
       const ProfilePage(),
     ];
     _appbarPages = [
       const HomeAppbar(),
       MainAppbar(title: S.of(context).diaryLabel, iconData: Icons.book),
+      MainAppbar(
+          title: S.of(context).recipesLabel,
+          iconData: Icons.restaurant_menu),
       MainAppbar(
           title: S.of(context).profileLabel, iconData: Icons.account_circle)
     ];
@@ -47,7 +52,9 @@ class _MainScreenState extends State<MainScreen> {
               tooltip: S.of(context).addLabel,
               child: const Icon(Icons.add),
             )
-          : null,
+          : _selectedPageIndex == 2
+              ? const RecipesPageFab()
+              : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedPageIndex,
         onDestinationSelected: _setPage,
@@ -64,6 +71,11 @@ class _MainScreenState extends State<MainScreen> {
               label: S.of(context).diaryLabel),
           NavigationDestination(
               icon: _selectedPageIndex == 2
+                  ? const Icon(Icons.restaurant_menu)
+                  : const Icon(Icons.restaurant_menu_outlined),
+              label: S.of(context).recipesLabel),
+          NavigationDestination(
+              icon: _selectedPageIndex == 3
                   ? const Icon(Icons.account_circle)
                   : const Icon(Icons.account_circle_outlined),
               label: S.of(context).profileLabel)

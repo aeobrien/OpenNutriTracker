@@ -19,6 +19,8 @@ import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_scree
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen.dart';
+import 'package:opennutritracker/features/recipes/presentation/recipe_log_screen.dart';
+import 'package:opennutritracker/features/recipes/presentation/llm_recipe_screen.dart';
 import 'package:opennutritracker/features/scanner/scanner_screen.dart';
 import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/features/settings/settings_screen.dart';
@@ -93,6 +95,10 @@ class OpenNutriTrackerApp extends StatelessWidget {
             const QuickAddScreen(),
         NavigationOptions.labelScanRoute: (context) =>
             const LabelScanScreen(),
+        NavigationOptions.recipeLogRoute: (context) =>
+            const RecipeLogScreen(),
+        NavigationOptions.llmRecipeRoute: (context) =>
+            const LlmRecipeScreen(),
       },
     );
   }

@@ -495,8 +495,32 @@ class _LabelScanScreenState extends State<LabelScanScreen> {
     try {
       final args = ModalRoute.of(context)?.settings.arguments
           as LabelScanScreenArguments?;
+      final isIngredientMode = args?.ingredientMode ?? false;
       final day = args?.day ?? DateTime.now();
       final meal = state.meal;
+
+      // In ingredient mode: save food item to DB (for future local lookup)
+      // then return nutrition data without creating a log entry.
+      if (isIngredientMode) {
+        final intakeRepo = locator<IntakeRepository>();
+        // Upsert the food item so it's available locally going forward
+        final foodItemId = await intakeRepo.saveFoodItemOnly(meal);
+
+        _log.fine('Label scan ingredient saved: ${meal.name}');
+
+        if (mounted) {
+          Navigator.of(context).pop(LabelScanIngredientResult(
+            name: meal.name ?? 'Unknown',
+            foodItemId: foodItemId,
+            kcalPer100: meal.nutriments.energyKcal100 ?? 0,
+            proteinPer100: meal.nutriments.proteins100 ?? 0,
+            carbsPer100: meal.nutriments.carbohydrates100 ?? 0,
+            fatPer100: meal.nutriments.fat100 ?? 0,
+          ));
+        }
+        return;
+      }
+
       final rawAmount =
           double.tryParse(_amountController.text.replaceAll(',', '.')) ?? 100;
 

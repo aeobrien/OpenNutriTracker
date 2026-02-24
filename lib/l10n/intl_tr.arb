@@ -460,5 +460,46 @@
   "openAiApiKeyNotSet": "Ayarlanmadı",
   "claudeApiKeyLabel": "Claude API Anahtarı",
   "claudeApiKeyConfigured": "Yapılandırıldı",
-  "claudeApiKeyNotSet": "Ayarlanmadı"
+  "claudeApiKeyNotSet": "Ayarlanmadı",
+
+  "recipesLabel": "Tarifler",
+  "newRecipeLabel": "Yeni Tarif",
+  "recipeNameHint": "Tarif adı",
+  "servingsLabel": "Porsiyon",
+  "addIngredientLabel": "Malzeme ekle",
+  "perServingLabel": "Porsiyon başına",
+  "saveRecipeLabel": "Tarifi kaydet",
+  "recipeSavedLabel": "Tarif kaydedildi",
+  "recipeDeletedLabel": "Tarif silindi",
+  "noRecipesLabel": "Henüz tarif yok",
+  "editRecipeLabel": "Tarifi düzenle",
+  "deleteRecipeLabel": "Tarifi sil",
+  "deleteRecipeConfirmLabel": "Bu tarif silinsin mi? Geçmiş günlük kayıtları korunacaktır.",
+  "ingredientsLabel": "Malzemeler",
+  "gramsShortLabel": "g",
+  "searchIngredientsHint": "Yiyecek ara...",
+  "noIngredientsLabel": "Malzeme eklenmedi",
+  "recipeLoggedLabel": "Tarif kaydedildi",
+  "servingMultiplierLabel": "{multiplier} porsiyon",
+  "@servingMultiplierLabel": {
+    "placeholders": {
+      "multiplier": {}
+    }
+  },
+  "createFromTextLabel": "Metinden oluştur",
+  "createFromUrlLabel": "URL'den içe aktar",
+  "pasteIngredientsHint": "Malzeme listesini yapıştır...",
+  "pasteUrlHint": "Tarif URL'sini yapıştır...",
+  "parseLabel": "Ayrıştır",
+  "importLabel": "İçe Aktar",
+  "parsingLabel": "Ayrıştırılıyor...",
+  "resolvedLabel": "Eşleşti",
+  "suggestedLabel": "Önerilen",
+  "unresolvedLabel": "Bulunamadı",
+  "logRecipeLabel": "Tarifi kaydet",
+  "favouritesLabel": "Favoriler",
+  "manualEntryLabel": "Manuel giriş",
+  "manualNutritionPer100gLabel": "100g başına besin değeri",
+  "confirmLabel": "Onayla",
+  "scanLabel": "Tara"
 }
