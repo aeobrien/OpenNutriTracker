@@ -19,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:opennutritracker/features/settings/presentation/health_debug_screen.dart';
 import 'package:opennutritracker/features/settings/presentation/widgets/calculations_dialog.dart';
+import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -81,6 +82,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   leading: const Icon(Icons.import_export),
                   title: Text(S.of(context).exportImportLabel),
                   onTap: () => _showExportImportDialog(context),
+                ),
+                _ApiKeyTile(
+                  icon: Icons.image_search_outlined,
+                  label: S.of(context).openAiApiKeyLabel,
+                  configuredText: S.of(context).openAiApiKeyConfigured,
+                  notSetText: S.of(context).openAiApiKeyNotSet,
+                  hintText: 'sk-...',
+                  getKey: () => SecureAppStorageProvider().getOpenAiApiKey(),
+                  setKey: (k) => SecureAppStorageProvider().setOpenAiApiKey(k),
+                  deleteKey: () => SecureAppStorageProvider().deleteOpenAiApiKey(),
+                  hasKey: () => SecureAppStorageProvider().hasOpenAiApiKey(),
+                ),
+                _ApiKeyTile(
+                  icon: Icons.smart_toy_outlined,
+                  label: S.of(context).claudeApiKeyLabel,
+                  configuredText: S.of(context).claudeApiKeyConfigured,
+                  notSetText: S.of(context).claudeApiKeyNotSet,
+                  hintText: 'sk-ant-...',
+                  getKey: () => SecureAppStorageProvider().getClaudeApiKey(),
+                  setKey: (k) => SecureAppStorageProvider().setClaudeApiKey(k),
+                  deleteKey: () => SecureAppStorageProvider().deleteClaudeApiKey(),
+                  hasKey: () => SecureAppStorageProvider().hasClaudeApiKey(),
                 ),
                 ListTile(
                   leading: const Icon(Icons.description_outlined),
@@ -412,6 +435,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(S.of(context).errorOpeningBrowser)));
       }
+    }
+  }
+}
+
+class _ApiKeyTile extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final String configuredText;
+  final String notSetText;
+  final String hintText;
+  final Future<String?> Function() getKey;
+  final Future<void> Function(String) setKey;
+  final Future<void> Function() deleteKey;
+  final Future<bool> Function() hasKey;
+
+  const _ApiKeyTile({
+    required this.icon,
+    required this.label,
+    required this.configuredText,
+    required this.notSetText,
+    required this.hintText,
+    required this.getKey,
+    required this.setKey,
+    required this.deleteKey,
+    required this.hasKey,
+  });
+
+  @override
+  State<_ApiKeyTile> createState() => _ApiKeyTileState();
+}
+
+class _ApiKeyTileState extends State<_ApiKeyTile> {
+  bool _hasKey = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkKey();
+  }
+
+  Future<void> _checkKey() async {
+    final has = await widget.hasKey();
+    if (mounted) setState(() => _hasKey = has);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(widget.icon),
+      title: Text(widget.label),
+      subtitle: Text(_hasKey ? widget.configuredText : widget.notSetText),
+      onTap: () => _showApiKeyDialog(context),
+    );
+  }
+
+  void _showApiKeyDialog(BuildContext context) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String?>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(widget.label),
+          content: TextField(
+            controller: controller,
+            obscureText: true,
+            decoration: InputDecoration(
+              hintText: widget.hintText,
+              border: const OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            if (_hasKey)
+              TextButton(
+                onPressed: () => Navigator.of(context).pop('__clear__'),
+                child: const Text('Clear'),
+              ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(S.of(context).dialogCancelLabel),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: Text(S.of(context).buttonSaveLabel),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == '__clear__') {
+      await widget.deleteKey();
+      _checkKey();
+    } else if (result != null && result.trim().isNotEmpty) {
+      await widget.setKey(result.trim());
+      _checkKey();
     }
   }
 }

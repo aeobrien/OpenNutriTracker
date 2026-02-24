@@ -3797,6 +3797,176 @@ class S {
       args: [],
     );
   }
+
+  /// `Scan Label`
+  String get scanLabelTitle {
+    return Intl.message(
+      'Scan Label',
+      name: 'scanLabelTitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Photograph a nutrition label`
+  String get scanLabelSubtitle {
+    return Intl.message(
+      'Photograph a nutrition label',
+      name: 'scanLabelSubtitle',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Analyzing label...`
+  String get analyzingLabel {
+    return Intl.message(
+      'Analyzing label...',
+      name: 'analyzingLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Saved`
+  String get labelScanSaved {
+    return Intl.message('Saved', name: 'labelScanSaved', desc: '', args: []);
+  }
+
+  /// `Values look consistent`
+  String get valuesLookConsistent {
+    return Intl.message(
+      'Values look consistent',
+      name: 'valuesLookConsistent',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Values may need review ({deviation}% off)`
+  String valuesMayNeedReview(Object deviation) {
+    return Intl.message(
+      'Values may need review ($deviation% off)',
+      name: 'valuesMayNeedReview',
+      desc: '',
+      args: [deviation],
+    );
+  }
+
+  /// `Please check these values ({deviation}% off)`
+  String pleaseCheckValues(Object deviation) {
+    return Intl.message(
+      'Please check these values ($deviation% off)',
+      name: 'pleaseCheckValues',
+      desc: '',
+      args: [deviation],
+    );
+  }
+
+  /// `Confidence: {level}`
+  String confidenceLabel(Object level) {
+    return Intl.message(
+      'Confidence: $level',
+      name: 'confidenceLabel',
+      desc: '',
+      args: [level],
+    );
+  }
+
+  /// `OpenAI API key not set`
+  String get noApiKeyError {
+    return Intl.message(
+      'OpenAI API key not set',
+      name: 'noApiKeyError',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Go to Settings`
+  String get goToSettings {
+    return Intl.message(
+      'Go to Settings',
+      name: 'goToSettings',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Take Photo`
+  String get takePhoto {
+    return Intl.message('Take Photo', name: 'takePhoto', desc: '', args: []);
+  }
+
+  /// `Scan label with AI`
+  String get scanLabelWithAi {
+    return Intl.message(
+      'Scan label with AI',
+      name: 'scanLabelWithAi',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `OpenAI API Key`
+  String get openAiApiKeyLabel {
+    return Intl.message(
+      'OpenAI API Key',
+      name: 'openAiApiKeyLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configured`
+  String get openAiApiKeyConfigured {
+    return Intl.message(
+      'Configured',
+      name: 'openAiApiKeyConfigured',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not set`
+  String get openAiApiKeyNotSet {
+    return Intl.message(
+      'Not set',
+      name: 'openAiApiKeyNotSet',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Claude API Key`
+  String get claudeApiKeyLabel {
+    return Intl.message(
+      'Claude API Key',
+      name: 'claudeApiKeyLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Configured`
+  String get claudeApiKeyConfigured {
+    return Intl.message(
+      'Configured',
+      name: 'claudeApiKeyConfigured',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not set`
+  String get claudeApiKeyNotSet {
+    return Intl.message(
+      'Not set',
+      name: 'claudeApiKeyNotSet',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

@@ -420,5 +420,38 @@
   "quickAddSubtitle": "Nur Kalorien eingeben",
   "quickAddCaloriesHint": "Kalorien",
   "quickAddLabelHint": "Bezeichnung (optional)",
-  "quickAddSaved": "Schnell-Eintrag gespeichert"
+  "quickAddSaved": "Schnell-Eintrag gespeichert",
+  "scanLabelTitle": "Etikett scannen",
+  "scanLabelSubtitle": "Nährwertetikett fotografieren",
+  "analyzingLabel": "Etikett wird analysiert...",
+  "labelScanSaved": "Gespeichert",
+  "valuesLookConsistent": "Werte sehen konsistent aus",
+  "valuesMayNeedReview": "Werte sollten überprüft werden ({deviation}% Abweichung)",
+  "@valuesMayNeedReview": {
+    "placeholders": {
+      "deviation": {}
+    }
+  },
+  "pleaseCheckValues": "Bitte überprüfen Sie diese Werte ({deviation}% Abweichung)",
+  "@pleaseCheckValues": {
+    "placeholders": {
+      "deviation": {}
+    }
+  },
+  "confidenceLabel": "Konfidenz: {level}",
+  "@confidenceLabel": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "noApiKeyError": "OpenAI API-Schlüssel nicht gesetzt",
+  "goToSettings": "Zu Einstellungen",
+  "takePhoto": "Foto aufnehmen",
+  "scanLabelWithAi": "Etikett mit KI scannen",
+  "openAiApiKeyLabel": "OpenAI API-Schlüssel",
+  "openAiApiKeyConfigured": "Konfiguriert",
+  "openAiApiKeyNotSet": "Nicht gesetzt",
+  "claudeApiKeyLabel": "Claude API-Schlüssel",
+  "claudeApiKeyConfigured": "Konfiguriert",
+  "claudeApiKeyNotSet": "Nicht gesetzt"
 }

@@ -25,15 +25,22 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m1(pctCarbs, pctFats, pctProteins) =>
       "${pctCarbs}% carbs, ${pctFats}% fats, ${pctProteins}% proteins";
 
-  static String m2(time) => "updated ${time} ago";
+  static String m2(level) => "Confidence: ${level}";
 
-  static String m3(riskValue) => "Risk of comorbidities: ${riskValue}";
+  static String m3(time) => "updated ${time} ago";
 
-  static String m4(amount) => "This week: ${amount} kcal over target";
+  static String m4(riskValue) => "Risk of comorbidities: ${riskValue}";
 
-  static String m5(amount) => "This week: ${amount} kcal under target";
+  static String m5(deviation) =>
+      "Please check these values (${deviation}% off)";
 
-  static String m6(age) => "${age} years";
+  static String m6(deviation) => "Values may need review (${deviation}% off)";
+
+  static String m7(amount) => "This week: ${amount} kcal over target";
+
+  static String m8(amount) => "This week: ${amount} kcal under target";
+
+  static String m9(age) => "${age} years";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -65,6 +72,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageLabel": MessageLookupByLibrary.simpleMessage("Age"),
     "allItemsLabel": MessageLookupByLibrary.simpleMessage("All"),
     "alphaVersionName": MessageLookupByLibrary.simpleMessage("[Alpha]"),
+    "analyzingLabel": MessageLookupByLibrary.simpleMessage(
+      "Analyzing label...",
+    ),
     "appDescription": MessageLookupByLibrary.simpleMessage(
       "OpenNutriTracker is a free and open-source calorie and nutrient tracker that respects your privacy.",
     ),
@@ -107,7 +117,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "chooseWeightGoalLabel": MessageLookupByLibrary.simpleMessage(
       "Choose Weight Goal",
     ),
+    "claudeApiKeyConfigured": MessageLookupByLibrary.simpleMessage(
+      "Configured",
+    ),
+    "claudeApiKeyLabel": MessageLookupByLibrary.simpleMessage("Claude API Key"),
+    "claudeApiKeyNotSet": MessageLookupByLibrary.simpleMessage("Not set"),
     "cmLabel": MessageLookupByLibrary.simpleMessage("cm"),
+    "confidenceLabel": m2,
     "copyDialogTitle": MessageLookupByLibrary.simpleMessage(
       "Which meal type do you want to copy to?",
     ),
@@ -198,6 +214,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "genderFemaleLabel": MessageLookupByLibrary.simpleMessage("♀ female"),
     "genderLabel": MessageLookupByLibrary.simpleMessage("Gender"),
     "genderMaleLabel": MessageLookupByLibrary.simpleMessage("♂ male"),
+    "goToSettings": MessageLookupByLibrary.simpleMessage("Go to Settings"),
     "goalGainWeight": MessageLookupByLibrary.simpleMessage("Gain Weight"),
     "goalLabel": MessageLookupByLibrary.simpleMessage("Goal"),
     "goalLoseWeight": MessageLookupByLibrary.simpleMessage("Lose Weight"),
@@ -229,7 +246,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "kcalLabel": MessageLookupByLibrary.simpleMessage("kcal"),
     "kcalLeftLabel": MessageLookupByLibrary.simpleMessage("kcal left"),
     "kgLabel": MessageLookupByLibrary.simpleMessage("kg"),
-    "lastUpdatedLabel": m2,
+    "labelScanSaved": MessageLookupByLibrary.simpleMessage("Saved"),
+    "lastUpdatedLabel": m3,
     "lbsLabel": MessageLookupByLibrary.simpleMessage("lbs"),
     "lunchExample": MessageLookupByLibrary.simpleMessage(
       "e.g. pizza, salad, rice ...",
@@ -257,6 +275,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noActivityRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "No activity recently added",
+    ),
+    "noApiKeyError": MessageLookupByLibrary.simpleMessage(
+      "OpenAI API key not set",
     ),
     "noMealsRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "No meals recently added",
@@ -288,7 +309,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "nutritionalStatusRiskIncreased": MessageLookupByLibrary.simpleMessage(
       "Increased",
     ),
-    "nutritionalStatusRiskLabel": m3,
+    "nutritionalStatusRiskLabel": m4,
     "nutritionalStatusRiskLow": MessageLookupByLibrary.simpleMessage(
       "Low \n(but risk of other \nclinical problems increased)",
     ),
@@ -368,6 +389,11 @@ class MessageLookup extends MessageLookupByLibrary {
     "onboardingYourMacrosGoalLabel": MessageLookupByLibrary.simpleMessage(
       "Your macronutrient goals:",
     ),
+    "openAiApiKeyConfigured": MessageLookupByLibrary.simpleMessage(
+      "Configured",
+    ),
+    "openAiApiKeyLabel": MessageLookupByLibrary.simpleMessage("OpenAI API Key"),
+    "openAiApiKeyNotSet": MessageLookupByLibrary.simpleMessage("Not set"),
     "overTargetLabel": MessageLookupByLibrary.simpleMessage("over target"),
     "ozUnit": MessageLookupByLibrary.simpleMessage("oz"),
     "paAmericanFootballGeneral": MessageLookupByLibrary.simpleMessage(
@@ -731,6 +757,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "palVeryActiveLabel": MessageLookupByLibrary.simpleMessage("Very Active"),
     "per100gmlLabel": MessageLookupByLibrary.simpleMessage("Per 100g/ml"),
     "perServingLabel": MessageLookupByLibrary.simpleMessage("Per Serving"),
+    "pleaseCheckValues": m5,
     "privacyPolicyLabel": MessageLookupByLibrary.simpleMessage(
       "Privacy policy",
     ),
@@ -755,6 +782,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "retryLabel": MessageLookupByLibrary.simpleMessage("Retry"),
     "saturatedFatLabel": MessageLookupByLibrary.simpleMessage("saturated fat"),
+    "scanLabelSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Photograph a nutrition label",
+    ),
+    "scanLabelTitle": MessageLookupByLibrary.simpleMessage("Scan Label"),
+    "scanLabelWithAi": MessageLookupByLibrary.simpleMessage(
+      "Scan label with AI",
+    ),
     "scanProductLabel": MessageLookupByLibrary.simpleMessage("Scan Product"),
     "searchDefaultLabel": MessageLookupByLibrary.simpleMessage(
       "Please enter a search word",
@@ -829,11 +863,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "snackLabel": MessageLookupByLibrary.simpleMessage("Snack"),
     "sugarLabel": MessageLookupByLibrary.simpleMessage("sugar"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("supplied"),
+    "takePhoto": MessageLookupByLibrary.simpleMessage("Take Photo"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Undo"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Unit"),
-    "weeklyOverLabel": m4,
-    "weeklyUnderLabel": m5,
+    "valuesLookConsistent": MessageLookupByLibrary.simpleMessage(
+      "Values look consistent",
+    ),
+    "valuesMayNeedReview": m6,
+    "weeklyOverLabel": m7,
+    "weeklyUnderLabel": m8,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Weight"),
-    "yearsLabel": m6,
+    "yearsLabel": m9,
   };
 }

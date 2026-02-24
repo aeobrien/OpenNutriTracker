@@ -8,6 +8,7 @@ import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
+import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen_arguments.dart';
 import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/features/scanner/presentation/scanner_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -82,6 +83,12 @@ class _ScannerScreenState extends State<ScannerScreen> {
                       onPressed: _onSearchByNamePressed,
                       icon: const Icon(Icons.search),
                       label: Text(S.of(context).searchLabel),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: () => _onScanLabelPressed(),
+                      icon: const Icon(Icons.smart_toy_outlined),
+                      label: Text(S.of(context).scanLabelWithAi),
                     ),
                   ],
                 ),
@@ -158,6 +165,16 @@ class _ScannerScreenState extends State<ScannerScreen> {
       case IntakeTypeEntity.snack:
         return AddMealType.snackType;
     }
+  }
+
+  void _onScanLabelPressed() {
+    Navigator.of(context).pushReplacementNamed(
+      NavigationOptions.labelScanRoute,
+      arguments: LabelScanScreenArguments(
+        day: _day,
+        intakeType: _intakeTypeEntity,
+      ),
+    );
   }
 
   void _onRefreshButtonPressed() {

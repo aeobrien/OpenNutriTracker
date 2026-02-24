@@ -57,6 +57,9 @@ import 'package:opennutritracker/features/onboarding/presentation/bloc/onboardin
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:opennutritracker/features/scanner/domain/usecase/search_product_by_barcode_usecase.dart';
 import 'package:opennutritracker/features/scanner/presentation/scanner_bloc.dart';
+import 'package:opennutritracker/features/label_scan/data/data_source/openai_data_source.dart';
+import 'package:opennutritracker/features/label_scan/domain/usecase/extract_nutrition_usecase.dart';
+import 'package:opennutritracker/features/label_scan/presentation/bloc/label_scan_bloc.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/export_data_usecase.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/import_data_usecase.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/export_import_bloc.dart';
@@ -206,6 +209,13 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<OFFDataSource>(() => OFFDataSource());
   locator.registerLazySingleton<FDCDataSource>(() => FDCDataSource());
   locator.registerLazySingleton<HealthDataSource>(() => HealthDataSource());
+  locator.registerLazySingleton<OpenAiDataSource>(() => OpenAiDataSource());
+
+  // Label scan
+  locator.registerLazySingleton<ExtractNutritionUsecase>(
+      () => ExtractNutritionUsecase(locator(), secureAppStorageProvider));
+  locator.registerFactory<LabelScanBloc>(
+      () => LabelScanBloc(locator()));
 
   // Initialize config if needed
   await _initializeConfig(locator());

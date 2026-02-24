@@ -25,15 +25,23 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m1(pctCarbs, pctFats, pctProteins) =>
       "%${pctCarbs} karbonhidrat, %${pctFats} yağ, %${pctProteins} protein";
 
-  static String m2(time) => "${time} önce güncellendi";
+  static String m2(level) => "Güven: ${level}";
 
-  static String m3(riskValue) => "Eşlik eden hastalık riski: ${riskValue}";
+  static String m3(time) => "${time} önce güncellendi";
 
-  static String m4(amount) => "This week: ${amount} kcal over target";
+  static String m4(riskValue) => "Eşlik eden hastalık riski: ${riskValue}";
 
-  static String m5(amount) => "This week: ${amount} kcal under target";
+  static String m5(deviation) =>
+      "Lütfen bu değerleri kontrol edin (${deviation}% sapma)";
 
-  static String m6(age) => "${age} yıl";
+  static String m6(deviation) =>
+      "Değerler inceleme gerektirebilir (${deviation}% sapma)";
+
+  static String m7(amount) => "This week: ${amount} kcal over target";
+
+  static String m8(amount) => "This week: ${amount} kcal under target";
+
+  static String m9(age) => "${age} yıl";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -65,6 +73,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageLabel": MessageLookupByLibrary.simpleMessage("Yaş"),
     "allItemsLabel": MessageLookupByLibrary.simpleMessage("Tümü"),
     "alphaVersionName": MessageLookupByLibrary.simpleMessage("[Alpha]"),
+    "analyzingLabel": MessageLookupByLibrary.simpleMessage(
+      "Etiket analiz ediliyor...",
+    ),
     "appDescription": MessageLookupByLibrary.simpleMessage(
       "OpenNutriTracker, gizliliğinize saygı duyan ücretsiz ve açık kaynaklı bir kalori ve besin takipçisidir.",
     ),
@@ -107,7 +118,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "chooseWeightGoalLabel": MessageLookupByLibrary.simpleMessage(
       "Kilo Hedefini Seçin",
     ),
+    "claudeApiKeyConfigured": MessageLookupByLibrary.simpleMessage(
+      "Yapılandırıldı",
+    ),
+    "claudeApiKeyLabel": MessageLookupByLibrary.simpleMessage(
+      "Claude API Anahtarı",
+    ),
+    "claudeApiKeyNotSet": MessageLookupByLibrary.simpleMessage("Ayarlanmadı"),
     "cmLabel": MessageLookupByLibrary.simpleMessage("cm"),
+    "confidenceLabel": m2,
     "copyDialogTitle": MessageLookupByLibrary.simpleMessage(
       "Hangi yemek türüne kopyalamak istiyorsunuz?",
     ),
@@ -197,6 +216,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "genderFemaleLabel": MessageLookupByLibrary.simpleMessage("♀ kadın"),
     "genderLabel": MessageLookupByLibrary.simpleMessage("Cinsiyet"),
     "genderMaleLabel": MessageLookupByLibrary.simpleMessage("♂ erkek"),
+    "goToSettings": MessageLookupByLibrary.simpleMessage("Ayarlara Git"),
     "goalGainWeight": MessageLookupByLibrary.simpleMessage("Kilo Al"),
     "goalLabel": MessageLookupByLibrary.simpleMessage("Hedef"),
     "goalLoseWeight": MessageLookupByLibrary.simpleMessage("Kilo Ver"),
@@ -228,7 +248,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "kcalLabel": MessageLookupByLibrary.simpleMessage("kcal"),
     "kcalLeftLabel": MessageLookupByLibrary.simpleMessage("kalan kcal"),
     "kgLabel": MessageLookupByLibrary.simpleMessage("kg"),
-    "lastUpdatedLabel": m2,
+    "labelScanSaved": MessageLookupByLibrary.simpleMessage("Kaydedildi"),
+    "lastUpdatedLabel": m3,
     "lbsLabel": MessageLookupByLibrary.simpleMessage("lbs"),
     "lunchExample": MessageLookupByLibrary.simpleMessage(
       "ör. pizza, salata, pirinç ...",
@@ -260,6 +281,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noActivityRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Son zamanlarda eklenen aktivite yok",
+    ),
+    "noApiKeyError": MessageLookupByLibrary.simpleMessage(
+      "OpenAI API anahtarı ayarlanmadı",
     ),
     "noMealsRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Son zamanlarda eklenen yemek yok",
@@ -293,7 +317,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "nutritionalStatusRiskIncreased": MessageLookupByLibrary.simpleMessage(
       "Artmış",
     ),
-    "nutritionalStatusRiskLabel": m3,
+    "nutritionalStatusRiskLabel": m4,
     "nutritionalStatusRiskLow": MessageLookupByLibrary.simpleMessage(
       "Düşük \n(ancak diğer \nklinik sorunların riski artmış)",
     ),
@@ -375,6 +399,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onboardingYourMacrosGoalLabel": MessageLookupByLibrary.simpleMessage(
       "Makro besin hedefleriniz:",
     ),
+    "openAiApiKeyConfigured": MessageLookupByLibrary.simpleMessage(
+      "Yapılandırıldı",
+    ),
+    "openAiApiKeyLabel": MessageLookupByLibrary.simpleMessage(
+      "OpenAI API Anahtarı",
+    ),
+    "openAiApiKeyNotSet": MessageLookupByLibrary.simpleMessage("Ayarlanmadı"),
     "overTargetLabel": MessageLookupByLibrary.simpleMessage("over target"),
     "ozUnit": MessageLookupByLibrary.simpleMessage("oz"),
     "paAmericanFootballGeneral": MessageLookupByLibrary.simpleMessage("futbol"),
@@ -726,6 +757,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "palVeryActiveLabel": MessageLookupByLibrary.simpleMessage("Çok Aktif"),
     "per100gmlLabel": MessageLookupByLibrary.simpleMessage("100g/ml başına"),
     "perServingLabel": MessageLookupByLibrary.simpleMessage("Porsiyon Başına"),
+    "pleaseCheckValues": m5,
     "privacyPolicyLabel": MessageLookupByLibrary.simpleMessage(
       "Gizlilik politikası",
     ),
@@ -754,6 +786,13 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "retryLabel": MessageLookupByLibrary.simpleMessage("Tekrar Dene"),
     "saturatedFatLabel": MessageLookupByLibrary.simpleMessage("doymuş yağ"),
+    "scanLabelSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Besin değeri etiketini fotoğraflayın",
+    ),
+    "scanLabelTitle": MessageLookupByLibrary.simpleMessage("Etiket Tara"),
+    "scanLabelWithAi": MessageLookupByLibrary.simpleMessage(
+      "Etiketi yapay zeka ile tara",
+    ),
     "scanProductLabel": MessageLookupByLibrary.simpleMessage("Ürünü Tara"),
     "searchDefaultLabel": MessageLookupByLibrary.simpleMessage(
       "Lütfen bir arama kelimesi girin",
@@ -830,11 +869,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "snackLabel": MessageLookupByLibrary.simpleMessage("Atıştırmalık"),
     "sugarLabel": MessageLookupByLibrary.simpleMessage("şeker"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("tüketilen"),
+    "takePhoto": MessageLookupByLibrary.simpleMessage("Fotoğraf Çek"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Geri al"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Birim"),
-    "weeklyOverLabel": m4,
-    "weeklyUnderLabel": m5,
+    "valuesLookConsistent": MessageLookupByLibrary.simpleMessage(
+      "Değerler tutarlı görünüyor",
+    ),
+    "valuesMayNeedReview": m6,
+    "weeklyOverLabel": m7,
+    "weeklyUnderLabel": m8,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Kilo"),
-    "yearsLabel": m6,
+    "yearsLabel": m9,
   };
 }

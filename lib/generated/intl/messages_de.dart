@@ -25,15 +25,23 @@ class MessageLookup extends MessageLookupByLibrary {
   static String m1(pctCarbs, pctFats, pctProteins) =>
       "${pctCarbs}% Kohlenhydrate, ${pctFats}% Fette, ${pctProteins}% Proteine";
 
-  static String m2(time) => "aktualisiert vor ${time}";
+  static String m2(level) => "Konfidenz: ${level}";
 
-  static String m3(riskValue) => "Risiko für Begleiterkrankungen: ${riskValue}";
+  static String m3(time) => "aktualisiert vor ${time}";
 
-  static String m4(amount) => "This week: ${amount} kcal over target";
+  static String m4(riskValue) => "Risiko für Begleiterkrankungen: ${riskValue}";
 
-  static String m5(amount) => "This week: ${amount} kcal under target";
+  static String m5(deviation) =>
+      "Bitte überprüfen Sie diese Werte (${deviation}% Abweichung)";
 
-  static String m6(age) => "${age} Jahre";
+  static String m6(deviation) =>
+      "Werte sollten überprüft werden (${deviation}% Abweichung)";
+
+  static String m7(amount) => "This week: ${amount} kcal over target";
+
+  static String m8(amount) => "This week: ${amount} kcal under target";
+
+  static String m9(age) => "${age} Jahre";
 
   final messages = _notInlinedMessages(_notInlinedMessages);
   static Map<String, Function> _notInlinedMessages(_) => <String, Function>{
@@ -67,6 +75,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "ageLabel": MessageLookupByLibrary.simpleMessage("Alter"),
     "allItemsLabel": MessageLookupByLibrary.simpleMessage("Alle"),
     "alphaVersionName": MessageLookupByLibrary.simpleMessage("[Alpha]"),
+    "analyzingLabel": MessageLookupByLibrary.simpleMessage(
+      "Etikett wird analysiert...",
+    ),
     "appDescription": MessageLookupByLibrary.simpleMessage(
       "OpenNutriTracker ist ein kostenloser und  quelloffener Kalorien- und Nährstofftracker, der Ihre Privatsphäre respektiert.",
     ),
@@ -106,7 +117,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "chooseWeightGoalLabel": MessageLookupByLibrary.simpleMessage(
       "Gewichtsziel wählen",
     ),
+    "claudeApiKeyConfigured": MessageLookupByLibrary.simpleMessage(
+      "Konfiguriert",
+    ),
+    "claudeApiKeyLabel": MessageLookupByLibrary.simpleMessage(
+      "Claude API-Schlüssel",
+    ),
+    "claudeApiKeyNotSet": MessageLookupByLibrary.simpleMessage("Nicht gesetzt"),
     "cmLabel": MessageLookupByLibrary.simpleMessage("cm"),
+    "confidenceLabel": m2,
     "copyDialogTitle": MessageLookupByLibrary.simpleMessage(
       "Zu welcher Mahlzeit hinzufügen?",
     ),
@@ -202,6 +221,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "genderFemaleLabel": MessageLookupByLibrary.simpleMessage("♀ weiblich"),
     "genderLabel": MessageLookupByLibrary.simpleMessage("Geschlecht"),
     "genderMaleLabel": MessageLookupByLibrary.simpleMessage("♂ männlich"),
+    "goToSettings": MessageLookupByLibrary.simpleMessage("Zu Einstellungen"),
     "goalGainWeight": MessageLookupByLibrary.simpleMessage("Gewicht zunehmen"),
     "goalLabel": MessageLookupByLibrary.simpleMessage("Ziel"),
     "goalLoseWeight": MessageLookupByLibrary.simpleMessage("Gewicht verlieren"),
@@ -237,7 +257,8 @@ class MessageLookup extends MessageLookupByLibrary {
     "kcalLabel": MessageLookupByLibrary.simpleMessage("kcal"),
     "kcalLeftLabel": MessageLookupByLibrary.simpleMessage("kcal übrig"),
     "kgLabel": MessageLookupByLibrary.simpleMessage("kg"),
-    "lastUpdatedLabel": m2,
+    "labelScanSaved": MessageLookupByLibrary.simpleMessage("Gespeichert"),
+    "lastUpdatedLabel": m3,
     "lunchExample": MessageLookupByLibrary.simpleMessage(
       "z. B. Pizza, Salat, Reis ...",
     ),
@@ -268,6 +289,9 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "noActivityRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Keine kürzlich hinzugefügten Aktivitäten",
+    ),
+    "noApiKeyError": MessageLookupByLibrary.simpleMessage(
+      "OpenAI API-Schlüssel nicht gesetzt",
     ),
     "noMealsRecentlyAddedLabel": MessageLookupByLibrary.simpleMessage(
       "Keine kürzlich hinzugefügten Mahlzeiten",
@@ -303,7 +327,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "nutritionalStatusRiskIncreased": MessageLookupByLibrary.simpleMessage(
       "Erhöht",
     ),
-    "nutritionalStatusRiskLabel": m3,
+    "nutritionalStatusRiskLabel": m4,
     "nutritionalStatusRiskLow": MessageLookupByLibrary.simpleMessage(
       "Niedrig \n(aber erhöhtes Risiko für andere \nklinische Probleme)",
     ),
@@ -379,6 +403,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "onboardingYourMacrosGoalLabel": MessageLookupByLibrary.simpleMessage(
       "Ihr Ziel für Makronährstoffe:",
     ),
+    "openAiApiKeyConfigured": MessageLookupByLibrary.simpleMessage(
+      "Konfiguriert",
+    ),
+    "openAiApiKeyLabel": MessageLookupByLibrary.simpleMessage(
+      "OpenAI API-Schlüssel",
+    ),
+    "openAiApiKeyNotSet": MessageLookupByLibrary.simpleMessage("Nicht gesetzt"),
     "overTargetLabel": MessageLookupByLibrary.simpleMessage("over target"),
     "ozUnit": MessageLookupByLibrary.simpleMessage("oz"),
     "paAmericanFootballGeneral": MessageLookupByLibrary.simpleMessage(
@@ -755,6 +786,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "palVeryActiveLabel": MessageLookupByLibrary.simpleMessage("Sehr aktiv"),
     "per100gmlLabel": MessageLookupByLibrary.simpleMessage("Pro 100 g/ml"),
     "perServingLabel": MessageLookupByLibrary.simpleMessage("Pro Portion"),
+    "pleaseCheckValues": m5,
     "privacyPolicyLabel": MessageLookupByLibrary.simpleMessage(
       "Datenschutzrichtlinie",
     ),
@@ -782,6 +814,13 @@ class MessageLookup extends MessageLookupByLibrary {
     "retryLabel": MessageLookupByLibrary.simpleMessage("Erneut versuchen"),
     "saturatedFatLabel": MessageLookupByLibrary.simpleMessage(
       "gesättigtes Fett",
+    ),
+    "scanLabelSubtitle": MessageLookupByLibrary.simpleMessage(
+      "Nährwertetikett fotografieren",
+    ),
+    "scanLabelTitle": MessageLookupByLibrary.simpleMessage("Etikett scannen"),
+    "scanLabelWithAi": MessageLookupByLibrary.simpleMessage(
+      "Etikett mit KI scannen",
     ),
     "scanProductLabel": MessageLookupByLibrary.simpleMessage("Produkt scannen"),
     "searchDefaultLabel": MessageLookupByLibrary.simpleMessage(
@@ -848,11 +887,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "snackLabel": MessageLookupByLibrary.simpleMessage("Snack"),
     "sugarLabel": MessageLookupByLibrary.simpleMessage("Zucker"),
     "suppliedLabel": MessageLookupByLibrary.simpleMessage("zugeführt"),
+    "takePhoto": MessageLookupByLibrary.simpleMessage("Foto aufnehmen"),
     "undoLabel": MessageLookupByLibrary.simpleMessage("Rückgängig"),
     "unitLabel": MessageLookupByLibrary.simpleMessage("Einheit"),
-    "weeklyOverLabel": m4,
-    "weeklyUnderLabel": m5,
+    "valuesLookConsistent": MessageLookupByLibrary.simpleMessage(
+      "Werte sehen konsistent aus",
+    ),
+    "valuesMayNeedReview": m6,
+    "weeklyOverLabel": m7,
+    "weeklyUnderLabel": m8,
     "weightLabel": MessageLookupByLibrary.simpleMessage("Gewicht"),
-    "yearsLabel": m6,
+    "yearsLabel": m9,
   };
 }

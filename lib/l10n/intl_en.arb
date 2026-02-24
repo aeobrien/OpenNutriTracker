@@ -430,5 +430,38 @@
   "quickAddSubtitle": "Just enter calories",
   "quickAddCaloriesHint": "Calories",
   "quickAddLabelHint": "Label (optional)",
-  "quickAddSaved": "Quick add saved"
+  "quickAddSaved": "Quick add saved",
+  "scanLabelTitle": "Scan Label",
+  "scanLabelSubtitle": "Photograph a nutrition label",
+  "analyzingLabel": "Analyzing label...",
+  "labelScanSaved": "Saved",
+  "valuesLookConsistent": "Values look consistent",
+  "valuesMayNeedReview": "Values may need review ({deviation}% off)",
+  "@valuesMayNeedReview": {
+    "placeholders": {
+      "deviation": {}
+    }
+  },
+  "pleaseCheckValues": "Please check these values ({deviation}% off)",
+  "@pleaseCheckValues": {
+    "placeholders": {
+      "deviation": {}
+    }
+  },
+  "confidenceLabel": "Confidence: {level}",
+  "@confidenceLabel": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "noApiKeyError": "OpenAI API key not set",
+  "goToSettings": "Go to Settings",
+  "takePhoto": "Take Photo",
+  "scanLabelWithAi": "Scan label with AI",
+  "openAiApiKeyLabel": "OpenAI API Key",
+  "openAiApiKeyConfigured": "Configured",
+  "openAiApiKeyNotSet": "Not set",
+  "claudeApiKeyLabel": "Claude API Key",
+  "claudeApiKeyConfigured": "Configured",
+  "claudeApiKeyNotSet": "Not set"
 }

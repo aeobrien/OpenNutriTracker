@@ -427,5 +427,38 @@
   "quickAddSubtitle": "Sadece kalori girin",
   "quickAddCaloriesHint": "Kalori",
   "quickAddLabelHint": "Etiket (isteğe bağlı)",
-  "quickAddSaved": "Hızlı ekleme kaydedildi"
+  "quickAddSaved": "Hızlı ekleme kaydedildi",
+  "scanLabelTitle": "Etiket Tara",
+  "scanLabelSubtitle": "Besin değeri etiketini fotoğraflayın",
+  "analyzingLabel": "Etiket analiz ediliyor...",
+  "labelScanSaved": "Kaydedildi",
+  "valuesLookConsistent": "Değerler tutarlı görünüyor",
+  "valuesMayNeedReview": "Değerler inceleme gerektirebilir ({deviation}% sapma)",
+  "@valuesMayNeedReview": {
+    "placeholders": {
+      "deviation": {}
+    }
+  },
+  "pleaseCheckValues": "Lütfen bu değerleri kontrol edin ({deviation}% sapma)",
+  "@pleaseCheckValues": {
+    "placeholders": {
+      "deviation": {}
+    }
+  },
+  "confidenceLabel": "Güven: {level}",
+  "@confidenceLabel": {
+    "placeholders": {
+      "level": {}
+    }
+  },
+  "noApiKeyError": "OpenAI API anahtarı ayarlanmadı",
+  "goToSettings": "Ayarlara Git",
+  "takePhoto": "Fotoğraf Çek",
+  "scanLabelWithAi": "Etiketi yapay zeka ile tara",
+  "openAiApiKeyLabel": "OpenAI API Anahtarı",
+  "openAiApiKeyConfigured": "Yapılandırıldı",
+  "openAiApiKeyNotSet": "Ayarlanmadı",
+  "claudeApiKeyLabel": "Claude API Anahtarı",
+  "claudeApiKeyConfigured": "Yapılandırıldı",
+  "claudeApiKeyNotSet": "Ayarlanmadı"
 }
