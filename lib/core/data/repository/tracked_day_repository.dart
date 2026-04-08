@@ -124,7 +124,17 @@ class TrackedDayRepository {
 
   Future<void> deleteDayIfEmpty(DateTime day) async {
     final row = await _dailyStatsDao.getByDate(day);
-    if (row != null && row.caloriesTracked <= 0) {
+    if (row == null) return;
+
+    // Use a small tolerance to handle floating-point residuals from
+    // repeated add/subtract operations on tracked values.
+    const tolerance = 0.01;
+    final hasCalories = row.caloriesTracked > tolerance;
+    final hasMacros = (row.carbsTracked ?? 0) > tolerance ||
+        (row.fatTracked ?? 0) > tolerance ||
+        (row.proteinTracked ?? 0) > tolerance;
+
+    if (!hasCalories && !hasMacros) {
       _log.fine('Deleting empty tracked day for $day');
       await _dailyStatsDao.deleteByDate(day);
     }
