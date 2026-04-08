@@ -8,6 +8,7 @@ import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/activity_vertial_list.dart';
 import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/delete_dialog.dart';
+import 'package:opennutritracker/core/presentation/widgets/delete_intake_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/disclaimer_dialog.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
@@ -222,7 +223,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final deletedText = S.of(context).itemDeletedSnackbar;
 
     final deleteIntake = await showDialog<bool>(
-        context: context, builder: (context) => const DeleteDialog());
+        context: context,
+        builder: (context) => DeleteIntakeDialog(intake: intakeEntity));
 
     if (deleteIntake != null) {
       _homeBloc.deleteIntakeItem(intakeEntity);
