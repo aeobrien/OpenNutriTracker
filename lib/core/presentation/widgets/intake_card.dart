@@ -98,21 +98,47 @@ class IntakeCard extends StatelessWidget {
                             .withValues(alpha: 0.5),
                       ),
                     ),
-                    Container(
-                      margin: const EdgeInsets.all(8.0),
-                      padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .tertiaryContainer
-                              .withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(20)),
-                      child: Text(
-                        '${intake.totalKcal.toInt()} kcal',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onTertiaryContainer),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+                            decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .tertiaryContainer
+                                    .withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(20)),
+                            child: Text(
+                              '${intake.totalKcal.toInt()} kcal',
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onTertiaryContainer),
+                            ),
+                          ),
+                          if (intake.isQuickAdd) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              padding: const EdgeInsets.all(4.0),
+                              decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .primaryContainer
+                                      .withValues(alpha: 0.9),
+                                  shape: BoxShape.circle),
+                              child: Icon(
+                                Icons.bolt,
+                                size: 12,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     ),
                     Container(
