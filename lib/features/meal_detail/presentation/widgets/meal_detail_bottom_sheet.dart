@@ -262,6 +262,27 @@ class _IncrementChips extends StatelessWidget {
     onQuantityOrUnitChanged(text, selectedUnit);
   }
 
+  void _halveAmount() {
+    final current =
+        double.tryParse(quantityTextController.text.replaceAll(',', '.')) ??
+            0.0;
+    final newVal = (current / 2).clamp(0.0, double.infinity);
+    final text = newVal == newVal.roundToDouble()
+        ? newVal.toInt().toString()
+        : newVal.toStringAsFixed(1);
+    quantityTextController.text = text;
+    onQuantityOrUnitChanged(text, selectedUnit);
+  }
+
+  void _setToOneServing() {
+    final servingQty = product.servingQuantity ?? 100.0;
+    final text = servingQty == servingQty.roundToDouble()
+        ? servingQty.toInt().toString()
+        : servingQty.toStringAsFixed(1);
+    quantityTextController.text = text;
+    onQuantityOrUnitChanged(text, selectedUnit);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isServing = selectedUnit == UnitDropdownItem.serving.toString();
@@ -312,6 +333,15 @@ class _IncrementChips extends StatelessWidget {
             onPressed: () => _changeAmount(1),
           ),
         ],
+        ActionChip(
+          label: const Text('\u00BD'),
+          onPressed: _halveAmount,
+        ),
+        if (!isServing && product.hasServingValues)
+          ActionChip(
+            label: const Text('1 serving'),
+            onPressed: _setToOneServing,
+          ),
       ],
     );
   }
