@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/core/presentation/widgets/add_item_bottom_sheet.dart';
+import 'package:opennutritracker/core/utils/navigation_options.dart';
+import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen_arguments.dart';
 import 'package:opennutritracker/features/diary/diary_page.dart';
 import 'package:opennutritracker/core/presentation/widgets/home_appbar.dart';
 import 'package:opennutritracker/features/home/home_page.dart';
@@ -47,10 +49,24 @@ class _MainScreenState extends State<MainScreen> {
       appBar: _appbarPages[_selectedPageIndex],
       body: _bodyPages[_selectedPageIndex],
       floatingActionButton: _selectedPageIndex == 0
-          ? FloatingActionButton(
-              onPressed: () => _onFabPressed(context),
-              tooltip: S.of(context).addLabel,
-              child: const Icon(Icons.add),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                FloatingActionButton.small(
+                  heroTag: 'fab_quick_add',
+                  onPressed: () => _onQuickAddPressed(context),
+                  tooltip: S.of(context).quickAddLabel,
+                  child: const Icon(Icons.bolt),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  heroTag: 'fab_add_item',
+                  onPressed: () => _onFabPressed(context),
+                  tooltip: S.of(context).addLabel,
+                  child: const Icon(Icons.add),
+                ),
+              ],
             )
           : _selectedPageIndex == 2
               ? const RecipesPageFab()
@@ -88,6 +104,13 @@ class _MainScreenState extends State<MainScreen> {
     setState(() {
       _selectedPageIndex = selectedIndex;
     });
+  }
+
+  void _onQuickAddPressed(BuildContext context) {
+    Navigator.of(context).pushNamed(
+      NavigationOptions.quickAddRoute,
+      arguments: QuickAddScreenArguments(DateTime.now()),
+    );
   }
 
   void _onFabPressed(BuildContext context) async {
