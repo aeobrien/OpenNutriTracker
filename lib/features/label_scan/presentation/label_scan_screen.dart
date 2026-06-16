@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
@@ -15,6 +16,8 @@ import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/label_scan/presentation/bloc/label_scan_bloc.dart';
+import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
+import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
 import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen_arguments.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -40,6 +43,8 @@ class _LabelScanScreenState extends State<LabelScanScreen> {
     super.initState();
     _bloc = locator<LabelScanBloc>();
     _selectedSlot = MealSlotCalc.suggestSlot(DateTime.now());
+    // Process any photos that were queued while offline on a previous visit.
+    _bloc.add(const ProcessQueuedScansEvent());
   }
 
   @override
@@ -99,6 +104,10 @@ class _LabelScanScreenState extends State<LabelScanScreen> {
       return _buildProcessingState(context);
     } else if (state is LabelScanResultState) {
       return _buildResultState(context, state);
+    } else if (state is LabelScanNotFoundState) {
+      return _buildNotFoundState(context, state);
+    } else if (state is LabelScanQueuedState) {
+      return _buildQueuedState(context, state);
     } else if (state is LabelScanErrorState) {
       return _buildErrorState(context, state);
     }
@@ -120,6 +129,13 @@ class _LabelScanScreenState extends State<LabelScanScreen> {
             onPressed: () => _bloc.add(const CaptureAndExtractEvent()),
             icon: const Icon(Icons.camera_alt),
             label: Text(S.of(context).takePhoto),
+          ),
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => _bloc.add(const CaptureAndExtractEvent(
+                source: ImageSource.gallery)),
+            icon: const Icon(Icons.photo_library_outlined),
+            label: const Text('Choose from library'),
           ),
         ],
       ),
@@ -172,6 +188,107 @@ class _LabelScanScreenState extends State<LabelScanScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildNotFoundState(
+      BuildContext context, LabelScanNotFoundState state) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.image_search_outlined,
+                size: 64, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              "Couldn't read a nutrition label in that photo.",
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              state.message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => _bloc.add(const CaptureAndExtractEvent()),
+              icon: const Icon(Icons.camera_alt),
+              label: Text(S.of(context).takePhoto),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _onSearchByNamePressed,
+              icon: const Icon(Icons.search),
+              label: Text(S.of(context).searchLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQueuedState(BuildContext context, LabelScanQueuedState state) {
+    final plural = state.queuedCount == 1 ? 'photo' : 'photos';
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.cloud_off_outlined,
+                size: 64, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(height: 16),
+            Text(
+              "You're offline, so your photo is saved.",
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "${state.queuedCount} $plural waiting. We'll read "
+              'the label automatically when you next open this screen with a '
+              'connection.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () =>
+                  _bloc.add(const ProcessQueuedScansEvent()),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try now'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _onSearchByNamePressed() {
+    final args = ModalRoute.of(context)?.settings.arguments
+        as LabelScanScreenArguments?;
+    final day = args?.day ?? DateTime.now();
+    final mealType = _slotToAddMealType(_selectedSlot);
+    Navigator.of(context).pushReplacementNamed(
+      NavigationOptions.addMealRoute,
+      arguments: AddMealScreenArguments(mealType, day),
+    );
+  }
+
+  static AddMealType _slotToAddMealType(String slot) {
+    switch (slot) {
+      case 'breakfast':
+        return AddMealType.breakfastType;
+      case 'lunch':
+        return AddMealType.lunchType;
+      case 'dinner':
+        return AddMealType.dinnerType;
+      default:
+        return AddMealType.snackType;
+    }
   }
 
   Widget _buildResultState(BuildContext context, LabelScanResultState state) {

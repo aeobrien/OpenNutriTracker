@@ -86,9 +86,21 @@ class LlmNutritionResult {
 
   bool get hasError => error != null;
 
+  /// Stable identifier for an LLM-extracted food item, derived from its name
+  /// and brand. Re-scanning the same product yields the same code so the food
+  /// item is updated in place rather than duplicated, making it genuinely
+  /// reusable. Falls back to a random UUID when there is no name to key on.
+  String stableCode() {
+    final keyName = name?.trim().toLowerCase() ?? '';
+    if (keyName.isEmpty) return IdGenerator.getUniqueID();
+    final keyBrand = brand?.trim().toLowerCase() ?? '';
+    final slug = '$keyName|$keyBrand'.replaceAll(RegExp(r'\s+'), ' ');
+    return 'llm_$slug';
+  }
+
   MealEntity toMealEntity() {
     return MealEntity(
-      code: IdGenerator.getUniqueID(),
+      code: stableCode(),
       name: name,
       brands: brand,
       url: null,
