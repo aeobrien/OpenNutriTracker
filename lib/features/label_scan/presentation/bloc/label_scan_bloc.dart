@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:equatable/equatable.dart';
@@ -7,6 +8,8 @@ import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/utils/calc/nutrition_validator.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/label_scan/data/dto/llm_nutrition_result.dart';
+import 'package:opennutritracker/features/label_scan/data/label_scan_offline_exception.dart';
+import 'package:opennutritracker/features/label_scan/data/pending_label_scan_queue.dart';
 import 'package:opennutritracker/features/label_scan/domain/usecase/extract_nutrition_usecase.dart';
 
 // Events
@@ -17,7 +20,17 @@ abstract class LabelScanEvent extends Equatable {
 }
 
 class CaptureAndExtractEvent extends LabelScanEvent {
-  const CaptureAndExtractEvent();
+  /// Where to take the photo from — camera (default) or the photo library.
+  final ImageSource source;
+  const CaptureAndExtractEvent({this.source = ImageSource.camera});
+
+  @override
+  List<Object?> get props => [source];
+}
+
+/// Process any photos that were queued while the device was offline.
+class ProcessQueuedScansEvent extends LabelScanEvent {
+  const ProcessQueuedScansEvent();
 }
 
 class UpdateFieldEvent extends LabelScanEvent {
@@ -68,16 +81,43 @@ class LabelScanErrorState extends LabelScanState {
   List<Object?> get props => [message, isApiKeyMissing];
 }
 
+/// The photo was processed but the label could not be read or parsed. Distinct
+/// from a transport error: the user should retake the photo or fall back to
+/// manual entry / search-by-name rather than just retrying the same shot.
+class LabelScanNotFoundState extends LabelScanState {
+  final String message;
+  const LabelScanNotFoundState(this.message);
+
+  @override
+  List<Object?> get props => [message];
+}
+
+/// The device was offline, so the photo has been queued for processing once
+/// connectivity returns.
+class LabelScanQueuedState extends LabelScanState {
+  final int queuedCount;
+  const LabelScanQueuedState(this.queuedCount);
+
+  @override
+  List<Object?> get props => [queuedCount];
+}
+
 // BLoC
 class LabelScanBloc extends Bloc<LabelScanEvent, LabelScanState> {
   final _log = Logger('LabelScanBloc');
   final ExtractNutritionUsecase _extractNutritionUsecase;
   final ImagePicker _imagePicker;
+  final PendingLabelScanQueue _pendingQueue;
 
-  LabelScanBloc(this._extractNutritionUsecase, {ImagePicker? imagePicker})
-      : _imagePicker = imagePicker ?? ImagePicker(),
+  LabelScanBloc(
+    this._extractNutritionUsecase, {
+    ImagePicker? imagePicker,
+    PendingLabelScanQueue? pendingQueue,
+  })  : _imagePicker = imagePicker ?? ImagePicker(),
+        _pendingQueue = pendingQueue ?? PendingLabelScanQueue(),
         super(const LabelScanInitialState()) {
     on<CaptureAndExtractEvent>(_onCaptureAndExtract);
+    on<ProcessQueuedScansEvent>(_onProcessQueuedScans);
     on<UpdateFieldEvent>(_onUpdateField);
   }
 
@@ -85,13 +125,13 @@ class LabelScanBloc extends Bloc<LabelScanEvent, LabelScanState> {
       CaptureAndExtractEvent event, Emitter<LabelScanState> emit) async {
     try {
       final image = await _imagePicker.pickImage(
-        source: ImageSource.camera,
+        source: event.source,
         imageQuality: 85,
         maxWidth: 2048,
       );
 
       if (image == null) {
-        // User cancelled camera — stay in current state
+        // User cancelled the picker — stay in current state
         return;
       }
 
@@ -100,30 +140,101 @@ class LabelScanBloc extends Bloc<LabelScanEvent, LabelScanState> {
       final imageBytes = await image.readAsBytes();
       final mimeType = _mimeTypeFromPath(image.path);
 
+      await _extractAndEmit(imageBytes, mimeType, emit);
+    } on LabelScanOfflineException catch (e) {
+      _log.warning('Offline during capture — queueing photo', e);
+      // The image bytes are re-read inside _extractAndEmit's caller; here the
+      // exception escaped before we could queue, so fall through to a generic
+      // queued state with whatever is already pending.
+      final count = await _pendingQueue.count();
+      emit(LabelScanQueuedState(count));
+    } catch (e, stackTrace) {
+      _log.severe('Error during label scan', e, stackTrace);
+      _emitErrorFor(e, emit);
+    }
+  }
+
+  /// Runs extraction on the given image, emitting the appropriate state.
+  /// On an offline failure the image is persisted to the pending queue.
+  Future<void> _extractAndEmit(Uint8List imageBytes, String mimeType,
+      Emitter<LabelScanState> emit) async {
+    try {
       final extractionResult =
           await _extractNutritionUsecase.execute(imageBytes, mimeType);
 
       if (extractionResult.nutrition.hasError) {
-        emit(LabelScanErrorState(
-            extractionResult.nutrition.error ?? 'Label unreadable'));
+        // The model could read the image but could not parse a nutrition
+        // label out of it — this is the "not found" path, not a transport
+        // error.
+        emit(LabelScanNotFoundState(
+            extractionResult.nutrition.error ?? 'Label could not be read'));
         return;
       }
 
-      final meal = extractionResult.nutrition.toMealEntity();
       emit(LabelScanResultState(
         result: extractionResult.nutrition,
         validation: extractionResult.validation,
-        meal: meal,
+        meal: extractionResult.nutrition.toMealEntity(),
       ));
-    } catch (e, stackTrace) {
-      _log.severe('Error during label scan', e, stackTrace);
-      final message = e.toString();
-      final isApiKeyMissing = message.contains('API key not configured');
-      emit(LabelScanErrorState(
-        isApiKeyMissing ? 'OpenAI API key not set' : 'Error: $message',
-        isApiKeyMissing: isApiKeyMissing,
-      ));
+    } on LabelScanOfflineException catch (e) {
+      _log.warning('Offline — queueing photo for later processing', e);
+      await _pendingQueue.enqueue(imageBytes, mimeType);
+      final count = await _pendingQueue.count();
+      emit(LabelScanQueuedState(count));
     }
+  }
+
+  /// Attempts to process every photo queued while offline. Successfully
+  /// processed photos are removed from the queue; the first one that yields a
+  /// usable result is surfaced. If still offline, the queue is left intact.
+  Future<void> _onProcessQueuedScans(
+      ProcessQueuedScansEvent event, Emitter<LabelScanState> emit) async {
+    final pending = await _pendingQueue.pending();
+    if (pending.isEmpty) return;
+
+    _log.fine('Processing ${pending.length} queued label scan(s)');
+    emit(const LabelScanProcessingState());
+
+    for (final scan in pending) {
+      try {
+        final bytes = await File(scan.imagePath).readAsBytes();
+        final extractionResult =
+            await _extractNutritionUsecase.execute(bytes, scan.mimeType);
+        await _pendingQueue.remove(scan.id);
+
+        if (extractionResult.nutrition.hasError) {
+          // Skip unreadable queued photos rather than blocking the rest.
+          continue;
+        }
+
+        emit(LabelScanResultState(
+          result: extractionResult.nutrition,
+          validation: extractionResult.validation,
+          meal: extractionResult.nutrition.toMealEntity(),
+        ));
+        return;
+      } on LabelScanOfflineException {
+        // Still offline — keep everything queued and report back.
+        emit(LabelScanQueuedState(await _pendingQueue.count()));
+        return;
+      } catch (e, st) {
+        _log.severe('Failed to process queued scan ${scan.id}', e, st);
+        // Drop the broken entry so it does not wedge the queue forever.
+        await _pendingQueue.remove(scan.id);
+      }
+    }
+
+    // Nothing yielded a usable result — return to a clean initial state.
+    emit(const LabelScanInitialState());
+  }
+
+  void _emitErrorFor(Object e, Emitter<LabelScanState> emit) {
+    final message = e.toString();
+    final isApiKeyMissing = message.contains('API key not configured');
+    emit(LabelScanErrorState(
+      isApiKeyMissing ? 'OpenAI API key not set' : 'Error: $message',
+      isApiKeyMissing: isApiKeyMissing,
+    ));
   }
 
   void _onUpdateField(UpdateFieldEvent event, Emitter<LabelScanState> emit) {

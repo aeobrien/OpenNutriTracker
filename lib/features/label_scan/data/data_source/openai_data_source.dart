@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/label_scan/data/dto/llm_nutrition_result.dart';
+import 'package:opennutritracker/features/label_scan/data/label_scan_offline_exception.dart';
 import 'package:opennutritracker/features/label_scan/data/llm_nutrition_prompt.dart';
 
 class OpenAiDataSource {
@@ -84,6 +87,16 @@ class OpenAiDataSource {
         _log.fine('OpenAI response: $responseText');
 
         return LlmNutritionResult.parse(responseText);
+      } on SocketException catch (e) {
+        _log.warning('Network unavailable during extraction', e);
+        throw const LabelScanOfflineException();
+      } on TimeoutException catch (e) {
+        _log.warning('Extraction timed out (attempt $attempt)', e);
+        lastError = e;
+      } on http.ClientException catch (e) {
+        // ClientException wraps low-level connection failures (DNS, refused).
+        _log.warning('HTTP client error during extraction', e);
+        throw const LabelScanOfflineException();
       } on Exception catch (e) {
         _log.warning('OpenAI API call failed (attempt $attempt)', e);
         lastError = e;
