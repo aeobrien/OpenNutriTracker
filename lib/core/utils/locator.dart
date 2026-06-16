@@ -57,6 +57,8 @@ import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart'
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/features/onboarding/presentation/bloc/onboarding_bloc.dart';
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
+import 'package:opennutritracker/features/quick_add/data/repository/quick_add_draft_repository.dart';
+import 'package:opennutritracker/features/quick_add/domain/usecase/quick_add_draft_usecase.dart';
 import 'package:opennutritracker/features/scanner/domain/usecase/search_product_by_barcode_usecase.dart';
 import 'package:opennutritracker/features/scanner/presentation/scanner_bloc.dart';
 import 'package:opennutritracker/features/label_scan/data/data_source/openai_data_source.dart';
@@ -210,6 +212,8 @@ Future<void> initLocator() async {
       () => ExportDataUsecase(locator(), locator(), locator()));
   locator.registerLazySingleton(
       () => ImportDataUsecase(locator(), locator(), locator()));
+  locator.registerLazySingleton<QuickAddDraftUsecase>(
+      () => QuickAddDraftUsecase(locator()));
 
   // Repositories
   locator.registerLazySingleton(() => ConfigRepository(configDao));
@@ -229,6 +233,8 @@ Future<void> initLocator() async {
       () => HealthRepository(locator(), dailyStatsDao));
   locator.registerLazySingleton<RecipeRepository>(
       () => RecipeRepository(recipeDao));
+  locator.registerLazySingleton<QuickAddDraftRepository>(
+      () => QuickAddDraftRepository(configDao));
 
   // DataSources (only non-Hive ones remain)
   locator.registerLazySingleton<PhysicalActivityDataSource>(
