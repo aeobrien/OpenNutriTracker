@@ -144,16 +144,49 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         _log.warning('Error during HealthKit check', e);
       }
 
-      final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
-      final totalCarbsGoal =
-          await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
-      final totalFatsGoal =
-          await _getMacroGoalUsecase.getFatsGoal(totalKcalGoal);
-      final totalProteinsGoal =
-          await _getMacroGoalUsecase.getProteinsGoal(totalKcalGoal);
+      // Instant load: prefer cached values from the DailyStats row instead of
+      // recomputing goals (which re-hits HealthKit) and re-summing intake.
+      // The cached row is kept current incrementally on every add/edit/delete,
+      // so when it exists it is authoritative. Falls back to computed values
+      // only when no row exists yet (before the first entry of the day).
+      final cachedDay = await _getTrackedDayUsecase.getTrackedDay(currentDay);
+
+      final double totalKcalGoal;
+      final double totalCarbsGoal;
+      final double totalFatsGoal;
+      final double totalProteinsGoal;
+      final double suppliedKcal;
+      final double suppliedCarbs;
+      final double suppliedFats;
+      final double suppliedProteins;
+
+      if (cachedDay != null) {
+        totalKcalGoal = cachedDay.calorieGoal;
+        totalCarbsGoal = cachedDay.carbsGoal ??
+            await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
+        totalFatsGoal = cachedDay.fatGoal ??
+            await _getMacroGoalUsecase.getFatsGoal(totalKcalGoal);
+        totalProteinsGoal = cachedDay.proteinGoal ??
+            await _getMacroGoalUsecase.getProteinsGoal(totalKcalGoal);
+        suppliedKcal = cachedDay.caloriesTracked;
+        suppliedCarbs = cachedDay.carbsTracked ?? totalCarbsIntake;
+        suppliedFats = cachedDay.fatTracked ?? totalFatsIntake;
+        suppliedProteins = cachedDay.proteinTracked ?? totalProteinsIntake;
+      } else {
+        totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
+        totalCarbsGoal =
+            await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
+        totalFatsGoal = await _getMacroGoalUsecase.getFatsGoal(totalKcalGoal);
+        totalProteinsGoal =
+            await _getMacroGoalUsecase.getProteinsGoal(totalKcalGoal);
+        suppliedKcal = totalKcalIntake;
+        suppliedCarbs = totalCarbsIntake;
+        suppliedFats = totalFatsIntake;
+        suppliedProteins = totalProteinsIntake;
+      }
 
       final totalKcalLeft =
-          CalorieGoalCalc.getDailyKcalLeft(totalKcalGoal, totalKcalIntake);
+          CalorieGoalCalc.getDailyKcalLeft(totalKcalGoal, suppliedKcal);
 
       // Compute base allowance (no exercise)
       final totalKcalBase = await _getKcalGoalUsecase.getKcalGoal(
@@ -179,14 +212,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           showDisclaimerDialog: showDisclaimerDialog,
           totalKcalDaily: totalKcalGoal,
           totalKcalLeft: totalKcalLeft,
-          totalKcalSupplied: totalKcalIntake,
+          totalKcalSupplied: suppliedKcal,
           totalKcalBurned: totalKcalActivities,
-          totalCarbsIntake: totalCarbsIntake,
-          totalFatsIntake: totalFatsIntake,
+          totalCarbsIntake: suppliedCarbs,
+          totalFatsIntake: suppliedFats,
           totalCarbsGoal: totalCarbsGoal,
           totalFatsGoal: totalFatsGoal,
           totalProteinsGoal: totalProteinsGoal,
-          totalProteinsIntake: totalProteinsIntake,
+          totalProteinsIntake: suppliedProteins,
           breakfastIntakeList: breakfastIntakeList,
           lunchIntakeList: lunchIntakeList,
           dinnerIntakeList: dinnerIntakeList,

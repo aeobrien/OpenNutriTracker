@@ -2,6 +2,7 @@ import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/dashboard_widget.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -106,6 +107,37 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('This week: 500 kcal over target'), findsOneWidget);
+  });
+
+  testWidgets('over-target gauge uses primary colour, never the error colour',
+      (tester) async {
+    await tester.pumpWidget(
+        _wrapWidget(_defaultDashboard(totalKcalLeft: -200)));
+    await tester.pumpAndSettle();
+
+    final BuildContext context =
+        tester.element(find.byType(DashboardWidget));
+    final scheme = Theme.of(context).colorScheme;
+
+    final indicator = tester.firstWidget<CircularPercentIndicator>(
+        find.byType(CircularPercentIndicator));
+    expect(indicator.progressColor, scheme.primary);
+    expect(indicator.progressColor, isNot(scheme.error));
+  });
+
+  testWidgets('over-target text "over target" is not coloured red/error',
+      (tester) async {
+    await tester.pumpWidget(
+        _wrapWidget(_defaultDashboard(totalKcalLeft: -200)));
+    await tester.pumpAndSettle();
+
+    final BuildContext context =
+        tester.element(find.byType(DashboardWidget));
+    final scheme = Theme.of(context).colorScheme;
+
+    final overText = tester.firstWidget<Text>(find.text('over target'));
+    expect(overText.style?.color, isNot(scheme.error));
+    expect(overText.style?.color, scheme.onSurface);
   });
 
   testWidgets('hides weekly context when null', (tester) async {
