@@ -27,6 +27,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final log = Logger('HomePage');
 
   late HomeBloc _homeBloc;
+  DateTime _loadedForDay = DateTime.now();
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -87,7 +89,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       log.info('App resumed');
-      _refreshPageOnDayChange();
+      final now = DateTime.now();
+      final dayChanged = now.year != _loadedForDay.year ||
+          now.month != _loadedForDay.month ||
+          now.day != _loadedForDay.day;
+      if (dayChanged) {
+        // New day — reload everything (intake lists, goals, HealthKit).
+        _loadedForDay = now;
+        _homeBloc.add(const LoadItemsEvent());
+      } else {
+        // Same day — just refresh HealthKit active calories and the allowance.
+        _homeBloc.add(const RefreshActiveCaloriesEvent());
+      }
     }
     super.didChangeAppLifecycleState(state);
   }
@@ -283,10 +296,5 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _homeBloc.add(const LoadItemsEvent());
       }
     });
-  }
-
-  /// Refresh page on resume (picks up HealthKit updates + day changes)
-  void _refreshPageOnDayChange() {
-    _homeBloc.add(const LoadItemsEvent());
   }
 }

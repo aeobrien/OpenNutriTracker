@@ -200,6 +200,71 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
           activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
           healthKitConnected: healthKitConnected));
     });
+
+    on<RefreshActiveCaloriesEvent>((event, emit) async {
+      final currentState = state;
+      if (currentState is! HomeLoadedState) {
+        // Nothing loaded yet — let the normal load handle it.
+        add(const LoadItemsEvent());
+        return;
+      }
+
+      double activeCaloriesToday = currentState.activeCaloriesToday;
+      DateTime? activeCaloriesUpdatedAt = currentState.activeCaloriesUpdatedAt;
+      bool healthKitConnected = currentState.healthKitConnected;
+      try {
+        healthKitConnected = await _healthRepository.hasPermission();
+        if (healthKitConnected) {
+          activeCaloriesToday =
+              await _healthRepository.fetchAndCacheActiveCalories();
+          final cached = await _healthRepository.getCachedActiveCalories();
+          activeCaloriesUpdatedAt = cached.$2;
+        }
+      } catch (e) {
+        _log.warning('Error refreshing HealthKit active calories', e);
+        return;
+      }
+
+      // Recompute allowance-derived values from the refreshed active calories.
+      final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
+      final totalKcalBase =
+          await _getKcalGoalUsecase.getKcalGoal(totalKcalActivitiesParam: 0);
+      final totalKcalEarned = totalKcalGoal - totalKcalBase;
+      final totalKcalLeft = CalorieGoalCalc.getDailyKcalLeft(
+          totalKcalGoal, currentState.totalKcalSupplied);
+      final totalCarbsGoal =
+          await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
+      final totalFatsGoal =
+          await _getMacroGoalUsecase.getFatsGoal(totalKcalGoal);
+      final totalProteinsGoal =
+          await _getMacroGoalUsecase.getProteinsGoal(totalKcalGoal);
+
+      emit(HomeLoadedState(
+        showDisclaimerDialog: currentState.showDisclaimerDialog,
+        totalKcalDaily: totalKcalGoal,
+        totalKcalLeft: totalKcalLeft,
+        totalKcalSupplied: currentState.totalKcalSupplied,
+        totalKcalBurned: currentState.totalKcalBurned,
+        totalCarbsIntake: currentState.totalCarbsIntake,
+        totalFatsIntake: currentState.totalFatsIntake,
+        totalCarbsGoal: totalCarbsGoal,
+        totalFatsGoal: totalFatsGoal,
+        totalProteinsGoal: totalProteinsGoal,
+        totalProteinsIntake: currentState.totalProteinsIntake,
+        breakfastIntakeList: currentState.breakfastIntakeList,
+        lunchIntakeList: currentState.lunchIntakeList,
+        dinnerIntakeList: currentState.dinnerIntakeList,
+        snackIntakeList: currentState.snackIntakeList,
+        userActivityList: currentState.userActivityList,
+        usesImperialUnits: currentState.usesImperialUnits,
+        totalKcalBase: totalKcalBase,
+        totalKcalEarned: totalKcalEarned,
+        weeklyRemaining: currentState.weeklyRemaining,
+        activeCaloriesToday: activeCaloriesToday,
+        activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
+        healthKitConnected: healthKitConnected,
+      ));
+    });
   }
 
   double getTotalKcal(List<IntakeEntity> intakeList) =>
