@@ -19,6 +19,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:opennutritracker/features/settings/presentation/widgets/calculations_dialog.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
+import 'package:opennutritracker/features/recipes/data/mealie_secure_storage.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/health_repository.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
@@ -128,6 +129,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   setKey: (k) => SecureAppStorageProvider().setClaudeApiKey(k),
                   deleteKey: () => SecureAppStorageProvider().deleteClaudeApiKey(),
                   hasKey: () => SecureAppStorageProvider().hasClaudeApiKey(),
+                ),
+                // Mealie is the recipe source of truth; FoodTracker mirrors it
+                // one-way. Sync the pulled recipes from the Recipes tab.
+                _ApiKeyTile(
+                  icon: Icons.dns_outlined,
+                  label: 'Mealie server URL',
+                  configuredText: 'Configured',
+                  notSetText: 'Not set',
+                  hintText: 'http://100.71.40.51:9000',
+                  obscure: false,
+                  getKey: () => SecureAppStorageProvider().getMealieBaseUrl(),
+                  setKey: (k) => SecureAppStorageProvider().setMealieBaseUrl(k),
+                  deleteKey: () => SecureAppStorageProvider().setMealieBaseUrl(''),
+                  hasKey: () => SecureAppStorageProvider()
+                      .getMealieBaseUrl()
+                      .then((v) => (v ?? '').isNotEmpty),
+                ),
+                _ApiKeyTile(
+                  icon: Icons.key_outlined,
+                  label: 'Mealie API token',
+                  configuredText: 'Configured',
+                  notSetText: 'Not set',
+                  hintText: 'paste your Mealie API token',
+                  getKey: () => SecureAppStorageProvider().getMealieToken(),
+                  setKey: (k) => SecureAppStorageProvider().setMealieToken(k),
+                  deleteKey: () => SecureAppStorageProvider().setMealieToken(''),
+                  hasKey: () => SecureAppStorageProvider()
+                      .getMealieToken()
+                      .then((v) => (v ?? '').isNotEmpty),
                 ),
                 ListTile(
                   leading: const Icon(Icons.description_outlined),
@@ -625,6 +655,7 @@ class _ApiKeyTile extends StatefulWidget {
   final Future<void> Function(String) setKey;
   final Future<void> Function() deleteKey;
   final Future<bool> Function() hasKey;
+  final bool obscure;
 
   const _ApiKeyTile({
     required this.icon,
@@ -636,6 +667,7 @@ class _ApiKeyTile extends StatefulWidget {
     required this.setKey,
     required this.deleteKey,
     required this.hasKey,
+    this.obscure = true,
   });
 
   @override
@@ -675,7 +707,7 @@ class _ApiKeyTileState extends State<_ApiKeyTile> {
           title: Text(widget.label),
           content: TextField(
             controller: controller,
-            obscureText: true,
+            obscureText: widget.obscure,
             decoration: InputDecoration(
               hintText: widget.hintText,
               border: const OutlineInputBorder(),

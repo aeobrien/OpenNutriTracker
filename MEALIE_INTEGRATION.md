@@ -44,19 +44,27 @@ final result = await MealieSyncService(ds, recipeRepository).syncAllRecipes();
 // result.synced / result.failed / result.total
 ```
 
-## What's left (needs you — touches your WIP or needs UX/decisions)
+## UI — now wired (2026-06-23)
 
-1. **Settings UI** — two fields (Mealie URL + API token) → `storage.setMealieBaseUrl` /
-   `setMealieToken`, and a "Sync now" button calling `syncAllRecipes()`. This lives in
-   `settings_screen.dart` / `settings_bloc.dart`, which are in your Phase-14 WIP — so it's
-   yours to place, or hand me the nod once that lands.
-2. **Register the pieces** in `locator.dart` (also your WIP) and decide when sync runs
-   (on app start? pull-to-refresh on the recipe list? a timer?).
-3. **Retire FoodTracker's recipe authoring** — hide/remove the manual recipe builder and
-   the LLM importer, since Mealie owns authoring now.
-4. **The per-serving toggle** (optional) — Mealie nutrition is per-serving by convention;
-   `syncAllRecipes(nutritionIsPerServing: false)` divides by servings if a library is
-   entered whole-recipe.
+- **Settings** (`settings_screen.dart`): two new entries — "Mealie server URL" and
+  "Mealie API token" — reusing the existing `_ApiKeyTile` (added an `obscure` flag so
+  the URL shows in plain text). They read/write via the secure-storage extension.
+- **Recipes tab** (`recipes_page.dart`): the two recipe-creation buttons (manual builder +
+  LLM importer) are **replaced by a single "Sync from Mealie" button**. It builds the
+  data source from the stored URL+token, runs `syncAllRecipes()`, shows a "Synced N
+  recipe(s)" snackbar, and refreshes the list. If Mealie isn't configured it points you
+  to Settings. Authoring now lives only in Mealie; the old builder/importer screens remain
+  in the codebase but are no longer reachable.
+
+Analyzer-clean for the new code; all 20 data-layer tests still pass. **Not yet
+device-tested** — needs a run on your phone (build in Xcode / `flutter run`), then a
+walkthrough. Two new UI strings are plain English (not localised) — fine for personal use.
+
+### Optional follow-ups
+- **Per-serving toggle**: Mealie nutrition is per-serving by convention;
+  `syncAllRecipes(nutritionIsPerServing: false)` divides by servings if a library is
+  entered whole-recipe. Not surfaced in the UI yet.
+- **Sync on a schedule / pull-to-refresh**: currently sync is the manual button only.
 
 ## Deliberately deferred (not silently dropped)
 
