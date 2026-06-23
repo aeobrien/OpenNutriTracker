@@ -138,8 +138,9 @@ Future<void> initLocator() async {
       locator(), locator(), locator(), locator(), locator(), locator()));
   locator.registerLazySingleton<ProfileBloc>(
       () => ProfileBloc(locator(), locator(), locator(), locator(), locator()));
-  locator.registerLazySingleton(() =>
-      SettingsBloc(locator(), locator(), locator(), locator(), locator()));
+  locator.registerLazySingleton(() => SettingsBloc(
+      locator(), locator(), locator(), locator(), locator(),
+      locator(), locator()));
   locator.registerFactory(() => ExportImportBloc(locator(), locator()));
 
   locator.registerFactory<ActivitiesBloc>(() => ActivitiesBloc(locator()));
@@ -207,9 +208,11 @@ Future<void> initLocator() async {
       () => GetHealthUsecase(locator(), locator()));
   locator.registerLazySingleton(() => GetMacroGoalUsecase(locator()));
   locator.registerLazySingleton(
-      () => ExportDataUsecase(locator(), locator(), locator()));
+      () => ExportDataUsecase(locator(), locator(), locator(),
+          foodItemDao, recipeDao));
   locator.registerLazySingleton(
-      () => ImportDataUsecase(locator(), locator(), locator()));
+      () => ImportDataUsecase(locator(), locator(), locator(),
+          foodItemDao, recipeDao));
 
   // Repositories
   locator.registerLazySingleton(() => ConfigRepository(configDao));

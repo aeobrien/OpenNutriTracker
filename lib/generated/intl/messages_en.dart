@@ -86,6 +86,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "appLicenseLabel": MessageLookupByLibrary.simpleMessage("GPL-3.0 license"),
     "appTitle": MessageLookupByLibrary.simpleMessage("OpenNutriTracker"),
     "appVersionName": m0,
+    "appleHealthLabel": MessageLookupByLibrary.simpleMessage("Apple Health"),
     "baseLabel": MessageLookupByLibrary.simpleMessage("base"),
     "baseQuantityLabel": MessageLookupByLibrary.simpleMessage(
       "Base quantity (g/ml)",
@@ -105,6 +106,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "buttonSaveLabel": MessageLookupByLibrary.simpleMessage("Save"),
     "buttonStartLabel": MessageLookupByLibrary.simpleMessage("START"),
     "buttonYesLabel": MessageLookupByLibrary.simpleMessage("YES"),
+    "calculatedTdeeLabel": MessageLookupByLibrary.simpleMessage(
+      "Calculated TDEE",
+    ),
     "calculationsMacronutrientsDistributionLabel":
         MessageLookupByLibrary.simpleMessage("Macros distribution"),
     "calculationsMacrosDistribution": m1,
@@ -154,9 +158,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "dailyKcalAdjustmentLabel": MessageLookupByLibrary.simpleMessage(
       "Daily Kcal adjustment:",
     ),
+    "dailyTargetLabel": MessageLookupByLibrary.simpleMessage("Daily Target"),
     "dataCollectionLabel": MessageLookupByLibrary.simpleMessage(
       "Support development by providing anonymous usage data",
     ),
+    "dayBoundaryDescription": MessageLookupByLibrary.simpleMessage(
+      "When does a new day start for tracking purposes?",
+    ),
+    "dayBoundaryLabel": MessageLookupByLibrary.simpleMessage("Day Start"),
     "deleteAllLabel": MessageLookupByLibrary.simpleMessage("Delete all"),
     "deleteRecipeConfirmLabel": MessageLookupByLibrary.simpleMessage(
       "Delete this recipe? Past diary entries will be preserved.",
@@ -210,7 +219,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorProductNotFound": MessageLookupByLibrary.simpleMessage(
       "Product not found",
     ),
+    "exerciseMultiplierDescription": MessageLookupByLibrary.simpleMessage(
+      "How much of your active calories should count towards your daily allowance?",
+    ),
+    "exerciseMultiplierLabel": MessageLookupByLibrary.simpleMessage(
+      "Exercise Multiplier",
+    ),
     "exportAction": MessageLookupByLibrary.simpleMessage("Export"),
+    "exportFormatCsvLabel": MessageLookupByLibrary.simpleMessage("CSV"),
+    "exportFormatJsonLabel": MessageLookupByLibrary.simpleMessage("JSON"),
     "exportImportDescription": MessageLookupByLibrary.simpleMessage(
       "You can export the app data to a zip file and import it later. This is useful if you want to backup your data or transfer it to another device.\n\nThe app does not use any cloud service to store your data.",
     ),
@@ -240,9 +257,16 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "gramMilliliterUnit": MessageLookupByLibrary.simpleMessage("g/ml"),
     "gramUnit": MessageLookupByLibrary.simpleMessage("g"),
+    "gramsModeLabel": MessageLookupByLibrary.simpleMessage("Grams"),
     "gramsShortLabel": MessageLookupByLibrary.simpleMessage("g"),
+    "healthConnectedLabel": MessageLookupByLibrary.simpleMessage(
+      "Active Energy: Connected",
+    ),
     "healthDeniedNote": MessageLookupByLibrary.simpleMessage(
       "You can enable this later in Settings.",
+    ),
+    "healthNotConnectedLabel": MessageLookupByLibrary.simpleMessage(
+      "Not connected",
     ),
     "healthPermissionBody": MessageLookupByLibrary.simpleMessage(
       "FoodTracker can read your active calories to automatically adjust your daily allowance.",
@@ -795,6 +819,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "pasteUrlHint": MessageLookupByLibrary.simpleMessage("Paste recipe URL..."),
     "per100gmlLabel": MessageLookupByLibrary.simpleMessage("Per 100g/ml"),
     "perServingLabel": MessageLookupByLibrary.simpleMessage("Per serving"),
+    "percentageModeLabel": MessageLookupByLibrary.simpleMessage("Percentage"),
     "pleaseCheckValues": m5,
     "privacyPolicyLabel": MessageLookupByLibrary.simpleMessage(
       "Privacy policy",
@@ -825,6 +850,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "remindersLabel": MessageLookupByLibrary.simpleMessage("Reminders"),
     "reportErrorDialogText": MessageLookupByLibrary.simpleMessage(
       "Do you want to report an error to the developer?",
+    ),
+    "requestPermissionLabel": MessageLookupByLibrary.simpleMessage(
+      "Request Permission",
     ),
     "resolvedLabel": MessageLookupByLibrary.simpleMessage("Matched"),
     "retryLabel": MessageLookupByLibrary.simpleMessage("Retry"),

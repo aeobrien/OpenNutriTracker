@@ -68,11 +68,19 @@ class _EditDialogState extends State<EditDialog> {
     amountEditingController.text = newVal.toStringAsFixed(2);
   }
 
+  void _setAmount(double metricValue) {
+    final displayValue = _convertValue(
+        metricValue, widget.intakeEntity.meal.mealUnit);
+    amountEditingController.text = displayValue.toStringAsFixed(2);
+  }
+
   @override
   Widget build(BuildContext context) {
     final unitStr = _convertUnit(widget.intakeEntity.meal.mealUnit ?? '');
     final isLiquid = widget.intakeEntity.meal.isLiquid;
     final unitLabel = isLiquid ? 'ml' : 'g';
+    final hasServing = widget.intakeEntity.meal.hasServingValues &&
+        widget.intakeEntity.meal.servingQuantity != null;
 
     return AlertDialog(
       title: Text(S.of(context).editItemDialogTitle),
@@ -91,18 +99,6 @@ class _EditDialogState extends State<EditDialog> {
           runSpacing: 4.0,
           children: [
             ActionChip(
-              label: Text('-100$unitLabel'),
-              onPressed: () => _changeAmount(-100),
-            ),
-            ActionChip(
-              label: Text('-50$unitLabel'),
-              onPressed: () => _changeAmount(-50),
-            ),
-            ActionChip(
-              label: Text('-10$unitLabel'),
-              onPressed: () => _changeAmount(-10),
-            ),
-            ActionChip(
               label: Text('+10$unitLabel'),
               onPressed: () => _changeAmount(10),
             ),
@@ -110,10 +106,18 @@ class _EditDialogState extends State<EditDialog> {
               label: Text('+50$unitLabel'),
               onPressed: () => _changeAmount(50),
             ),
-            ActionChip(
-              label: Text('+100$unitLabel'),
-              onPressed: () => _changeAmount(100),
-            ),
+            if (hasServing) ...[
+              ActionChip(
+                label: const Text('\u00BD srv'),
+                onPressed: () => _setAmount(
+                    widget.intakeEntity.meal.servingQuantity! * 0.5),
+              ),
+              ActionChip(
+                label: const Text('1 srv'),
+                onPressed: () =>
+                    _setAmount(widget.intakeEntity.meal.servingQuantity!),
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 8.0),

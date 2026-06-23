@@ -4302,6 +4302,141 @@ class S {
   String get notTrackedLabel {
     return Intl.message('—', name: 'notTrackedLabel', desc: '', args: []);
   }
+
+  /// `Exercise Multiplier`
+  String get exerciseMultiplierLabel {
+    return Intl.message(
+      'Exercise Multiplier',
+      name: 'exerciseMultiplierLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `How much of your active calories should count towards your daily allowance?`
+  String get exerciseMultiplierDescription {
+    return Intl.message(
+      'How much of your active calories should count towards your daily allowance?',
+      name: 'exerciseMultiplierDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Apple Health`
+  String get appleHealthLabel {
+    return Intl.message(
+      'Apple Health',
+      name: 'appleHealthLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Active Energy: Connected`
+  String get healthConnectedLabel {
+    return Intl.message(
+      'Active Energy: Connected',
+      name: 'healthConnectedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Not connected`
+  String get healthNotConnectedLabel {
+    return Intl.message(
+      'Not connected',
+      name: 'healthNotConnectedLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Request Permission`
+  String get requestPermissionLabel {
+    return Intl.message(
+      'Request Permission',
+      name: 'requestPermissionLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Day Start`
+  String get dayBoundaryLabel {
+    return Intl.message(
+      'Day Start',
+      name: 'dayBoundaryLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `When does a new day start for tracking purposes?`
+  String get dayBoundaryDescription {
+    return Intl.message(
+      'When does a new day start for tracking purposes?',
+      name: 'dayBoundaryDescription',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Calculated TDEE`
+  String get calculatedTdeeLabel {
+    return Intl.message(
+      'Calculated TDEE',
+      name: 'calculatedTdeeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Daily Target`
+  String get dailyTargetLabel {
+    return Intl.message(
+      'Daily Target',
+      name: 'dailyTargetLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Percentage`
+  String get percentageModeLabel {
+    return Intl.message(
+      'Percentage',
+      name: 'percentageModeLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `Grams`
+  String get gramsModeLabel {
+    return Intl.message('Grams', name: 'gramsModeLabel', desc: '', args: []);
+  }
+
+  /// `JSON`
+  String get exportFormatJsonLabel {
+    return Intl.message(
+      'JSON',
+      name: 'exportFormatJsonLabel',
+      desc: '',
+      args: [],
+    );
+  }
+
+  /// `CSV`
+  String get exportFormatCsvLabel {
+    return Intl.message(
+      'CSV',
+      name: 'exportFormatCsvLabel',
+      desc: '',
+      args: [],
+    );
+  }
 }
 
 class AppLocalizationDelegate extends LocalizationsDelegate<S> {

@@ -514,5 +514,20 @@
   "weeklyTargetLabel": "Target",
   "weeklyNetLabel": "Net",
   "trackedLabel": "Tracked",
-  "notTrackedLabel": "—"
+  "notTrackedLabel": "—",
+
+  "exerciseMultiplierLabel": "Exercise Multiplier",
+  "exerciseMultiplierDescription": "How much of your active calories should count towards your daily allowance?",
+  "appleHealthLabel": "Apple Health",
+  "healthConnectedLabel": "Active Energy: Connected",
+  "healthNotConnectedLabel": "Not connected",
+  "requestPermissionLabel": "Request Permission",
+  "dayBoundaryLabel": "Day Start",
+  "dayBoundaryDescription": "When does a new day start for tracking purposes?",
+  "calculatedTdeeLabel": "Calculated TDEE",
+  "dailyTargetLabel": "Daily Target",
+  "percentageModeLabel": "Percentage",
+  "gramsModeLabel": "Grams",
+  "exportFormatJsonLabel": "JSON",
+  "exportFormatCsvLabel": "CSV"
 }

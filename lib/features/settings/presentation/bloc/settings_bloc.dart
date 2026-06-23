@@ -7,7 +7,10 @@ import 'package:opennutritracker/core/domain/usecase/add_tracked_day_usecase.dar
 import 'package:opennutritracker/core/domain/usecase/get_config_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_kcal_goal_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart';
+import 'package:opennutritracker/core/data/repository/config_repository.dart';
+import 'package:opennutritracker/core/data/repository/user_repository.dart';
 import 'package:opennutritracker/core/utils/app_const.dart';
+import 'package:opennutritracker/core/utils/calc/calorie_goal_calc.dart';
 
 part 'settings_event.dart';
 
@@ -21,13 +24,17 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
   final AddTrackedDayUsecase _addTrackedDayUsecase;
   final GetKcalGoalUsecase _getKcalGoalUsecase;
   final GetMacroGoalUsecase _getMacroGoalUsecase;
+  final UserRepository _userRepository;
+  final ConfigRepository _configRepository;
 
   SettingsBloc(
       this._getConfigUsecase,
       this._addConfigUsecase,
       this._addTrackedDayUsecase,
       this._getKcalGoalUsecase,
-      this._getMacroGoalUsecase)
+      this._getMacroGoalUsecase,
+      this._userRepository,
+      this._configRepository)
       : super(SettingsInitial()) {
     on<LoadSettingsEvent>((event, emit) async {
       emit(SettingsLoadingState());
@@ -84,6 +91,43 @@ class SettingsBloc extends Bloc<SettingsEvent, SettingsState> {
       double carbGoalPct, double proteinGoalPct, double fatGoalPct) {
     _addConfigUsecase.setConfigMacroGoalPct(carbGoalPct.toInt() / 100,
         proteinGoalPct.toInt() / 100, fatGoalPct.toInt() / 100);
+  }
+
+  Future<double> getTdee() async {
+    final user = await _userRepository.getUserData();
+    return CalorieGoalCalc.getTdee(user);
+  }
+
+  Future<double> getGoalAdjustment() async {
+    final user = await _userRepository.getUserData();
+    return CalorieGoalCalc.getKcalGoalAdjustment(user.goal);
+  }
+
+  Future<String> getMacroMode() async {
+    return await _configRepository.getMacroMode();
+  }
+
+  Future<void> setMacroMode(String mode) async {
+    await _configRepository.setMacroMode(mode);
+  }
+
+  Future<double?> getFixedProteinGrams() async {
+    return await _configRepository.getFixedProteinGrams();
+  }
+
+  Future<double?> getFixedCarbsGrams() async {
+    return await _configRepository.getFixedCarbsGrams();
+  }
+
+  Future<double?> getFixedFatGrams() async {
+    return await _configRepository.getFixedFatGrams();
+  }
+
+  Future<void> setFixedMacroGrams(
+      double protein, double carbs, double fat) async {
+    await _configRepository.setFixedProteinGrams(protein);
+    await _configRepository.setFixedCarbsGrams(carbs);
+    await _configRepository.setFixedFatGrams(fat);
   }
 
   void updateTrackedDay(DateTime day) async {

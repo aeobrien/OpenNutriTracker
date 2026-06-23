@@ -157,5 +157,62 @@ class ConfigRepository {
     await _configDao.setDouble('notif${_cap(slot)}Minute', minute.toDouble());
   }
 
+  // --- Day boundary ---
+
+  Future<int> getDayBoundaryHour() async {
+    final val = await _configDao.getDouble('dayBoundaryHour');
+    return val?.toInt() ?? 2;
+  }
+
+  Future<void> setDayBoundaryHour(int hour) async {
+    await _configDao.setDouble('dayBoundaryHour', hour.toDouble());
+  }
+
+  // --- Macro gram mode ---
+
+  Future<String> getMacroMode() async {
+    return await _configDao.getValue('macroMode') ?? 'percentage';
+  }
+
+  Future<void> setMacroMode(String mode) async {
+    await _configDao.setValue('macroMode', mode);
+  }
+
+  Future<double?> getFixedProteinGrams() async {
+    return await _configDao.getDouble('fixedProteinGrams');
+  }
+
+  Future<void> setFixedProteinGrams(double? value) async {
+    if (value == null) {
+      await _configDao.deleteKey('fixedProteinGrams');
+    } else {
+      await _configDao.setDouble('fixedProteinGrams', value);
+    }
+  }
+
+  Future<double?> getFixedCarbsGrams() async {
+    return await _configDao.getDouble('fixedCarbsGrams');
+  }
+
+  Future<void> setFixedCarbsGrams(double? value) async {
+    if (value == null) {
+      await _configDao.deleteKey('fixedCarbsGrams');
+    } else {
+      await _configDao.setDouble('fixedCarbsGrams', value);
+    }
+  }
+
+  Future<double?> getFixedFatGrams() async {
+    return await _configDao.getDouble('fixedFatGrams');
+  }
+
+  Future<void> setFixedFatGrams(double? value) async {
+    if (value == null) {
+      await _configDao.deleteKey('fixedFatGrams');
+    } else {
+      await _configDao.setDouble('fixedFatGrams', value);
+    }
+  }
+
   String _cap(String s) => s[0].toUpperCase() + s.substring(1);
 }
