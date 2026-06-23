@@ -22,12 +22,17 @@ class ExportImportBloc extends Bloc<ExportImportEvent, ExportImportState> {
       try {
         emit(ExportImportLoadingState());
 
-        final result = await _exportDataUsecase.exportData(
-          exportZipFileName,
-          userActivityJsonFileName,
-          userIntakeJsonFileName,
-          trackedDayJsonFileName,
-        );
+        bool result;
+        if (event.format == 'csv') {
+          result = await _exportDataUsecase.exportDataCsv(exportZipFileName);
+        } else {
+          result = await _exportDataUsecase.exportData(
+            exportZipFileName,
+            userActivityJsonFileName,
+            userIntakeJsonFileName,
+            trackedDayJsonFileName,
+          );
+        }
 
         if (result) {
           emit(ExportImportSuccess());

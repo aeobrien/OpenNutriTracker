@@ -511,5 +511,20 @@
   "weeklyTargetLabel": "Hedef",
   "weeklyNetLabel": "Net",
   "trackedLabel": "Takip edildi",
-  "notTrackedLabel": "—"
+  "notTrackedLabel": "—",
+
+  "exerciseMultiplierLabel": "Egzersiz Çarpanı",
+  "exerciseMultiplierDescription": "Aktif kalorilerinizin ne kadarı günlük hedefinize sayılsın?",
+  "appleHealthLabel": "Apple Health",
+  "healthConnectedLabel": "Aktif Enerji: Bağlı",
+  "healthNotConnectedLabel": "Bağlı değil",
+  "requestPermissionLabel": "İzin İste",
+  "dayBoundaryLabel": "Gün Başlangıcı",
+  "dayBoundaryDescription": "Takip için yeni gün ne zaman başlar?",
+  "calculatedTdeeLabel": "Hesaplanan TDEE",
+  "dailyTargetLabel": "Günlük Hedef",
+  "percentageModeLabel": "Yüzde",
+  "gramsModeLabel": "Gram",
+  "exportFormatJsonLabel": "JSON",
+  "exportFormatCsvLabel": "CSV"
 }

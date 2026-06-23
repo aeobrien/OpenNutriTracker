@@ -17,10 +17,10 @@ import 'package:opennutritracker/generated/l10n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:opennutritracker/features/settings/presentation/health_debug_screen.dart';
 import 'package:opennutritracker/features/settings/presentation/widgets/calculations_dialog.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
+import 'package:opennutritracker/core/data/repository/health_repository.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -76,6 +76,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () => _showCalculationsDialog(context),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.fitness_center_outlined),
+                  title: Text(S.of(context).exerciseMultiplierLabel),
+                  onTap: () => _showExerciseMultiplierDialog(context),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.nightlight_outlined),
+                  title: Text(S.of(context).dayBoundaryLabel),
+                  subtitle: _DayBoundarySubtitle(),
+                  onTap: () => _showDayBoundaryDialog(context),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.monitor_heart_outlined),
+                  title: Text(S.of(context).appleHealthLabel),
+                  subtitle: _HealthStatusSubtitle(),
+                  onTap: () => _showHealthDialog(context),
+                ),
+                ListTile(
                   leading: const Icon(Icons.notifications_outlined),
                   title: Text(S.of(context).remindersLabel),
                   onTap: () => _showNotificationSettingsDialog(context),
@@ -127,15 +144,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(S.of(context).settingsPrivacySettings),
                   onTap: () =>
                       _showPrivacyDialog(context, state.sendAnonymousData),
-                ),
-                ListTile(
-                  leading: const Icon(Icons.monitor_heart_outlined),
-                  title: const Text('HealthKit Debug'),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const HealthDebugScreen()),
-                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.error_outline_outlined),
@@ -451,6 +459,160 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     }
   }
+
+  void _showExerciseMultiplierDialog(BuildContext context) async {
+    final configRepo = locator<ConfigRepository>();
+    double current = await configRepo.getExerciseMultiplier();
+
+    if (!context.mounted) return;
+    final result = await showDialog<double>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(S.of(context).exerciseMultiplierLabel),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(S.of(context).exerciseMultiplierDescription),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${(current * 100).round()}%',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  Slider(
+                    min: 0,
+                    max: 1.0,
+                    divisions: 20,
+                    value: current,
+                    label: '${(current * 100).round()}%',
+                    onChanged: (value) {
+                      setDialogState(() => current = value);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(S.of(context).dialogCancelLabel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(current),
+                  child: Text(S.of(context).dialogOKLabel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    if (result != null) {
+      await configRepo.setExerciseMultiplier(result);
+      _homeBloc.add(LoadItemsEvent());
+    }
+  }
+
+  void _showDayBoundaryDialog(BuildContext context) async {
+    final configRepo = locator<ConfigRepository>();
+    int current = await configRepo.getDayBoundaryHour();
+
+    if (!context.mounted) return;
+    final result = await showDialog<int>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(S.of(context).dayBoundaryLabel),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(S.of(context).dayBoundaryDescription),
+              const SizedBox(height: 8),
+              ...List.generate(7, (i) {
+                final hour = i;
+                final label = hour == 0 ? '12:00 AM' : '$hour:00 AM';
+                return RadioListTile<int>(
+                  title: Text(label),
+                  value: hour,
+                  groupValue: current,
+                  onChanged: (value) {
+                    Navigator.of(context).pop(value);
+                  },
+                );
+              }),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(S.of(context).dialogCancelLabel),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result != null) {
+      await configRepo.setDayBoundaryHour(result);
+      setState(() {}); // refresh subtitle
+    }
+  }
+
+  void _showHealthDialog(BuildContext context) async {
+    final healthRepo = locator<HealthRepository>();
+    bool hasPerm = await healthRepo.hasPermission();
+
+    if (!context.mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text(S.of(context).appleHealthLabel),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        hasPerm ? Icons.check_circle : Icons.cancel,
+                        color: hasPerm ? Colors.green : Colors.grey,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(hasPerm
+                          ? S.of(context).healthConnectedLabel
+                          : S.of(context).healthNotConnectedLabel),
+                    ],
+                  ),
+                  if (!hasPerm) ...[
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () async {
+                        final result =
+                            await healthRepo.requestPermission();
+                        setDialogState(() => hasPerm = result);
+                      },
+                      child: Text(S.of(context).requestPermissionLabel),
+                    ),
+                  ],
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(S.of(context).dialogOKLabel),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 }
 
 class _ApiKeyTile extends StatefulWidget {
@@ -545,6 +707,36 @@ class _ApiKeyTileState extends State<_ApiKeyTile> {
       await widget.setKey(result.trim());
       _checkKey();
     }
+  }
+}
+
+class _DayBoundarySubtitle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<int>(
+      future: locator<ConfigRepository>().getDayBoundaryHour(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        final hour = snapshot.data!;
+        final label = hour == 0 ? '12:00 AM' : '$hour:00 AM';
+        return Text(label);
+      },
+    );
+  }
+}
+
+class _HealthStatusSubtitle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: locator<HealthRepository>().hasPermission(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        return Text(snapshot.data!
+            ? S.of(context).healthConnectedLabel
+            : S.of(context).healthNotConnectedLabel);
+      },
+    );
   }
 }
 

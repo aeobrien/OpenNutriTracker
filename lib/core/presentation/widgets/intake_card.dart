@@ -33,14 +33,19 @@ class IntakeCard extends StatelessWidget {
           height: 120,
           child: Dismissible(
             key: ValueKey('dismiss_${intake.id}'),
-            direction: DismissDirection.down,
-            background: Card(
+            direction: DismissDirection.endToStart,
+            background: const SizedBox.shrink(),
+            secondaryBackground: Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16.0),
               ),
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const Center(
-                child: Icon(Icons.delete_outline),
+              child: const Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding: EdgeInsets.only(right: 16.0),
+                  child: Icon(Icons.delete_outline),
+                ),
               ),
             ),
             onDismissed: (_) {

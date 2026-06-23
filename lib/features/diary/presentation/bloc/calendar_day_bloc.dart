@@ -152,6 +152,7 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
         carbsTracked: intakeEntity.totalCarbsGram,
         fatTracked: intakeEntity.totalFatsGram,
         proteinTracked: intakeEntity.totalProteinsGram);
+    await _addTrackedDayUsecase.deleteDayIfEmpty(day);
   }
 
   Future<void> deleteUserActivityItem(BuildContext context,
@@ -168,6 +169,7 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
         carbsAmount: carbsAmount,
         fatAmount: fatAmount,
         proteinAmount: proteinAmount);
+    await _addTrackedDayUsecase.deleteDayIfEmpty(day);
     _updateDiaryPage(day);
   }
 

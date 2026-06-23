@@ -7,6 +7,12 @@ class GetMacroGoalUsecase {
   GetMacroGoalUsecase(this._configRepository);
 
   Future<double> getCarbsGoal(double totalCalorieGoal) async {
+    final macroMode = await _configRepository.getMacroMode();
+    if (macroMode == 'grams') {
+      final fixed = await _configRepository.getFixedCarbsGrams();
+      if (fixed != null) return fixed;
+    }
+
     final config = await _configRepository.getConfig();
     final userCarbGoal = config.userCarbGoalPct;
 
@@ -15,6 +21,12 @@ class GetMacroGoalUsecase {
   }
 
   Future<double> getFatsGoal(double totalCalorieGoal) async {
+    final macroMode = await _configRepository.getMacroMode();
+    if (macroMode == 'grams') {
+      final fixed = await _configRepository.getFixedFatGrams();
+      if (fixed != null) return fixed;
+    }
+
     final config = await _configRepository.getConfig();
     final userFatGoal = config.userFatGoalPct;
 
@@ -23,6 +35,12 @@ class GetMacroGoalUsecase {
   }
 
   Future<double> getProteinsGoal(double totalCalorieGoal) async {
+    final macroMode = await _configRepository.getMacroMode();
+    if (macroMode == 'grams') {
+      final fixed = await _configRepository.getFixedProteinGrams();
+      if (fixed != null) return fixed;
+    }
+
     final config = await _configRepository.getConfig();
     final userProteinGoal = config.userProteinGoalPct;
 

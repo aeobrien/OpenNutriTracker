@@ -85,6 +85,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "appLicenseLabel": MessageLookupByLibrary.simpleMessage("GPL-3.0 lisansı"),
     "appTitle": MessageLookupByLibrary.simpleMessage("OpenNutriTracker"),
     "appVersionName": m0,
+    "appleHealthLabel": MessageLookupByLibrary.simpleMessage("Apple Health"),
     "baseLabel": MessageLookupByLibrary.simpleMessage("base"),
     "baseQuantityLabel": MessageLookupByLibrary.simpleMessage(
       "Temel miktar (g/ml)",
@@ -104,6 +105,9 @@ class MessageLookup extends MessageLookupByLibrary {
     "buttonSaveLabel": MessageLookupByLibrary.simpleMessage("Kaydet"),
     "buttonStartLabel": MessageLookupByLibrary.simpleMessage("BAŞLA"),
     "buttonYesLabel": MessageLookupByLibrary.simpleMessage("EVET"),
+    "calculatedTdeeLabel": MessageLookupByLibrary.simpleMessage(
+      "Hesaplanan TDEE",
+    ),
     "calculationsMacronutrientsDistributionLabel":
         MessageLookupByLibrary.simpleMessage("Makro besin dağılımı"),
     "calculationsMacrosDistribution": m1,
@@ -155,9 +159,14 @@ class MessageLookup extends MessageLookupByLibrary {
     "dailyKcalAdjustmentLabel": MessageLookupByLibrary.simpleMessage(
       "Günlük Kcal ayarı:",
     ),
+    "dailyTargetLabel": MessageLookupByLibrary.simpleMessage("Günlük Hedef"),
     "dataCollectionLabel": MessageLookupByLibrary.simpleMessage(
       "Anonim kullanım verileri sağlayarak geliştirmeyi destekleyin",
     ),
+    "dayBoundaryDescription": MessageLookupByLibrary.simpleMessage(
+      "Takip için yeni gün ne zaman başlar?",
+    ),
+    "dayBoundaryLabel": MessageLookupByLibrary.simpleMessage("Gün Başlangıcı"),
     "deleteRecipeConfirmLabel": MessageLookupByLibrary.simpleMessage(
       "Bu tarif silinsin mi? Geçmiş günlük kayıtları korunacaktır.",
     ),
@@ -210,7 +219,15 @@ class MessageLookup extends MessageLookupByLibrary {
     "errorProductNotFound": MessageLookupByLibrary.simpleMessage(
       "Ürün bulunamadı",
     ),
+    "exerciseMultiplierDescription": MessageLookupByLibrary.simpleMessage(
+      "Aktif kalorilerinizin ne kadarı günlük hedefinize sayılsın?",
+    ),
+    "exerciseMultiplierLabel": MessageLookupByLibrary.simpleMessage(
+      "Egzersiz Çarpanı",
+    ),
     "exportAction": MessageLookupByLibrary.simpleMessage("Dışa Aktar"),
+    "exportFormatCsvLabel": MessageLookupByLibrary.simpleMessage("CSV"),
+    "exportFormatJsonLabel": MessageLookupByLibrary.simpleMessage("JSON"),
     "exportImportDescription": MessageLookupByLibrary.simpleMessage(
       "Uygulama verilerini bir zip dosyasına dışa aktarabilir ve daha sonra içe aktarabilirsiniz. Bu, verilerinizi yedeklemek veya başka bir cihaza aktarmak istiyorsanız kullanışlıdır.\n\nUygulama, verilerinizi saklamak için herhangi bir bulut hizmeti kullanmaz.",
     ),
@@ -238,9 +255,16 @@ class MessageLookup extends MessageLookupByLibrary {
     "goalMaintainWeight": MessageLookupByLibrary.simpleMessage("Kilo Koru"),
     "gramMilliliterUnit": MessageLookupByLibrary.simpleMessage("g/ml"),
     "gramUnit": MessageLookupByLibrary.simpleMessage("g"),
+    "gramsModeLabel": MessageLookupByLibrary.simpleMessage("Gram"),
     "gramsShortLabel": MessageLookupByLibrary.simpleMessage("g"),
+    "healthConnectedLabel": MessageLookupByLibrary.simpleMessage(
+      "Aktif Enerji: Bağlı",
+    ),
     "healthDeniedNote": MessageLookupByLibrary.simpleMessage(
       "Bunu daha sonra Ayarlar\'dan etkinleştirebilirsiniz.",
+    ),
+    "healthNotConnectedLabel": MessageLookupByLibrary.simpleMessage(
+      "Bağlı değil",
     ),
     "healthPermissionBody": MessageLookupByLibrary.simpleMessage(
       "FoodTracker, günlük kalori hedefinizi otomatik olarak ayarlamak için aktif kalorilerinizi okuyabilir.",
@@ -795,6 +819,7 @@ class MessageLookup extends MessageLookupByLibrary {
     ),
     "per100gmlLabel": MessageLookupByLibrary.simpleMessage("100g/ml başına"),
     "perServingLabel": MessageLookupByLibrary.simpleMessage("Porsiyon başına"),
+    "percentageModeLabel": MessageLookupByLibrary.simpleMessage("Yüzde"),
     "pleaseCheckValues": m5,
     "privacyPolicyLabel": MessageLookupByLibrary.simpleMessage(
       "Gizlilik politikası",
@@ -832,6 +857,7 @@ class MessageLookup extends MessageLookupByLibrary {
     "reportErrorDialogText": MessageLookupByLibrary.simpleMessage(
       "Geliştiriciye bir hata bildirmek istiyor musunuz?",
     ),
+    "requestPermissionLabel": MessageLookupByLibrary.simpleMessage("İzin İste"),
     "resolvedLabel": MessageLookupByLibrary.simpleMessage("Eşleşti"),
     "retryLabel": MessageLookupByLibrary.simpleMessage("Tekrar Dene"),
     "saturatedFatLabel": MessageLookupByLibrary.simpleMessage("doymuş yağ"),

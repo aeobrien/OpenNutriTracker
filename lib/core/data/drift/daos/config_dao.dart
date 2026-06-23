@@ -46,4 +46,8 @@ class ConfigDao extends DatabaseAccessor<AppDatabase> with _$ConfigDaoMixin {
   Future<void> setDouble(String key, double value) async {
     await setValue(key, value.toString());
   }
+
+  Future<void> deleteKey(String key) async {
+    await (delete(config)..where((t) => t.key.equals(key))).go();
+  }
 }

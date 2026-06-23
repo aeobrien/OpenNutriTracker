@@ -504,5 +504,20 @@
   "weeklyTargetLabel": "Ziel",
   "weeklyNetLabel": "Netto",
   "trackedLabel": "Erfasst",
-  "notTrackedLabel": "—"
+  "notTrackedLabel": "—",
+
+  "exerciseMultiplierLabel": "Bewegungsmultiplikator",
+  "exerciseMultiplierDescription": "Wie viel Ihrer aktiven Kalorien sollen auf Ihr Tagesziel angerechnet werden?",
+  "appleHealthLabel": "Apple Health",
+  "healthConnectedLabel": "Aktive Energie: Verbunden",
+  "healthNotConnectedLabel": "Nicht verbunden",
+  "requestPermissionLabel": "Berechtigung anfordern",
+  "dayBoundaryLabel": "Tagesbeginn",
+  "dayBoundaryDescription": "Wann beginnt ein neuer Tag für die Erfassung?",
+  "calculatedTdeeLabel": "Berechneter TDEE",
+  "dailyTargetLabel": "Tagesziel",
+  "percentageModeLabel": "Prozent",
+  "gramsModeLabel": "Gramm",
+  "exportFormatJsonLabel": "JSON",
+  "exportFormatCsvLabel": "CSV"
 }

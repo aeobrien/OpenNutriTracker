@@ -262,29 +262,26 @@ class _IncrementChips extends StatelessWidget {
     onQuantityOrUnitChanged(text, selectedUnit);
   }
 
+  void _setAmount(double value) {
+    final text = value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toStringAsFixed(1);
+    quantityTextController.text = text;
+    onQuantityOrUnitChanged(text, selectedUnit);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isServing = selectedUnit == UnitDropdownItem.serving.toString();
     final isLiquid = product.isLiquid;
     final unitLabel = isLiquid ? 'ml' : 'g';
+    final hasServing = product.hasServingValues && product.servingQuantity != null;
 
     return Wrap(
       spacing: 8.0,
       runSpacing: 4.0,
       children: [
         if (!isServing) ...[
-          ActionChip(
-            label: Text('-100$unitLabel'),
-            onPressed: () => _changeAmount(-100),
-          ),
-          ActionChip(
-            label: Text('-50$unitLabel'),
-            onPressed: () => _changeAmount(-50),
-          ),
-          ActionChip(
-            label: Text('-10$unitLabel'),
-            onPressed: () => _changeAmount(-10),
-          ),
           ActionChip(
             label: Text('+10$unitLabel'),
             onPressed: () => _changeAmount(10),
@@ -293,16 +290,19 @@ class _IncrementChips extends StatelessWidget {
             label: Text('+50$unitLabel'),
             onPressed: () => _changeAmount(50),
           ),
-          ActionChip(
-            label: Text('+100$unitLabel'),
-            onPressed: () => _changeAmount(100),
-          ),
+          if (hasServing) ...[
+            ActionChip(
+              label: const Text('\u00BD srv'),
+              onPressed: () =>
+                  _setAmount(product.servingQuantity! * 0.5),
+            ),
+            ActionChip(
+              label: const Text('1 srv'),
+              onPressed: () => _setAmount(product.servingQuantity!),
+            ),
+          ],
         ],
         if (isServing) ...[
-          ActionChip(
-            label: const Text('-0.5 srv'),
-            onPressed: () => _changeAmount(-0.5),
-          ),
           ActionChip(
             label: const Text('+0.5 srv'),
             onPressed: () => _changeAmount(0.5),
