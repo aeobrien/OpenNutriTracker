@@ -41,13 +41,26 @@ final recipe = await mealie.fetchRecipe(page.items.first.slug);
 final entity = MealieRecipeMapper.toRecipeEntity(recipe);
 ```
 
-### 2. The persistence decision (read this before saving)
-`RecipeRepository.createRecipe` **recomputes** per-serving nutrition from *ingredient*
-macros. Mealie gives a recipe-level nutrition block and ingredients with **no** macros,
-so calling `createRecipe` as-is would **zero out** an imported recipe's nutrition. Options:
+### 2. Persistence — DONE (`createRecipeWithNutrition`)
+`RecipeRepository.createRecipe` recomputes per-serving nutrition from *ingredient* macros,
+which would **zero out** a Mealie import (recipe-level nutrition, macro-less ingredients).
+Fixed: `RecipeRepository.createRecipeWithNutrition({...})` inserts explicit per-serving
+fields and **skips** the recompute. Built + tested against in-memory SQLite
+(`test/features/recipes/data/mealie/recipe_repository_nutrition_test.dart`). Just call it
+with the mapped entity's fields:
 
-- **(A, recommended)** Add `RecipeRepository.createRecipeWithNutrition({name, servings, kcalPerServing, proteinPerServing, carbsPerServing, fatPerServing, ingredients})` that inserts the `RecipesCompanion` with explicit per-serving fields and **skips** `recomputeNutrition`. The mapper already gives you a `RecipeEntity` with correct per-serving macros — persist those directly.
-- **(B)** Synthesize one ingredient whose `per100 × grams` reproduces the totals. Hacky; avoid.
+```dart
+final entity = MealieRecipeMapper.toRecipeEntity(recipe);
+await recipeRepository.createRecipeWithNutrition(
+  name: entity.name,
+  servings: entity.servings,
+  kcalPerServing: entity.kcalPerServing,
+  proteinPerServing: entity.proteinPerServing,
+  carbsPerServing: entity.carbsPerServing,
+  fatPerServing: entity.fatPerServing,
+  ingredients: entity.ingredients,
+);
+```
 
 ### 3. UI
 Add "Import from Mealie" beside the existing recipe-creation options in `features/recipes`:

@@ -53,6 +53,58 @@ class RecipeRepository {
     return (await getRecipeById(recipeId))!;
   }
 
+  /// Creates a recipe with **explicit** per-serving nutrition, WITHOUT recomputing
+  /// from ingredients. Use for imported recipes (e.g. from Mealie) whose macros are
+  /// supplied at the recipe level and whose ingredients carry no per-100g data —
+  /// [createRecipe]'s `recomputeNutrition` would otherwise zero such a recipe out.
+  Future<RecipeEntity> createRecipeWithNutrition({
+    required String name,
+    required double servings,
+    required double kcalPerServing,
+    required double proteinPerServing,
+    required double carbsPerServing,
+    required double fatPerServing,
+    List<RecipeIngredientEntity> ingredients = const [],
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final recipeId = _uuid.v4();
+    _log.fine('Creating recipe with explicit nutrition: $name (id: $recipeId)');
+
+    await _recipeDao.insertRecipe(RecipesCompanion(
+      id: Value(recipeId),
+      name: Value(name),
+      servings: Value(servings),
+      createdAt: Value(now),
+      updatedAt: Value(now),
+      kcalPerServing: Value(kcalPerServing),
+      proteinPerServing: Value(proteinPerServing),
+      carbsPerServing: Value(carbsPerServing),
+      fatPerServing: Value(fatPerServing),
+    ));
+
+    final ingredientCompanions = <RecipeIngredientsCompanion>[];
+    for (var i = 0; i < ingredients.length; i++) {
+      final ing = ingredients[i];
+      ingredientCompanions.add(RecipeIngredientsCompanion(
+        id: Value(ing.id.isEmpty ? _uuid.v4() : ing.id),
+        recipeId: Value(recipeId),
+        foodItemId: Value(ing.foodItemId),
+        name: Value(ing.name),
+        grams: Value(ing.grams),
+        kcalPer100: Value(ing.kcalPer100),
+        proteinPer100: Value(ing.proteinPer100),
+        carbsPer100: Value(ing.carbsPer100),
+        fatPer100: Value(ing.fatPer100),
+        sortOrder: Value(i),
+      ));
+    }
+    // Deliberately NOT calling recomputeNutrition — it would overwrite the explicit
+    // per-serving values above with ingredient-derived totals (zero, for Mealie).
+    await _recipeDao.replaceIngredients(recipeId, ingredientCompanions);
+
+    return (await getRecipeById(recipeId))!;
+  }
+
   Future<RecipeEntity?> getRecipeById(String id) async {
     final recipe = await _recipeDao.getById(id);
     if (recipe == null) return null;
