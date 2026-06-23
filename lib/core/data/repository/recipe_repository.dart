@@ -105,6 +105,63 @@ class RecipeRepository {
     return (await getRecipeById(recipeId))!;
   }
 
+  /// Inserts-or-updates a recipe mirrored one-way from Mealie, keyed on the
+  /// recipe's [RecipeEntity.id] (which the Mealie mapper sets to the Mealie slug —
+  /// a stable identifier). Used by the one-way sync: Mealie is the source of truth,
+  /// FoodTracker holds a read-only mirror. Preserves the explicit per-serving
+  /// nutrition (no recompute) and replaces the ingredient list each time.
+  Future<RecipeEntity> upsertMirroredRecipe(RecipeEntity recipe) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final existing = await _recipeDao.getById(recipe.id);
+
+    if (existing == null) {
+      await _recipeDao.insertRecipe(RecipesCompanion(
+        id: Value(recipe.id),
+        name: Value(recipe.name),
+        servings: Value(recipe.servings),
+        createdAt: Value(now),
+        updatedAt: Value(now),
+        kcalPerServing: Value(recipe.kcalPerServing),
+        proteinPerServing: Value(recipe.proteinPerServing),
+        carbsPerServing: Value(recipe.carbsPerServing),
+        fatPerServing: Value(recipe.fatPerServing),
+      ));
+    } else {
+      await _recipeDao.updateRecipe(
+        recipe.id,
+        RecipesCompanion(
+          name: Value(recipe.name),
+          servings: Value(recipe.servings),
+          updatedAt: Value(now),
+          kcalPerServing: Value(recipe.kcalPerServing),
+          proteinPerServing: Value(recipe.proteinPerServing),
+          carbsPerServing: Value(recipe.carbsPerServing),
+          fatPerServing: Value(recipe.fatPerServing),
+        ),
+      );
+    }
+
+    final ingredientCompanions = <RecipeIngredientsCompanion>[];
+    for (var i = 0; i < recipe.ingredients.length; i++) {
+      final ing = recipe.ingredients[i];
+      ingredientCompanions.add(RecipeIngredientsCompanion(
+        id: Value(ing.id.isEmpty ? _uuid.v4() : ing.id),
+        recipeId: Value(recipe.id),
+        foodItemId: Value(ing.foodItemId),
+        name: Value(ing.name),
+        grams: Value(ing.grams),
+        kcalPer100: Value(ing.kcalPer100),
+        proteinPer100: Value(ing.proteinPer100),
+        carbsPer100: Value(ing.carbsPer100),
+        fatPer100: Value(ing.fatPer100),
+        sortOrder: Value(i),
+      ));
+    }
+    await _recipeDao.replaceIngredients(recipe.id, ingredientCompanions);
+
+    return (await getRecipeById(recipe.id))!;
+  }
+
   Future<RecipeEntity?> getRecipeById(String id) async {
     final recipe = await _recipeDao.getById(id);
     if (recipe == null) return null;
