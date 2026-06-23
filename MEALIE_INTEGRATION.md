@@ -61,8 +61,13 @@ fibre/sugar/sodium, so the mapper drops them. Mealie's nutrition DTO still parse
 11 fields, so if you later add those to `RecipeEntity`, the data's already there
 (note: Mealie stores *sodium*, not salt — multiply by 2.5 for salt grams).
 
-## Mealie server
-- Host: the Mac mini, `http://100.71.40.51:9000` (Tailscale). LAN-reachable too; not exposed to the public internet.
-- Deploy: `~/services/mealie/docker-compose.yml` on the mini (official image, SQLite, persistent `mealie-data` volume), via colima.
-- Admin login + API token: see `~/services/mealie/SETUP_NOTES.md` on the mini (written after first boot).
-- Status of the overnight deploy is reported in the session summary.
+## Mealie server — DEPLOYED + VERIFIED (2026-06-23)
+- Host: the Mac mini, `http://100.71.40.51:9000` (Tailscale; LAN-reachable; not public).
+- Mealie v3.19.2, running under **OrbStack** (the mini's existing docker runtime that
+  hosts the media stack — colima turned out unnecessary). Compose file:
+  `~/services/mealie/docker-compose.yml` (official image, SQLite, `mealie-data` volume).
+- **Admin login + API token: `~/services/mealie/SETUP_NOTES.md` on the mini** (chmod 600).
+  Default login is `changeme@example.com` / `MyPassword` — **change it first thing**.
+- Verified end-to-end: imported a recipe by URL and read back per-serving nutrition
+  (624 kcal / 35P / 58C / 25F, 6 servings) via the token-auth API — exactly the shape
+  this module's DTOs + mapper consume. So pointing the app at it should just work.
