@@ -32,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -71,6 +71,11 @@ class AppDatabase extends _$AppDatabase {
           );
           await customStatement(
             'CREATE INDEX IF NOT EXISTS idx_user_activities_date ON user_activities(date)',
+          );
+          // Provenance for externally-synced (Mantel) intake entries. A UNIQUE
+          // index makes a re-pull idempotent; NULLs (local entries) are exempt.
+          await customStatement(
+            'CREATE UNIQUE INDEX IF NOT EXISTS idx_log_entries_external_id ON log_entries(external_id)',
           );
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -157,6 +162,17 @@ class AppDatabase extends _$AppDatabase {
             );
             await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_log_entries_recipe_id ON log_entries(recipe_id)',
+            );
+          }
+          if (from < 6) {
+            // Mantel meal-sync provenance. Add the column, then a UNIQUE index
+            // so a retried pull can't double-log an intake. SQLite allows the
+            // many NULLs that pre-existing local entries carry.
+            await customStatement(
+              'ALTER TABLE log_entries ADD COLUMN external_id TEXT',
+            );
+            await customStatement(
+              'CREATE UNIQUE INDEX IF NOT EXISTS idx_log_entries_external_id ON log_entries(external_id)',
             );
           }
         },

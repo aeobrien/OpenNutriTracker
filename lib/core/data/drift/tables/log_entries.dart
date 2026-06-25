@@ -18,6 +18,14 @@ class LogEntries extends Table {
   TextColumn get quickAddLabel => text().nullable()();
   TextColumn get recipeId => text().nullable()();
 
+  /// Provenance key for entries synced from an external source (Mantel). Holds
+  /// the source's UUID so a re-pull never double-logs. Null for locally-created
+  /// entries. Uniqueness is enforced by a unique index (created in both the
+  /// onCreate and onUpgrade paths) rather than an inline constraint, so fresh
+  /// installs and migrated DBs share the same schema — and SQLite's unique
+  /// index permits the many NULLs that local entries carry.
+  TextColumn get externalId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

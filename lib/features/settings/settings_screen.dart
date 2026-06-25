@@ -20,6 +20,8 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:opennutritracker/features/settings/presentation/widgets/calculations_dialog.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 import 'package:opennutritracker/features/recipes/data/mealie_secure_storage.dart';
+import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
+import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/health_repository.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
@@ -159,6 +161,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .getMealieToken()
                       .then((v) => (v ?? '').isNotEmpty),
                 ),
+                // Mantel logs meals by voice/chat; FoodTracker pulls them into
+                // the diary. Base URL + actor are required; the token is only
+                // needed if Mantel has one set for this actor (blank on tailnet).
+                _ApiKeyTile(
+                  icon: Icons.sync_alt_outlined,
+                  label: 'Mantel server URL',
+                  configuredText: 'Configured',
+                  notSetText: 'Not set',
+                  hintText: 'http://100.71.40.51:8770',
+                  obscure: false,
+                  getKey: () => SecureAppStorageProvider().getMantelBaseUrl(),
+                  setKey: (k) => SecureAppStorageProvider().setMantelBaseUrl(k),
+                  deleteKey: () => SecureAppStorageProvider().setMantelBaseUrl(''),
+                  hasKey: () => SecureAppStorageProvider()
+                      .getMantelBaseUrl()
+                      .then((v) => (v ?? '').isNotEmpty),
+                ),
+                _ApiKeyTile(
+                  icon: Icons.person_outline,
+                  label: 'Mantel meal owner',
+                  configuredText: 'Configured',
+                  notSetText: 'Not set',
+                  hintText: 'aidan',
+                  obscure: false,
+                  getKey: () => SecureAppStorageProvider().getMantelActor(),
+                  setKey: (k) => SecureAppStorageProvider().setMantelActor(k),
+                  deleteKey: () => SecureAppStorageProvider().setMantelActor(''),
+                  hasKey: () => SecureAppStorageProvider()
+                      .getMantelActor()
+                      .then((v) => (v ?? '').isNotEmpty),
+                ),
+                _ApiKeyTile(
+                  icon: Icons.key_outlined,
+                  label: 'Mantel intake token (optional)',
+                  configuredText: 'Configured',
+                  notSetText: 'Not set',
+                  hintText: 'leave blank on the tailnet',
+                  getKey: () =>
+                      SecureAppStorageProvider().getMantelIntakeToken(),
+                  setKey: (k) =>
+                      SecureAppStorageProvider().setMantelIntakeToken(k),
+                  deleteKey: () =>
+                      SecureAppStorageProvider().setMantelIntakeToken(''),
+                  hasKey: () => SecureAppStorageProvider()
+                      .getMantelIntakeToken()
+                      .then((v) => (v ?? '').isNotEmpty),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.restaurant_outlined),
+                  title: const Text('Sync meals from Mantel'),
+                  onTap: () => _syncFromMantel(context),
+                ),
                 ListTile(
                   leading: const Icon(Icons.description_outlined),
                   title: Text(S.of(context).settingsDisclaimerLabel),
@@ -270,6 +324,49 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       builder: (context) => const _NotificationSettingsDialog(),
     );
+  }
+
+  /// Manual full sync of meals logged via Mantel. Bypasses any auto-sync — runs
+  /// a fresh pull and reports plainly so it never feels broken when the
+  /// foreground auto-sync already pulled everything.
+  Future<void> _syncFromMantel(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    if (!await SecureAppStorageProvider().hasMantelConfig()) {
+      messenger.showSnackBar(const SnackBar(
+        content:
+            Text('Set the Mantel server URL and meal owner above first.'),
+      ));
+      return;
+    }
+
+    messenger.showSnackBar(
+      const SnackBar(content: Text('Syncing meals from Mantel…')),
+    );
+
+    try {
+      final result = await locator<MantelSyncService>().syncPending();
+      final String message;
+      if (!result.configured) {
+        message = 'Set the Mantel server URL and meal owner above first.';
+      } else if (result.synced > 0) {
+        final failed = result.failed > 0 ? ' (${result.failed} failed)' : '';
+        message = 'Synced ${result.synced} meal(s) from Mantel$failed.';
+      } else if (result.failed > 0) {
+        message = '${result.failed} meal(s) failed to sync — try again.';
+      } else {
+        message = 'Up to date — no new meals.';
+      }
+      if (result.hasNewEntries) {
+        _homeBloc.add(const LoadItemsEvent());
+        _diaryBloc.add(const LoadDiaryYearEvent());
+      }
+      messenger.showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('Mantel sync failed: $e')),
+      );
+    }
   }
 
   void _showThemeDialog(BuildContext context, AppThemeEntity currentAppTheme) {

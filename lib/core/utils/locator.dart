@@ -68,6 +68,7 @@ import 'package:opennutritracker/features/recipes/presentation/bloc/recipe_log_b
 import 'package:opennutritracker/features/recipes/presentation/bloc/llm_recipe_bloc.dart';
 import 'package:opennutritracker/features/recipes/data/data_source/claude_recipe_data_source.dart';
 import 'package:opennutritracker/features/recipes/domain/usecase/resolve_ingredients_usecase.dart';
+import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/export_data_usecase.dart';
 import 'package:opennutritracker/features/settings/domain/usecase/import_data_usecase.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/export_import_bloc.dart';
@@ -232,6 +233,10 @@ Future<void> initLocator() async {
       () => HealthRepository(locator(), dailyStatsDao));
   locator.registerLazySingleton<RecipeRepository>(
       () => RecipeRepository(recipeDao));
+
+  // Mantel meal sync (one-way pull of voice/chat-logged meals into the diary).
+  locator.registerLazySingleton<MantelSyncService>(() =>
+      MantelSyncService(locator<IntakeRepository>(), secureAppStorageProvider));
 
   // DataSources (only non-Hive ones remain)
   locator.registerLazySingleton<PhysicalActivityDataSource>(

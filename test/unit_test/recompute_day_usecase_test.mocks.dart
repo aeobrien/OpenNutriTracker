@@ -312,6 +312,15 @@ class MockLogEntryDao extends _i1.Mock implements _i5.LogEntryDao {
           as _i6.Future<void>);
 
   @override
+  _i6.Future<bool> existsByExternalId(String? externalId) =>
+      (super.noSuchMethod(
+            Invocation.method(#existsByExternalId, [externalId]),
+            returnValue: _i6.Future<bool>.value(false),
+            returnValueForMissingStub: _i6.Future<bool>.value(false),
+          )
+          as _i6.Future<bool>);
+
+  @override
   _i6.Future<void> deleteById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#deleteById, [id]),

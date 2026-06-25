@@ -21,6 +21,15 @@ class LogEntryDao extends DatabaseAccessor<AppDatabase>
     await into(logEntries).insert(entry);
   }
 
+  /// True if a log entry already carries this external (Mantel) id. Used to make
+  /// the meal sync idempotent — a re-pull of an already-synced intake is skipped.
+  Future<bool> existsByExternalId(String externalId) async {
+    final query = select(logEntries)
+      ..where((t) => t.externalId.equals(externalId))
+      ..limit(1);
+    return (await query.getSingleOrNull()) != null;
+  }
+
   Future<void> deleteById(String id) async {
     await (delete(logEntries)..where((t) => t.id.equals(id))).go();
   }

@@ -102,6 +102,7 @@ class IntakeRepository {
     String? label,
     required String mealSlot,
     required DateTime dateTime,
+    String? externalId,
   }) async {
     _log.fine('Adding quick-add intake: $id, kcal=$kcal, label=$label');
 
@@ -118,6 +119,7 @@ class IntakeRepository {
       snapshotFat: Value(fat),
       entryType: const Value('quickAdd'),
       quickAddLabel: Value(label),
+      externalId: Value(externalId),
     ));
 
     return IntakeEntity(
@@ -185,6 +187,12 @@ class IntakeRepository {
       snapshotCarbs: carbs,
       snapshotFat: fat,
     );
+  }
+
+  /// True if an intake with this external (Mantel) provenance id is already
+  /// logged locally. Lets the meal sync skip already-synced items idempotently.
+  Future<bool> hasExternalIntake(String externalId) async {
+    return _logEntryDao.existsByExternalId(externalId);
   }
 
   Future<void> addAllIntakeDBOs(List<IntakeDBO> intakeDBOs) async {

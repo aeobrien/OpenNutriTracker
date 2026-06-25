@@ -14,6 +14,7 @@ import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.da
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/dashboard_widget.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/intake_vertical_list.dart';
+import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -32,6 +33,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _homeBloc = locator<HomeBloc>();
     super.initState();
+    _syncMantel(); // pull voice/chat-logged meals on cold open
   }
 
   @override
@@ -88,6 +90,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       log.info('App resumed');
       _refreshPageOnDayChange();
+      _syncMantel(); // pull any meals logged via Mantel while we were away
     }
     super.didChangeAppLifecycleState(state);
   }
@@ -288,5 +291,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// Refresh page on resume (picks up HealthKit updates + day changes)
   void _refreshPageOnDayChange() {
     _homeBloc.add(const LoadItemsEvent());
+  }
+
+  /// Pull meals logged via Mantel (voice/chat) into the diary, off the UI
+  /// thread. Reloads the page only if something new was actually added. Silent
+  /// on failure / when Mantel isn't configured — the manual button in Settings
+  /// surfaces any errors.
+  void _syncMantel() {
+    locator<MantelSyncService>().syncPending().then((result) {
+      if (!mounted) return;
+      if (result.hasNewEntries) {
+        log.info('Mantel sync added ${result.synced} meal(s); refreshing');
+        _homeBloc.add(const LoadItemsEvent());
+      }
+    }).catchError((Object e) {
+      log.warning('Mantel sync failed: $e');
+    });
   }
 }

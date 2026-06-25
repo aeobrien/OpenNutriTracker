@@ -1476,6 +1476,17 @@ class $LogEntriesTable extends LogEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _externalIdMeta = const VerificationMeta(
+    'externalId',
+  );
+  @override
+  late final GeneratedColumn<String> externalId = GeneratedColumn<String>(
+    'external_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1491,6 +1502,7 @@ class $LogEntriesTable extends LogEntries
     entryType,
     quickAddLabel,
     recipeId,
+    externalId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1607,6 +1619,12 @@ class $LogEntriesTable extends LogEntries
         recipeId.isAcceptableOrUnknown(data['recipe_id']!, _recipeIdMeta),
       );
     }
+    if (data.containsKey('external_id')) {
+      context.handle(
+        _externalIdMeta,
+        externalId.isAcceptableOrUnknown(data['external_id']!, _externalIdMeta),
+      );
+    }
     return context;
   }
 
@@ -1668,6 +1686,10 @@ class $LogEntriesTable extends LogEntries
         DriftSqlType.string,
         data['${effectivePrefix}recipe_id'],
       ),
+      externalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}external_id'],
+      ),
     );
   }
 
@@ -1691,6 +1713,14 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
   final String entryType;
   final String? quickAddLabel;
   final String? recipeId;
+
+  /// Provenance key for entries synced from an external source (Mantel). Holds
+  /// the source's UUID so a re-pull never double-logs. Null for locally-created
+  /// entries. Uniqueness is enforced by a unique index (created in both the
+  /// onCreate and onUpgrade paths) rather than an inline constraint, so fresh
+  /// installs and migrated DBs share the same schema — and SQLite's unique
+  /// index permits the many NULLs that local entries carry.
+  final String? externalId;
   const LogEntry({
     required this.id,
     required this.timestamp,
@@ -1705,6 +1735,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     required this.entryType,
     this.quickAddLabel,
     this.recipeId,
+    this.externalId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1727,6 +1758,9 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     }
     if (!nullToAbsent || recipeId != null) {
       map['recipe_id'] = Variable<String>(recipeId);
+    }
+    if (!nullToAbsent || externalId != null) {
+      map['external_id'] = Variable<String>(externalId);
     }
     return map;
   }
@@ -1752,6 +1786,9 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       recipeId: recipeId == null && nullToAbsent
           ? const Value.absent()
           : Value(recipeId),
+      externalId: externalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(externalId),
     );
   }
 
@@ -1774,6 +1811,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       entryType: serializer.fromJson<String>(json['entryType']),
       quickAddLabel: serializer.fromJson<String?>(json['quickAddLabel']),
       recipeId: serializer.fromJson<String?>(json['recipeId']),
+      externalId: serializer.fromJson<String?>(json['externalId']),
     );
   }
   @override
@@ -1793,6 +1831,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       'entryType': serializer.toJson<String>(entryType),
       'quickAddLabel': serializer.toJson<String?>(quickAddLabel),
       'recipeId': serializer.toJson<String?>(recipeId),
+      'externalId': serializer.toJson<String?>(externalId),
     };
   }
 
@@ -1810,6 +1849,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     String? entryType,
     Value<String?> quickAddLabel = const Value.absent(),
     Value<String?> recipeId = const Value.absent(),
+    Value<String?> externalId = const Value.absent(),
   }) => LogEntry(
     id: id ?? this.id,
     timestamp: timestamp ?? this.timestamp,
@@ -1826,6 +1866,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
         ? quickAddLabel.value
         : this.quickAddLabel,
     recipeId: recipeId.present ? recipeId.value : this.recipeId,
+    externalId: externalId.present ? externalId.value : this.externalId,
   );
   LogEntry copyWithCompanion(LogEntriesCompanion data) {
     return LogEntry(
@@ -1854,6 +1895,9 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           ? data.quickAddLabel.value
           : this.quickAddLabel,
       recipeId: data.recipeId.present ? data.recipeId.value : this.recipeId,
+      externalId: data.externalId.present
+          ? data.externalId.value
+          : this.externalId,
     );
   }
 
@@ -1872,7 +1916,8 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           ..write('snapshotFat: $snapshotFat, ')
           ..write('entryType: $entryType, ')
           ..write('quickAddLabel: $quickAddLabel, ')
-          ..write('recipeId: $recipeId')
+          ..write('recipeId: $recipeId, ')
+          ..write('externalId: $externalId')
           ..write(')'))
         .toString();
   }
@@ -1892,6 +1937,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     entryType,
     quickAddLabel,
     recipeId,
+    externalId,
   );
   @override
   bool operator ==(Object other) =>
@@ -1909,7 +1955,8 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           other.snapshotFat == this.snapshotFat &&
           other.entryType == this.entryType &&
           other.quickAddLabel == this.quickAddLabel &&
-          other.recipeId == this.recipeId);
+          other.recipeId == this.recipeId &&
+          other.externalId == this.externalId);
 }
 
 class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
@@ -1926,6 +1973,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
   final Value<String> entryType;
   final Value<String?> quickAddLabel;
   final Value<String?> recipeId;
+  final Value<String?> externalId;
   final Value<int> rowid;
   const LogEntriesCompanion({
     this.id = const Value.absent(),
@@ -1941,6 +1989,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     this.entryType = const Value.absent(),
     this.quickAddLabel = const Value.absent(),
     this.recipeId = const Value.absent(),
+    this.externalId = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LogEntriesCompanion.insert({
@@ -1957,6 +2006,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     this.entryType = const Value.absent(),
     this.quickAddLabel = const Value.absent(),
     this.recipeId = const Value.absent(),
+    this.externalId = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        timestamp = Value(timestamp),
@@ -1977,6 +2027,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     Expression<String>? entryType,
     Expression<String>? quickAddLabel,
     Expression<String>? recipeId,
+    Expression<String>? externalId,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1993,6 +2044,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
       if (entryType != null) 'entry_type': entryType,
       if (quickAddLabel != null) 'quick_add_label': quickAddLabel,
       if (recipeId != null) 'recipe_id': recipeId,
+      if (externalId != null) 'external_id': externalId,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2011,6 +2063,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     Value<String>? entryType,
     Value<String?>? quickAddLabel,
     Value<String?>? recipeId,
+    Value<String?>? externalId,
     Value<int>? rowid,
   }) {
     return LogEntriesCompanion(
@@ -2027,6 +2080,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
       entryType: entryType ?? this.entryType,
       quickAddLabel: quickAddLabel ?? this.quickAddLabel,
       recipeId: recipeId ?? this.recipeId,
+      externalId: externalId ?? this.externalId,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2073,6 +2127,9 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     if (recipeId.present) {
       map['recipe_id'] = Variable<String>(recipeId.value);
     }
+    if (externalId.present) {
+      map['external_id'] = Variable<String>(externalId.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2095,6 +2152,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
           ..write('entryType: $entryType, ')
           ..write('quickAddLabel: $quickAddLabel, ')
           ..write('recipeId: $recipeId, ')
+          ..write('externalId: $externalId, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6170,6 +6228,7 @@ typedef $$LogEntriesTableCreateCompanionBuilder =
       Value<String> entryType,
       Value<String?> quickAddLabel,
       Value<String?> recipeId,
+      Value<String?> externalId,
       Value<int> rowid,
     });
 typedef $$LogEntriesTableUpdateCompanionBuilder =
@@ -6187,6 +6246,7 @@ typedef $$LogEntriesTableUpdateCompanionBuilder =
       Value<String> entryType,
       Value<String?> quickAddLabel,
       Value<String?> recipeId,
+      Value<String?> externalId,
       Value<int> rowid,
     });
 
@@ -6283,6 +6343,11 @@ class $$LogEntriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FoodItemsTableFilterComposer get foodItemId {
     final $$FoodItemsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -6376,6 +6441,11 @@ class $$LogEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FoodItemsTableOrderingComposer get foodItemId {
     final $$FoodItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -6455,6 +6525,11 @@ class $$LogEntriesTableAnnotationComposer
   GeneratedColumn<String> get recipeId =>
       $composableBuilder(column: $table.recipeId, builder: (column) => column);
 
+  GeneratedColumn<String> get externalId => $composableBuilder(
+    column: $table.externalId,
+    builder: (column) => column,
+  );
+
   $$FoodItemsTableAnnotationComposer get foodItemId {
     final $$FoodItemsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -6520,6 +6595,7 @@ class $$LogEntriesTableTableManager
                 Value<String> entryType = const Value.absent(),
                 Value<String?> quickAddLabel = const Value.absent(),
                 Value<String?> recipeId = const Value.absent(),
+                Value<String?> externalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogEntriesCompanion(
                 id: id,
@@ -6535,6 +6611,7 @@ class $$LogEntriesTableTableManager
                 entryType: entryType,
                 quickAddLabel: quickAddLabel,
                 recipeId: recipeId,
+                externalId: externalId,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6552,6 +6629,7 @@ class $$LogEntriesTableTableManager
                 Value<String> entryType = const Value.absent(),
                 Value<String?> quickAddLabel = const Value.absent(),
                 Value<String?> recipeId = const Value.absent(),
+                Value<String?> externalId = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogEntriesCompanion.insert(
                 id: id,
@@ -6567,6 +6645,7 @@ class $$LogEntriesTableTableManager
                 entryType: entryType,
                 quickAddLabel: quickAddLabel,
                 recipeId: recipeId,
+                externalId: externalId,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
