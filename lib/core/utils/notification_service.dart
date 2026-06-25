@@ -43,6 +43,20 @@ class NotificationService {
     await _restoreNotifications();
   }
 
+  /// Show a one-off banner immediately (used for a Mantel meal-sync push that
+  /// arrives while the app is foregrounded — iOS suppresses the remote banner
+  /// then, so we surface a local one).
+  Future<void> showInstant(String title, String body) async {
+    const details = NotificationDetails(iOS: DarwinNotificationDetails());
+    await _plugin.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique-enough id
+      title,
+      body,
+      details,
+    );
+    _log.fine('Showed instant notification: $title - $body');
+  }
+
   Future<void> scheduleMealReminder(String mealSlot, int hour, int minute) async {
     final id = _notificationId(mealSlot);
     final body = _bodyForSlot(mealSlot);

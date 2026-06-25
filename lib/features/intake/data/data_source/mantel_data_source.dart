@@ -97,6 +97,28 @@ class MantelDataSource {
         .toList();
   }
 
+  /// Registers this device's push token so Mantel can notify it of new intakes
+  /// (Phase B). Best-effort — returns true on success. Idempotent server-side.
+  Future<bool> registerDevice(String token, {String platform = 'ios'}) async {
+    if (token.isEmpty) return false;
+    final uri = Uri.parse('$_base/intake/register-device');
+    _log.fine('POST $uri (register device)');
+    final http.Response response;
+    try {
+      response = await _client
+          .post(
+            uri,
+            headers: {..._headers, 'Content-Type': 'application/json'},
+            body: jsonEncode({'actor': actor, 'token': token, 'platform': platform}),
+          )
+          .timeout(_timeout);
+    } catch (e) {
+      _log.warning('Mantel register-device failed: $e');
+      return false;
+    }
+    return response.statusCode == 200;
+  }
+
   /// Confirms a batch of locally-inserted intake ids so Mantel marks them
   /// consumed. Idempotent server-side. Returns the number Mantel acked.
   Future<int> ack(List<String> ids) async {

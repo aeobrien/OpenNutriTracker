@@ -1,6 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/features/intake/data/mantel_push_service.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/user_repository.dart';
 import 'package:opennutritracker/core/domain/entity/app_theme_entity.dart';
@@ -28,6 +31,15 @@ import 'package:opennutritracker/features/settings/settings_screen.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 import 'package:provider/provider.dart';
 
+/// FCM background handler — runs in its own isolate, so it just brings Firebase
+/// up. The actual diary update happens on the next foreground/app-open sync
+/// (Phase A is the reliable backstop); the visible banner comes from the push
+/// payload itself when the app is backgrounded.
+@pragma('vm:entry-point')
+Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   LoggerConfig.intiLogger();
@@ -39,6 +51,16 @@ Future<void> main() async {
 
   final notificationService = locator<NotificationService>();
   await notificationService.init();
+
+  // Mantel push (Phase B). Guarded: if Firebase isn't configured yet (no
+  // GoogleService-Info.plist), the app still runs — Phase-A open-app sync works.
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
+    await locator<MantelPushService>().init();
+  } catch (e) {
+    log.warning('Mantel push setup skipped (Firebase not configured?): $e');
+  }
 
   log.info('Starting App ...');
   runAppWithChangeNotifiers(isUserInitialized, savedAppTheme);
