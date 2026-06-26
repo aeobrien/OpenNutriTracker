@@ -173,10 +173,31 @@ class DailyStatsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> updateActiveCalories(String date, double calories) async {
-    await customStatement(
+    final updatedAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final affected = await customUpdate(
       'UPDATE daily_stats SET active_calories_burned = ?, active_calories_updated_at = ? WHERE date = ?',
-      [calories, DateTime.now().millisecondsSinceEpoch ~/ 1000, date],
+      variables: [
+        Variable.withReal(calories),
+        Variable.withInt(updatedAt),
+        Variable.withString(date),
+      ],
+      updates: {dailyStats},
     );
+    // No tracked day exists yet (user hasn't logged anything today). Insert a
+    // placeholder so the cached HealthKit value survives. calorieGoal is a
+    // placeholder (0); addNewTrackedDay/updateGoals set the real goal
+    // later via upsert without clobbering these active-calorie columns.
+    if (affected == 0) {
+      await into(dailyStats).insert(
+        DailyStatsCompanion.insert(
+          date: date,
+          calorieGoal: 0,
+          activeCaloriesBurned: Value(calories),
+          activeCaloriesUpdatedAt:
+              Value(DateTime.fromMillisecondsSinceEpoch(updatedAt * 1000)),
+        ),
+      );
+    }
   }
 
   Future<(double, DateTime?)> getActiveCalories(String date) async {

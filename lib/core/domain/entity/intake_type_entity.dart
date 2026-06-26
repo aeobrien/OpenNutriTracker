@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/core/data/dbo/intake_type_dbo.dart';
 import 'package:opennutritracker/core/utils/custom_icons.dart';
+import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
+import 'package:opennutritracker/generated/l10n.dart';
 
 enum IntakeTypeEntity {
   breakfast,
@@ -43,5 +45,33 @@ enum IntakeTypeEntity {
         icon = CustomIcons.food_apple_outline;
     }
     return icon;
+  }
+
+  /// The [AddMealType] used when adding a new entry to this meal slot.
+  AddMealType getAddMealType() {
+    switch (this) {
+      case IntakeTypeEntity.breakfast:
+        return AddMealType.breakfastType;
+      case IntakeTypeEntity.lunch:
+        return AddMealType.lunchType;
+      case IntakeTypeEntity.dinner:
+        return AddMealType.dinnerType;
+      case IntakeTypeEntity.snack:
+        return AddMealType.snackType;
+    }
+  }
+
+  /// The localized section title for this meal slot.
+  String getLabel(BuildContext context) {
+    switch (this) {
+      case IntakeTypeEntity.breakfast:
+        return S.of(context).breakfastLabel;
+      case IntakeTypeEntity.lunch:
+        return S.of(context).lunchLabel;
+      case IntakeTypeEntity.dinner:
+        return S.of(context).dinnerLabel;
+      case IntakeTypeEntity.snack:
+        return S.of(context).snackLabel;
+    }
   }
 }

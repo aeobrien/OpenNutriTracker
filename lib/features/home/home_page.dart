@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
-import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/domain/entity/tracked_day_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/activity_vertial_list.dart';
@@ -10,10 +9,10 @@ import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/delete_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/disclaimer_dialog.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
-import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/dashboard_widget.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/intake_vertical_list.dart';
+import 'package:opennutritracker/core/utils/calc/meal_grouping.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -27,6 +26,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final log = Logger('HomePage');
 
   late HomeBloc _homeBloc;
+  DateTime _loadedForDay = DateTime.now();
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -87,7 +88,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       log.info('App resumed');
-      _refreshPageOnDayChange();
+      final now = DateTime.now();
+      final dayChanged = now.year != _loadedForDay.year ||
+          now.month != _loadedForDay.month ||
+          now.day != _loadedForDay.day;
+      if (dayChanged) {
+        // New day — reload everything (intake lists, goals, HealthKit).
+        _loadedForDay = now;
+        _homeBloc.add(const LoadItemsEvent());
+      } else {
+        // Same day — just refresh HealthKit active calories and the allowance.
+        _homeBloc.add(const RefreshActiveCaloriesEvent());
+      }
     }
     super.didChangeAppLifecycleState(state);
   }
@@ -126,6 +138,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (showDisclaimerDialog) {
       _showDisclaimerDialog(context);
     }
+    // Group all intake entries by meal slot via the pure grouping helper so
+    // the section order and slot set are a single source of truth.
+    final grouped = MealGrouping.groupByMeal([
+      ...breakfastIntakeList,
+      ...lunchIntakeList,
+      ...dinnerIntakeList,
+      ...snackIntakeList,
+    ]);
     return Stack(children: [
       ListView(key: const PageStorageKey('home_list'), children: [
         DashboardWidget(
@@ -152,50 +172,18 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           userActivityList: userActivities,
           onItemLongPressedCallback: onActivityItemLongPressed,
         ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).breakfastLabel,
-          listIcon: IntakeTypeEntity.breakfast.getIconData(),
-          addMealType: AddMealType.breakfastType,
-          intakeList: breakfastIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).lunchLabel,
-          listIcon: IntakeTypeEntity.lunch.getIconData(),
-          addMealType: AddMealType.lunchType,
-          intakeList: lunchIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).dinnerLabel,
-          addMealType: AddMealType.dinnerType,
-          listIcon: IntakeTypeEntity.dinner.getIconData(),
-          intakeList: dinnerIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).snackLabel,
-          listIcon: IntakeTypeEntity.snack.getIconData(),
-          addMealType: AddMealType.snackType,
-          intakeList: snackIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
+        for (final slot in MealGrouping.displayOrder)
+          IntakeVerticalList(
+            day: DateTime.now(),
+            title: slot.getLabel(context),
+            listIcon: slot.getIconData(),
+            addMealType: slot.getAddMealType(),
+            intakeList: grouped[slot]!,
+            onDeleteIntakeCallback: onDeleteIntake,
+            onItemLongPressedCallback: onIntakeItemLongPressed,
+            onItemTappedCallback: onIntakeItemTapped,
+            usesImperialUnits: usesImperialUnits,
+          ),
         const SizedBox(height: 48.0)
       ]),
     ]);
@@ -283,10 +271,5 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _homeBloc.add(const LoadItemsEvent());
       }
     });
-  }
-
-  /// Refresh page on resume (picks up HealthKit updates + day changes)
-  void _refreshPageOnDayChange() {
-    _homeBloc.add(const LoadItemsEvent());
   }
 }

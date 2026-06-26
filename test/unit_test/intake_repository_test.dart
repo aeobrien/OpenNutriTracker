@@ -6,6 +6,8 @@ import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_nutriments_entity.dart';
 import '../fixture/meal_entity_fixtures.dart';
 
 void main() {
@@ -139,6 +141,64 @@ void main() {
 
       final result = await repo.updateIntake('qa-5', {'amount': 2.0});
       expect(result, isNull);
+    });
+
+    test('quick-add entries count toward a slot total alongside food',
+        () async {
+      final day = DateTime.utc(2024, 3, 1);
+
+      // A food entry: 200g of a 150 kcal/100g food = 300 kcal.
+      await repo.addIntake(IntakeEntity(
+        id: 'food-mix',
+        unit: 'g',
+        amount: 200,
+        type: IntakeTypeEntity.lunch,
+        meal: MealEntity(
+          code: 'mix-food',
+          name: 'Mixed food',
+          url: null,
+          mealQuantity: null,
+          mealUnit: 'g',
+          servingQuantity: null,
+          servingUnit: 'g',
+          servingSize: null,
+          nutriments: const MealNutrimentsEntity(
+            energyKcal100: 150,
+            proteins100: 10,
+            carbohydrates100: 20,
+            fat100: 5,
+            sugars100: null,
+            saturatedFat100: null,
+            fiber100: null,
+          ),
+          source: MealSourceEntity.custom,
+        ),
+        dateTime: DateTime.utc(2024, 3, 1, 12, 0, 0),
+      ));
+
+      // A quick-add estimate in the same slot: 450 kcal.
+      await repo.addQuickAddIntake(
+        id: 'qa-mix',
+        kcal: 450,
+        protein: 30,
+        carbs: 40,
+        fat: 15,
+        label: 'Estimate',
+        mealSlot: 'lunch',
+        dateTime: DateTime.utc(2024, 3, 1, 12, 30, 0),
+      );
+
+      final lunch =
+          await repo.getIntakeByDateAndType(IntakeTypeEntity.lunch, day);
+      expect(lunch.length, 2);
+
+      // Same reduction HomeBloc.getTotalKcal performs across a slot list.
+      final totalKcal =
+          lunch.fold<double>(0, (sum, i) => sum + i.totalKcal);
+      final totalProtein =
+          lunch.fold<double>(0, (sum, i) => sum + i.totalProteinsGram);
+      expect(totalKcal, 300 + 450);
+      expect(totalProtein, 20 + 30);
     });
 
     test('quick-add entries can be deleted', () async {
