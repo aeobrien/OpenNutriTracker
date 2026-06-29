@@ -30,6 +30,8 @@ class MantelPushService {
     try {
       final messaging = FirebaseMessaging.instance;
       final settings = await messaging.requestPermission();
+      _log.info('[MANTEL-PUSH] notification permission: '
+          '${settings.authorizationStatus}');
       if (settings.authorizationStatus == AuthorizationStatus.denied) {
         _log.info('Notifications denied — push off, Phase-A sync still works');
         return;
@@ -59,16 +61,40 @@ class MantelPushService {
   }
 
   Future<void> _registerCurrentToken() async {
-    // On iOS the APNS token must exist before the FCM token resolves.
-    await FirebaseMessaging.instance.getAPNSToken();
+    // On iOS the APNS token must exist before the FCM token resolves, and it's
+    // commonly null for the first moment after permission is granted — so retry
+    // briefly instead of silently giving up (which left device_tokens empty).
+    String? apns;
+    for (var i = 1; i <= 5; i++) {
+      apns = await FirebaseMessaging.instance.getAPNSToken();
+      if (apns != null) break;
+      _log.info('[MANTEL-PUSH] APNS token not ready (attempt $i/5) — retrying');
+      await Future.delayed(const Duration(seconds: 2));
+    }
+    if (apns == null) {
+      _log.warning('[MANTEL-PUSH] no APNS token after retries — push cannot '
+          'register. Check the Push Notifications capability + provisioning '
+          'on this build.');
+      return;
+    }
+    _log.info('[MANTEL-PUSH] APNS token acquired');
     final token = await FirebaseMessaging.instance.getToken();
+    if (token == null || token.isEmpty) {
+      _log.warning('[MANTEL-PUSH] APNS ok but FCM getToken() returned null — '
+          'Firebase project / APNs key mismatch?');
+      return;
+    }
+    _log.info('[MANTEL-PUSH] FCM token acquired — registering with Mantel');
     await _registerToken(token);
   }
 
   Future<void> _registerToken(String? token) async {
-    if (token == null || token.isEmpty) return;
+    if (token == null || token.isEmpty) {
+      _log.warning('[MANTEL-PUSH] no FCM token — cannot register for push');
+      return;
+    }
     if (!await _storage.hasMantelConfig()) {
-      _log.info('Mantel not configured — skipping device registration');
+      _log.info('[MANTEL-PUSH] Mantel not configured — skipping registration');
       return;
     }
     final url = (await _storage.getMantelBaseUrl())!;
@@ -76,6 +102,6 @@ class MantelPushService {
     final apiToken = await _storage.getMantelIntakeToken();
     final ok = await MantelDataSource(baseUrl: url, actor: actor, token: apiToken)
         .registerDevice(token);
-    _log.info('Registered device with Mantel: $ok');
+    _log.info('[MANTEL-PUSH] registered device with Mantel (actor=$actor): $ok');
   }
 }

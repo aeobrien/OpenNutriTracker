@@ -37,6 +37,9 @@ migrate_working_dir/
 # API Keys
 *.env
 env.g.dart
+# Firebase iOS config — carries an AIza... key GitHub's scanner flags; kept out
+# of the repo. Re-add it to ios/Runner/ from the Firebase console on a fresh clone.
+ios/Runner/GoogleService-Info.plist
 
 # Symbolication related
 app.*.symbols
@@ -55,3 +58,6 @@ result
 
 # FVM Version Cache
 .fvm/
+
+# Walkthrough test runs
+walkthrough-runs/
