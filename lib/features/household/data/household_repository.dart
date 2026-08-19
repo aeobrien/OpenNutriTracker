@@ -14,6 +14,11 @@ import 'package:opennutritracker/features/household/domain/weight_record.dart';
 /// from its own records rather than trusting whatever the phone sends with each
 /// request. Those are two separate facts kept deliberately in step: the local
 /// copy is a convenience, the server's copy is the truth.
+/// Writes the owner's name wherever else the app needs it in the older,
+/// name-based form. Injected so this class does not have to know about secure
+/// storage, and so a test can watch what was written.
+typedef OwnerNameWriter = Future<void> Function(String name);
+
 class HouseholdRepository {
   static const _deviceIdKey = 'householdDeviceId';
   static const _ownerKey = 'householdOwnerPersonId';
@@ -21,9 +26,15 @@ class HouseholdRepository {
 
   final ConfigDao _config;
   final HouseholdApi _api;
+
+  /// Optional only so a test can build a repository without one. The running
+  /// app always passes it — see the locator.
+  final OwnerNameWriter? _alsoWriteOwnerName;
+
   final _log = Logger('HouseholdRepository');
 
-  HouseholdRepository(this._config, this._api);
+  HouseholdRepository(this._config, this._api, {OwnerNameWriter? ownerNameWriter})
+      : _alsoWriteOwnerName = ownerNameWriter;
 
   /// This handset's own id, minted once and then kept for good. Two phones must
   /// never share one, or the server cannot tell them apart.
@@ -59,6 +70,37 @@ class HouseholdRepository {
     await _api.registerDevice(id, personId);
     await _config.setValue(_ownerKey, personId.toString());
     _log.info('[HOUSE] this phone now belongs to person $personId');
+    await _mirrorOwnerName(personId);
+  }
+
+  /// The app kept a *second* owner before this: a name typed into a settings
+  /// field, which decided whose meals were pulled down into the diary. Two
+  /// stored answers to "whose phone is this", and nothing kept them equal — so
+  /// changing one in Settings changed half the app's behaviour and not the
+  /// other half.
+  ///
+  /// There is now one answer, chosen once, and the old name is written from it
+  /// rather than typed. It is a copy of this decision, never a decision of its
+  /// own, which is why it is written here and nowhere else.
+  ///
+  /// Quiet on failure on purpose. Whose phone this is has already been settled
+  /// with the server by the time we get here; failing to update a derived copy
+  /// must not undo that or make the person answer again.
+  Future<void> _mirrorOwnerName(int personId) async {
+    final write = _alsoWriteOwnerName;
+    if (write == null) return;
+    try {
+      final everyone = await _api.people();
+      final person = everyone.firstWhere((p) => p.id == personId);
+      // The household's own spelling, exactly as the server holds it. If the
+      // name-based side ever matches case-sensitively again, this is the one
+      // line to look at.
+      await write(person.name);
+      _log.info('[HOUSE] owner name mirrored as ${person.name}');
+    } catch (e) {
+      _log.warning('[HOUSE] owner set, but the older name copy was not '
+          'updated: $e');
+    }
   }
 
   /// Whose phone the server says this is. Used to check the two copies agree.

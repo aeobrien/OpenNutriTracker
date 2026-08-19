@@ -134,7 +134,11 @@ Future<void> initLocator() async {
   // failing.
   final householdApi = HouseholdApi(
       baseUrl: (await secureAppStorageProvider.getMantelBaseUrl()) ?? '');
-  final householdRepository = HouseholdRepository(configDao, householdApi);
+  // One owner, one place it is written. Choosing who this phone belongs to also
+  // writes the older name-based copy the meal sync reads, so the two can no
+  // longer disagree — there is no longer anywhere to type the second one.
+  final householdRepository = HouseholdRepository(configDao, householdApi,
+      ownerNameWriter: secureAppStorageProvider.setMantelActor);
   final householdOutbox = Outbox.of(appDatabase, householdApi);
   locator.registerLazySingleton<HouseholdApi>(() => householdApi);
   locator.registerLazySingleton<HouseholdRepository>(() => householdRepository);

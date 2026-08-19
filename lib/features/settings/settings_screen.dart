@@ -199,20 +199,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .getMantelBaseUrl()
                       .then((v) => (v ?? '').isNotEmpty),
                 ),
-                _ApiKeyTile(
-                  icon: Icons.person_outline,
-                  label: 'Mantel meal owner',
-                  configuredText: 'Configured',
-                  notSetText: 'Not set',
-                  hintText: 'aidan',
-                  obscure: false,
-                  getKey: () => SecureAppStorageProvider().getMantelActor(),
-                  setKey: (k) => SecureAppStorageProvider().setMantelActor(k),
-                  deleteKey: () => SecureAppStorageProvider().setMantelActor(''),
-                  hasKey: () => SecureAppStorageProvider()
-                      .getMantelActor()
-                      .then((v) => (v ?? '').isNotEmpty),
-                ),
+                // There used to be an owner field here — a second
+                // place to say whose phone this is, typed by hand, which
+                // decided whose meals were pulled into the diary while the
+                // household half used a different answer. It is gone. Whose
+                // phone this is is asked once on first run and changed in the
+                // household section above; the name this field held is now
+                // written from that one choice.
                 _ApiKeyTile(
                   icon: Icons.key_outlined,
                   label: 'Mantel intake token (optional)',
