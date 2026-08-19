@@ -258,7 +258,8 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<AddTrackedDayUsecase>(
       () => AddTrackedDayUsecase(locator()));
   locator.registerLazySingleton(
-      () => GetKcalGoalUsecase(locator(), locator(), locator(), locator()));
+      () => GetKcalGoalUsecase(
+          locator(), locator(), locator(), locator(), locator()));
   locator.registerLazySingleton<GetHealthUsecase>(
       () => GetHealthUsecase(locator(), locator()));
   locator.registerLazySingleton(() => GetMacroGoalUsecase(locator()));

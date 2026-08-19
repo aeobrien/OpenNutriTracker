@@ -31,6 +31,18 @@ class CalorieGoalCalc {
       getEarnedCalories(activeCalories,
           exerciseMultiplier: exerciseMultiplier);
 
+  /// The day's allowance when the base figure has been set by hand rather than
+  /// calculated — the household's own target for this person.
+  ///
+  /// The exercise earned on the day is still added, which is the point of
+  /// keeping this next to [getAllowance] rather than short-circuiting the ring:
+  /// a typed target sets where the day starts, not whether a walk counts.
+  static double getAllowanceFrom(double baseKcal, double activeCalories,
+          {double exerciseMultiplier = defaultExerciseMultiplier}) =>
+      baseKcal +
+      getEarnedCalories(activeCalories,
+          exerciseMultiplier: exerciseMultiplier);
+
   /// Remaining calories: allowance - intake.
   static double getRemaining(double allowance, double intake) =>
       allowance - intake;

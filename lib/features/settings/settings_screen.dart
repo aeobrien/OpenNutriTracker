@@ -75,7 +75,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // showing: whose phone this is, and whether they see figures.
                 HouseholdSettingsSection(
                   repository: locator<HouseholdRepository>(),
-                  onChanged: () => HouseholdScope.refreshed(context),
+                  onChanged: () {
+                    HouseholdScope.refreshed(context);
+                    // And redraw Home, because the target that was just
+                    // changed is the number on its ring. Home is built once
+                    // and kept alive behind the tabs, so without this it goes
+                    // on showing the old figure until the app is restarted —
+                    // which looks exactly like the setting having been
+                    // ignored, and on 19 August that is what it looked like.
+                    _homeBloc.add(const LoadItemsEvent());
+                    _diaryBloc.add(const LoadDiaryYearEvent());
+                  },
                 ),
                 const Divider(),
                 ListTile(
