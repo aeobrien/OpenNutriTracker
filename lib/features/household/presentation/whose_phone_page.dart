@@ -133,10 +133,15 @@ class HouseholdGate extends StatefulWidget {
   final HouseholdRepository repository;
   final Widget child;
 
+  /// Told once somebody has said whose phone this is, so the app above can pick
+  /// up that person's own settings.
+  final VoidCallback? onAnswered;
+
   const HouseholdGate({
     super.key,
     required this.repository,
     required this.child,
+    this.onAnswered,
   });
 
   @override
@@ -166,7 +171,10 @@ class _HouseholdGateState extends State<HouseholdGate> {
     if (_needsPrompt!) {
       return WhosePhonePage(
         repository: widget.repository,
-        onChosen: () => setState(() => _needsPrompt = false),
+        onChosen: () {
+          setState(() => _needsPrompt = false);
+          widget.onAnswered?.call();
+        },
       );
     }
     return widget.child;

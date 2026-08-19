@@ -75,6 +75,12 @@ import 'package:opennutritracker/features/settings/domain/usecase/import_data_us
 import 'package:opennutritracker/features/settings/presentation/bloc/export_import_bloc.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
+import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/data/outbox.dart';
+import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
+import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:logging/logging.dart';
 
 final locator = GetIt.instance;
@@ -113,6 +119,23 @@ Future<void> initLocator() async {
   // Register DAOs for direct access
   locator.registerLazySingleton<FoodItemDao>(() => foodItemDao);
   locator.registerLazySingleton<RecipeDao>(() => recipeDao);
+
+  // The household half: the two ledgers on the Mac Mini, the one outbound
+  // queue, and the day. The address is the same Mantel host the meal sync
+  // already uses; when it has not been set yet the calls simply report the Mini
+  // as unreachable, which every screen already says plainly rather than
+  // failing.
+  final householdApi = HouseholdApi(
+      baseUrl: (await secureAppStorageProvider.getMantelBaseUrl()) ?? '');
+  final householdRepository = HouseholdRepository(configDao, householdApi);
+  final householdOutbox = Outbox.of(appDatabase, householdApi);
+  locator.registerLazySingleton<HouseholdApi>(() => householdApi);
+  locator.registerLazySingleton<HouseholdRepository>(() => householdRepository);
+  locator.registerLazySingleton<Outbox>(() => householdOutbox);
+  locator.registerLazySingleton<HouseholdLogger>(
+      () => HouseholdLogger(householdRepository, householdOutbox));
+  locator.registerLazySingleton<DayRepository>(
+      () => DayRepository(householdApi, householdRepository));
 
   // Cache manager
   locator

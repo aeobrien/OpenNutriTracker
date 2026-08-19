@@ -13,6 +13,9 @@ import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart'
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:opennutritracker/features/settings/presentation/widgets/export_import_dialog.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/presentation/household_scope.dart';
+import 'package:opennutritracker/features/household/presentation/household_settings_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
@@ -67,6 +70,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return ListView(
               children: [
                 const SizedBox(height: 16.0),
+                // The household settings come first because they decide what
+                // the rest of this screen — and the rest of the app — is even
+                // showing: whose phone this is, and whether they see figures.
+                HouseholdSettingsSection(
+                  repository: locator<HouseholdRepository>(),
+                  onChanged: () => HouseholdScope.refreshed(context),
+                ),
+                const Divider(),
                 ListTile(
                   leading: const Icon(Icons.ac_unit_outlined),
                   title: Text(S.of(context).settingsUnitsLabel),

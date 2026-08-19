@@ -20,6 +20,8 @@ import 'package:opennutritracker/features/activity_detail/activity_detail_screen
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
 import 'package:opennutritracker/features/add_activity/presentation/add_activity_screen.dart';
 import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_screen.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/presentation/household_scope.dart';
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen.dart';
@@ -112,6 +114,14 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
         GlobalWidgetsLocalizations.delegate,
       ],
       supportedLocales: S.delegate.supportedLocales,
+      // Wrapped around every screen, not around one of them: the figures switch
+      // has to sit above anything that could show a calorie figure, and the
+      // "whose phone is this" question has to be answered before any screen can
+      // write to a ledger.
+      builder: (context, child) => HouseholdScope(
+        repository: locator<HouseholdRepository>(),
+        child: child ?? const SizedBox.shrink(),
+      ),
       initialRoute: widget.userInitialized
           ? NavigationOptions.mainRoute
           : NavigationOptions.onboardingRoute,
