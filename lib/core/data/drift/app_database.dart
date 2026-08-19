@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/label_capture_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/outbox_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/recipe_dao.dart';
@@ -13,6 +14,7 @@ import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
 import 'package:opennutritracker/core/data/drift/tables/config.dart';
 import 'package:opennutritracker/core/data/drift/tables/daily_stats.dart';
 import 'package:opennutritracker/core/data/drift/tables/food_items.dart';
+import 'package:opennutritracker/core/data/drift/tables/label_captures.dart';
 import 'package:opennutritracker/core/data/drift/tables/log_entries.dart';
 import 'package:opennutritracker/core/data/drift/tables/outbox_items.dart';
 import 'package:opennutritracker/core/data/drift/tables/recipe_ingredients.dart';
@@ -27,14 +29,14 @@ import 'package:sqlite3/sqlite3.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients, OutboxItems],
-  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao, OutboxDao],
+  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients, OutboxItems, LabelCaptures],
+  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao, OutboxDao, LabelCaptureDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -199,6 +201,19 @@ class AppDatabase extends _$AppDatabase {
             await customStatement(
               'CREATE INDEX IF NOT EXISTS idx_outbox_items_queued_at ON outbox_items(queued_at)',
             );
+          }
+          if (from < 8) {
+            // Photographs taken so far for a packet whose capture was
+            // interrupted. Additive, like the queue above.
+            await customStatement('''
+              CREATE TABLE IF NOT EXISTS label_captures (
+                capture_id TEXT NOT NULL,
+                shot TEXT NOT NULL,
+                path TEXT NOT NULL,
+                taken_at INTEGER NOT NULL,
+                PRIMARY KEY (capture_id, shot)
+              )
+            ''');
           }
         },
       );

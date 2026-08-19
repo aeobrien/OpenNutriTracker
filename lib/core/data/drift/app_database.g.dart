@@ -5958,6 +5958,324 @@ class OutboxItemsCompanion extends UpdateCompanion<OutboxItem> {
   }
 }
 
+class $LabelCapturesTable extends LabelCaptures
+    with TableInfo<$LabelCapturesTable, LabelCapture> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LabelCapturesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _captureIdMeta = const VerificationMeta(
+    'captureId',
+  );
+  @override
+  late final GeneratedColumn<String> captureId = GeneratedColumn<String>(
+    'capture_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _shotMeta = const VerificationMeta('shot');
+  @override
+  late final GeneratedColumn<String> shot = GeneratedColumn<String>(
+    'shot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+    'path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _takenAtMeta = const VerificationMeta(
+    'takenAt',
+  );
+  @override
+  late final GeneratedColumn<int> takenAt = GeneratedColumn<int>(
+    'taken_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [captureId, shot, path, takenAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'label_captures';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LabelCapture> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('capture_id')) {
+      context.handle(
+        _captureIdMeta,
+        captureId.isAcceptableOrUnknown(data['capture_id']!, _captureIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_captureIdMeta);
+    }
+    if (data.containsKey('shot')) {
+      context.handle(
+        _shotMeta,
+        shot.isAcceptableOrUnknown(data['shot']!, _shotMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_shotMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+        _pathMeta,
+        path.isAcceptableOrUnknown(data['path']!, _pathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('taken_at')) {
+      context.handle(
+        _takenAtMeta,
+        takenAt.isAcceptableOrUnknown(data['taken_at']!, _takenAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_takenAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {captureId, shot};
+  @override
+  LabelCapture map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LabelCapture(
+      captureId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}capture_id'],
+      )!,
+      shot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}shot'],
+      )!,
+      path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}path'],
+      )!,
+      takenAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}taken_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LabelCapturesTable createAlias(String alias) {
+    return $LabelCapturesTable(attachedDatabase, alias);
+  }
+}
+
+class LabelCapture extends DataClass implements Insertable<LabelCapture> {
+  /// The capture this shot belongs to. One capture, one packet.
+  final String captureId;
+
+  /// Which of the three: 'front', 'nutrition', 'ingredients'.
+  final String shot;
+
+  /// Where the photograph is, inside the app's own storage. Never the system
+  /// photo library — a picture of the back of a cereal box is not a memory and
+  /// does not belong in somebody's camera roll.
+  final String path;
+  final int takenAt;
+  const LabelCapture({
+    required this.captureId,
+    required this.shot,
+    required this.path,
+    required this.takenAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['capture_id'] = Variable<String>(captureId);
+    map['shot'] = Variable<String>(shot);
+    map['path'] = Variable<String>(path);
+    map['taken_at'] = Variable<int>(takenAt);
+    return map;
+  }
+
+  LabelCapturesCompanion toCompanion(bool nullToAbsent) {
+    return LabelCapturesCompanion(
+      captureId: Value(captureId),
+      shot: Value(shot),
+      path: Value(path),
+      takenAt: Value(takenAt),
+    );
+  }
+
+  factory LabelCapture.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LabelCapture(
+      captureId: serializer.fromJson<String>(json['captureId']),
+      shot: serializer.fromJson<String>(json['shot']),
+      path: serializer.fromJson<String>(json['path']),
+      takenAt: serializer.fromJson<int>(json['takenAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'captureId': serializer.toJson<String>(captureId),
+      'shot': serializer.toJson<String>(shot),
+      'path': serializer.toJson<String>(path),
+      'takenAt': serializer.toJson<int>(takenAt),
+    };
+  }
+
+  LabelCapture copyWith({
+    String? captureId,
+    String? shot,
+    String? path,
+    int? takenAt,
+  }) => LabelCapture(
+    captureId: captureId ?? this.captureId,
+    shot: shot ?? this.shot,
+    path: path ?? this.path,
+    takenAt: takenAt ?? this.takenAt,
+  );
+  LabelCapture copyWithCompanion(LabelCapturesCompanion data) {
+    return LabelCapture(
+      captureId: data.captureId.present ? data.captureId.value : this.captureId,
+      shot: data.shot.present ? data.shot.value : this.shot,
+      path: data.path.present ? data.path.value : this.path,
+      takenAt: data.takenAt.present ? data.takenAt.value : this.takenAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LabelCapture(')
+          ..write('captureId: $captureId, ')
+          ..write('shot: $shot, ')
+          ..write('path: $path, ')
+          ..write('takenAt: $takenAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(captureId, shot, path, takenAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LabelCapture &&
+          other.captureId == this.captureId &&
+          other.shot == this.shot &&
+          other.path == this.path &&
+          other.takenAt == this.takenAt);
+}
+
+class LabelCapturesCompanion extends UpdateCompanion<LabelCapture> {
+  final Value<String> captureId;
+  final Value<String> shot;
+  final Value<String> path;
+  final Value<int> takenAt;
+  final Value<int> rowid;
+  const LabelCapturesCompanion({
+    this.captureId = const Value.absent(),
+    this.shot = const Value.absent(),
+    this.path = const Value.absent(),
+    this.takenAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LabelCapturesCompanion.insert({
+    required String captureId,
+    required String shot,
+    required String path,
+    required int takenAt,
+    this.rowid = const Value.absent(),
+  }) : captureId = Value(captureId),
+       shot = Value(shot),
+       path = Value(path),
+       takenAt = Value(takenAt);
+  static Insertable<LabelCapture> custom({
+    Expression<String>? captureId,
+    Expression<String>? shot,
+    Expression<String>? path,
+    Expression<int>? takenAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (captureId != null) 'capture_id': captureId,
+      if (shot != null) 'shot': shot,
+      if (path != null) 'path': path,
+      if (takenAt != null) 'taken_at': takenAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LabelCapturesCompanion copyWith({
+    Value<String>? captureId,
+    Value<String>? shot,
+    Value<String>? path,
+    Value<int>? takenAt,
+    Value<int>? rowid,
+  }) {
+    return LabelCapturesCompanion(
+      captureId: captureId ?? this.captureId,
+      shot: shot ?? this.shot,
+      path: path ?? this.path,
+      takenAt: takenAt ?? this.takenAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (captureId.present) {
+      map['capture_id'] = Variable<String>(captureId.value);
+    }
+    if (shot.present) {
+      map['shot'] = Variable<String>(shot.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (takenAt.present) {
+      map['taken_at'] = Variable<int>(takenAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LabelCapturesCompanion(')
+          ..write('captureId: $captureId, ')
+          ..write('shot: $shot, ')
+          ..write('path: $path, ')
+          ..write('takenAt: $takenAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5971,6 +6289,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RecipeIngredientsTable recipeIngredients =
       $RecipeIngredientsTable(this);
   late final $OutboxItemsTable outboxItems = $OutboxItemsTable(this);
+  late final $LabelCapturesTable labelCaptures = $LabelCapturesTable(this);
   late final FoodItemDao foodItemDao = FoodItemDao(this as AppDatabase);
   late final LogEntryDao logEntryDao = LogEntryDao(this as AppDatabase);
   late final DailyStatsDao dailyStatsDao = DailyStatsDao(this as AppDatabase);
@@ -5983,6 +6302,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   );
   late final RecipeDao recipeDao = RecipeDao(this as AppDatabase);
   late final OutboxDao outboxDao = OutboxDao(this as AppDatabase);
+  late final LabelCaptureDao labelCaptureDao = LabelCaptureDao(
+    this as AppDatabase,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5997,6 +6319,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     recipes,
     recipeIngredients,
     outboxItems,
+    labelCaptures,
   ];
 }
 
@@ -9492,6 +9815,187 @@ typedef $$OutboxItemsTableProcessedTableManager =
       OutboxItem,
       PrefetchHooks Function()
     >;
+typedef $$LabelCapturesTableCreateCompanionBuilder =
+    LabelCapturesCompanion Function({
+      required String captureId,
+      required String shot,
+      required String path,
+      required int takenAt,
+      Value<int> rowid,
+    });
+typedef $$LabelCapturesTableUpdateCompanionBuilder =
+    LabelCapturesCompanion Function({
+      Value<String> captureId,
+      Value<String> shot,
+      Value<String> path,
+      Value<int> takenAt,
+      Value<int> rowid,
+    });
+
+class $$LabelCapturesTableFilterComposer
+    extends Composer<_$AppDatabase, $LabelCapturesTable> {
+  $$LabelCapturesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get captureId => $composableBuilder(
+    column: $table.captureId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get shot => $composableBuilder(
+    column: $table.shot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get takenAt => $composableBuilder(
+    column: $table.takenAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LabelCapturesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LabelCapturesTable> {
+  $$LabelCapturesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get captureId => $composableBuilder(
+    column: $table.captureId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get shot => $composableBuilder(
+    column: $table.shot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get takenAt => $composableBuilder(
+    column: $table.takenAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LabelCapturesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LabelCapturesTable> {
+  $$LabelCapturesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get captureId =>
+      $composableBuilder(column: $table.captureId, builder: (column) => column);
+
+  GeneratedColumn<String> get shot =>
+      $composableBuilder(column: $table.shot, builder: (column) => column);
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<int> get takenAt =>
+      $composableBuilder(column: $table.takenAt, builder: (column) => column);
+}
+
+class $$LabelCapturesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LabelCapturesTable,
+          LabelCapture,
+          $$LabelCapturesTableFilterComposer,
+          $$LabelCapturesTableOrderingComposer,
+          $$LabelCapturesTableAnnotationComposer,
+          $$LabelCapturesTableCreateCompanionBuilder,
+          $$LabelCapturesTableUpdateCompanionBuilder,
+          (
+            LabelCapture,
+            BaseReferences<_$AppDatabase, $LabelCapturesTable, LabelCapture>,
+          ),
+          LabelCapture,
+          PrefetchHooks Function()
+        > {
+  $$LabelCapturesTableTableManager(_$AppDatabase db, $LabelCapturesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LabelCapturesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LabelCapturesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LabelCapturesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> captureId = const Value.absent(),
+                Value<String> shot = const Value.absent(),
+                Value<String> path = const Value.absent(),
+                Value<int> takenAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LabelCapturesCompanion(
+                captureId: captureId,
+                shot: shot,
+                path: path,
+                takenAt: takenAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String captureId,
+                required String shot,
+                required String path,
+                required int takenAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LabelCapturesCompanion.insert(
+                captureId: captureId,
+                shot: shot,
+                path: path,
+                takenAt: takenAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LabelCapturesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LabelCapturesTable,
+      LabelCapture,
+      $$LabelCapturesTableFilterComposer,
+      $$LabelCapturesTableOrderingComposer,
+      $$LabelCapturesTableAnnotationComposer,
+      $$LabelCapturesTableCreateCompanionBuilder,
+      $$LabelCapturesTableUpdateCompanionBuilder,
+      (
+        LabelCapture,
+        BaseReferences<_$AppDatabase, $LabelCapturesTable, LabelCapture>,
+      ),
+      LabelCapture,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -9514,4 +10018,6 @@ class $AppDatabaseManager {
       $$RecipeIngredientsTableTableManager(_db, _db.recipeIngredients);
   $$OutboxItemsTableTableManager get outboxItems =>
       $$OutboxItemsTableTableManager(_db, _db.outboxItems);
+  $$LabelCapturesTableTableManager get labelCaptures =>
+      $$LabelCapturesTableTableManager(_db, _db.labelCaptures);
 }

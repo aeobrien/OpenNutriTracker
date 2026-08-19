@@ -49,6 +49,14 @@ class FakeHouseholdServer {
 
   bool reachable = true;
 
+  /// Whether the photographs can be read at all. False is an ordinary day, not
+  /// a broken server: the panel was creased, the light was poor.
+  bool labelReadable = true;
+
+  /// What a reading gives back, and which fields it could not make out.
+  Map<String, dynamic> labelRead = const {'name': 'A packet', 'kcal_100': 400};
+  List<String> labelUnreadable = const [];
+
   int get aidan => 1;
   int get emily => 2;
 
@@ -160,6 +168,24 @@ class FakeHouseholdServer {
                 .where((w) => w['owner_id'] == personId)
                 .map((w) => {'day': w['day'], 'kg': w['kg']})
                 .toList(),
+          };
+        } else if (path == '/household/label/read') {
+          if (!labelReadable) {
+            return http.Response(
+                jsonEncode({
+                  'ok': false,
+                  'readable': false,
+                  'error': 'nothing readable came back from the photographs',
+                  'hint': 'type the numbers in instead',
+                }),
+                422,
+                headers: {'content-type': 'application/json'});
+          }
+          result = {
+            'ok': true,
+            'candidate': labelRead,
+            'trust': 'photo',
+            'unreadable': labelUnreadable,
           };
         } else if (path == '/household/food') {
           final id = (body['client_id'] ?? 'food-${foods.length + 1}') as String;
