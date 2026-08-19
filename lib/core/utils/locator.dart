@@ -248,7 +248,7 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<GetUserActivityUsecase>(
       () => GetUserActivityUsecase(locator()));
   locator.registerLazySingleton<AddUserActivityUsecase>(
-      () => AddUserActivityUsecase(locator()));
+      () => AddUserActivityUsecase(locator(), locator()));
   locator.registerLazySingleton<DeleteUserActivityUsecase>(
       () => DeleteUserActivityUsecase(locator()));
   locator.registerLazySingleton<GetPhysicalActivityUsecase>(

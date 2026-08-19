@@ -86,11 +86,16 @@ class ExerciseSync {
   }
 
   /// The same day's exercise, typed in because the watch did not have it.
+  ///
+  /// [clientId] is how a repeat cannot double a day up. The app's own activity
+  /// screen passes the activity's own id, so the household gets one row per
+  /// activity however many times the write is retried from the queue.
   Future<String> typeIn({
     required String day,
     required num kcal,
     num? minutes,
     String? note,
+    String? clientId,
   }) =>
       _logger.logExercise(
         day: day,
@@ -98,7 +103,13 @@ class ExerciseSync {
         kcal: kcal,
         minutes: minutes,
         note: note,
+        clientId: clientId,
       );
+
+  /// The day [when] falls on, in the form the server uses.
+  static String dayKey(DateTime when) => '${when.year.toString().padLeft(4, '0')}-'
+      '${when.month.toString().padLeft(2, '0')}-'
+      '${when.day.toString().padLeft(2, '0')}';
 
   /// One id per person per day for the watch's figure — the whole reason a
   /// repeated sync cannot double a day up.

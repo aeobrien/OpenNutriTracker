@@ -14,6 +14,7 @@ import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.da
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/dashboard_widget.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/intake_vertical_list.dart';
+import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
@@ -49,6 +50,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _homeBloc = locator<HomeBloc>();
     super.initState();
     _syncMantel(); // pull voice/chat-logged meals on cold open
+    _readTheWatch(); // and put today's active calories on the household's day
   }
 
   @override
@@ -106,6 +108,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       log.info('App resumed');
       _refreshPageOnDayChange();
       _syncMantel(); // pull any meals logged via Mantel while we were away
+      _readTheWatch();
     }
     super.didChangeAppLifecycleState(state);
   }
@@ -319,6 +322,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// thread. Reloads the page only if something new was actually added. Silent
   /// on failure / when Mantel isn't configured — the manual button in Settings
   /// surfaces any errors.
+  /// Put what the watch recorded today on the household's day.
+  ///
+  /// This used to happen when the second tab was opened, and went with it. It
+  /// belongs here: the watch's figure should reach the household because the
+  /// app was opened, not because somebody visited a particular screen.
+  ///
+  /// Safe to call as often as it likes — the row's id is worked out from the
+  /// person and the day, so a day's exercise cannot multiply by being opened
+  /// twice. Quiet on failure on purpose: a watch with nothing to say, a refused
+  /// permission and a sleeping Mini are all ordinary, and none of them should
+  /// put an error in front of somebody who just opened their day.
+  void _readTheWatch() {
+    locator<ExerciseSync>()
+        .syncFromHealth(day: ExerciseSync.dayKey(DateTime.now()))
+        .catchError((Object e) {
+      log.info('Watch sync skipped: $e');
+      return null;
+    });
+  }
+
   void _syncMantel() {
     locator<MantelSyncService>().syncPending().then((result) {
       if (!mounted) return;
