@@ -29,7 +29,7 @@ import 'package:opennutritracker/features/household/data/household_repository.da
 import 'package:opennutritracker/features/household/data/outbox.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meal_row.dart';
-import 'package:opennutritracker/features/today/presentation/today_screen.dart';
+import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
 
 import 'package:opennutritracker/features/today/domain/day_view.dart';
 
@@ -78,7 +78,9 @@ void main() {
   tearDown(() async => db.close());
 
   Widget screen(DayRepository repository) => MaterialApp(
-        home: Scaffold(body: TodayScreen(repository: repository, day: today)),
+        home: Scaffold(
+          body: PlannedMealsSection(repository: repository, day: today),
+        ),
       );
 
   /// The household's traybake, with the two of them down for different amounts.
@@ -113,46 +115,59 @@ void main() {
       expect(find.text('Planned'), findsOneWidget);
     });
 
-    testWidgets('and the eaten one does not', (tester) async {
-      await tester.pumpWidget(screen(days));
-      await tester.pumpAndSettle();
-
-      final sandwichRow = find.ancestor(
-        of: find.text('Cheese sandwich'),
-        matching: find.byType(Card),
-      );
-      expect(sandwichRow, findsOneWidget);
-      expect(
-          find.descendant(of: sandwichRow, matching: find.text('Planned')),
-          findsNothing);
-    });
-
-    testWidgets('the planned one is drawn faded and the eaten one is not',
+    testWidgets('and what has been eaten is nowhere near this section',
         (tester) async {
       await tester.pumpWidget(screen(days));
       await tester.pumpAndSettle();
 
-      expect(isFaded(tester, 'Chicken traybake'), isTrue);
-      expect(isFaded(tester, 'Cheese sandwich'), isFalse,
-          reason: 'something already eaten must not be dimmed like a thing '
-              'still to come');
+      // This section draws only what is still to come. What has been eaten is
+      // Home's own list, above it — which is precisely why a planned meal can
+      // never be counted as eaten: they are not the same list any more.
+      expect(find.text('Cheese sandwich'), findsNothing);
     });
 
-    testWidgets('planned meals sit below what has been eaten', (tester) async {
+    testWidgets('the planned one is drawn faded', (tester) async {
       await tester.pumpWidget(screen(days));
       await tester.pumpAndSettle();
 
-      final eaten = tester.getTopLeft(find.text('Cheese sandwich')).dy;
-      final planned = tester.getTopLeft(find.text('Chicken traybake')).dy;
-      expect(planned, greaterThan(eaten));
+      expect(isFaded(tester, 'Chicken traybake'), isTrue,
+          reason: 'a thing still to come must not look like a thing had');
     });
 
-    testWidgets('a planned meal is not counted as eaten', (tester) async {
+    testWidgets('it sits under a heading that says what it is', (tester) async {
       await tester.pumpWidget(screen(days));
       await tester.pumpAndSettle();
 
-      expect(find.text('480 kcal eaten'), findsOneWidget);
-      expect(find.text('960 kcal still planned'), findsOneWidget);
+      expect(find.text('Planned today'), findsOneWidget);
+    });
+  });
+
+  group('a day with no plan on it', () {
+    testWidgets('draws nothing at all', (tester) async {
+      await tester.pumpWidget(screen(days));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Planned today'), findsNothing);
+      expect(find.byType(PlannedMealRow), findsNothing);
+      // Not an empty heading, not a "nothing planned" line. Home should look
+      // exactly as it did before any of this existed on a day with no plan.
+      expect(find.byType(Text), findsNothing);
+    });
+  });
+
+  group('when the household cannot be asked', () {
+    testWidgets('it says so rather than showing a day with no plan',
+        (tester) async {
+      planTheTraybake();
+      mini.reachable = false;
+
+      await tester.pumpWidget(screen(days));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(PlannedMealRow), findsNothing);
+      expect(find.textContaining("isn't showing"), findsOneWidget,
+          reason: '"nothing is planned" and "I could not find out what is '
+              'planned" are different facts');
     });
   });
 

@@ -4,11 +4,17 @@
 /// person can get to, and the queue is emptied by the running app.
 ///
 /// This file exists because of a real miss. Every other test in this suite
-/// builds its widget directly — `TodayScreen(repository: …)` — which proves the
-/// screen works and proves nothing at all about whether the app ever shows it.
-/// Seven promises passed their own tests while being unreachable: no tab, no
-/// route, no caller. A component test cannot see that, because the thing that
-/// is missing is the *call site*, and the test is the call site.
+/// builds its widget directly — `PlannedMealsSection(repository: …)` — which
+/// proves the widget works and proves nothing at all about whether the app ever
+/// shows it. Seven promises passed their own tests while being unreachable: no
+/// tab, no route, no caller. A component test cannot see that, because the
+/// thing that is missing is the *call site*, and the test is the call site.
+///
+/// Since 19 August it also guards the opposite mistake. The app grew a second
+/// day — a Today tab beside a Home tab that was already the day — and every
+/// test passed while Aidan looked at one and reported the other. So the checks
+/// below assert not only that the day is reachable but that there is *one* of
+/// it.
 ///
 /// So this reads the source instead. It is deliberately crude — it looks for
 /// the mounting, not for what the mounted thing does — and that is the point:
@@ -22,26 +28,36 @@ import 'package:flutter_test/flutter_test.dart';
 String _read(String path) => File(path).readAsStringSync();
 
 void main() {
-  group('the day is reachable', () {
-    test('Today is one of the app\'s tabs', () {
+  group('there is one day, and it is Home', () {
+    test('the household\'s planned meals are mounted on Home', () {
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('PlannedMealsSection('), isTrue,
+          reason: 'what the household has planned is built nowhere a person '
+              'can see it');
+      expect(home.contains('DayRepository'), isTrue,
+          reason: 'the section is mounted but never given the household to '
+              'ask');
+    });
+
+    test('reloading Home reloads the planned meals with it', () {
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('_planned.currentState?.reload()'), isTrue,
+          reason: 'logging a meal would leave the planned row it matches '
+              'sitting there until the app was restarted');
+    });
+
+    test('there is no second day anywhere', () {
       final shell = _read('lib/core/presentation/main_screen.dart');
-      expect(shell.contains('TodayPage()'), isTrue,
-          reason: 'the day is built nowhere in the tab shell');
-      expect(shell.contains("label: 'Today'"), isTrue,
-          reason: 'there is no way to select the day');
-    });
-
-    test('the day is also a named route', () {
-      expect(_read('lib/main.dart').contains('NavigationOptions.todayRoute'),
-          isTrue);
-    });
-
-    test('the mounted day is given the exercise routes', () {
-      final page = _read('lib/features/today/presentation/today_page.dart');
-      expect(page.contains('ExerciseSync'), isTrue,
-          reason: 'the watch is never read from the mounted day');
-      expect(page.contains('TypeExerciseScreen'), isTrue,
-          reason: 'there is no way to type exercise in');
+      expect(shell.contains('TodayPage'), isFalse,
+          reason: 'a second tab showing the day is the fault this release '
+              'exists to remove');
+      expect(shell.contains("label: 'Today'"), isFalse);
+      expect(File('lib/features/today/presentation/today_screen.dart').existsSync(),
+          isFalse,
+          reason: 'the deleted screen is still on disk to be re-mounted by '
+              'somebody who does not know why it went');
+      expect(_read('lib/main.dart').contains('todayRoute'), isFalse,
+          reason: 'a route to the second day is still a way to reach it');
     });
   });
 

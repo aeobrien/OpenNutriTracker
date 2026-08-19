@@ -15,6 +15,8 @@ import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart'
 import 'package:opennutritracker/features/home/presentation/widgets/dashboard_widget.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/intake_vertical_list.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
+import 'package:opennutritracker/features/today/data/day_repository.dart';
+import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -28,6 +30,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   final log = Logger('HomePage');
 
   late HomeBloc _homeBloc;
+
+  /// The planned-meals section lives below Home in the tree, so Home cannot
+  /// find it by looking up. It is held by key instead, and told to reload
+  /// whenever Home reloads — see [_reload].
+  final _planned = GlobalKey<PlannedMealsSectionState>();
+
+  /// Reload the day. Everything on Home that can go stale goes through here so
+  /// that no future call site can reload half of it.
+  void _reload() {
+    _reload();
+    _planned.currentState?.reload();
+  }
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -149,6 +164,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
           healthKitConnected: healthKitConnected,
         ),
+        // What the household has planned, on the day list that already
+        // exists. Nothing is drawn here on a day with no plan.
+        PlannedMealsSection(
+          key: _planned,
+          repository: locator<DayRepository>(),
+          day: PlannedMealsSection.dayKey(DateTime.now()),
+        ),
         ActivityVerticalList(
           day: DateTime.now(),
           title: S.of(context).activityLabel,
@@ -211,7 +233,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (deleteIntake != null) {
       _homeBloc.deleteUserActivityItem(activityEntity);
-      _homeBloc.add(const LoadItemsEvent());
+      _reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(S.of(context).itemDeletedSnackbar)));
@@ -229,7 +251,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (deleteIntake != null) {
       _homeBloc.deleteIntakeItem(intakeEntity);
-      _homeBloc.add(const LoadItemsEvent());
+      _reload();
       messenger.showSnackBar(
           SnackBar(
             duration: const Duration(days: 1),
@@ -256,7 +278,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     if (changeIntakeAmount != null) {
       _homeBloc
           .updateIntakeItem(intakeEntity.id, {'amount': changeIntakeAmount});
-      _homeBloc.add(const LoadItemsEvent());
+      _reload();
       messenger.showSnackBar(
           SnackBar(
             duration: const Duration(days: 1),
@@ -270,7 +292,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void onDeleteIntake(IntakeEntity intake, TrackedDayEntity? trackedDayEntity) {
     _homeBloc.deleteIntakeItem(intake);
-    _homeBloc.add(const LoadItemsEvent());
+    _reload();
   }
 
   /// Show disclaimer dialog after build method
@@ -283,14 +305,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           });
       if (dialogConfirmed != null) {
         _homeBloc.saveConfigData(dialogConfirmed);
-        _homeBloc.add(const LoadItemsEvent());
+        _reload();
       }
     });
   }
 
   /// Refresh page on resume (picks up HealthKit updates + day changes)
   void _refreshPageOnDayChange() {
-    _homeBloc.add(const LoadItemsEvent());
+    _reload();
   }
 
   /// Pull meals logged via Mantel (voice/chat) into the diary, off the UI
@@ -302,7 +324,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (!mounted) return;
       if (result.hasNewEntries) {
         log.info('Mantel sync added ${result.synced} meal(s); refreshing');
-        _homeBloc.add(const LoadItemsEvent());
+        _reload();
       }
     }).catchError((Object e) {
       log.warning('Mantel sync failed: $e');

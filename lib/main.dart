@@ -28,7 +28,6 @@ import 'package:opennutritracker/features/label_scan/data/guided_capture.dart';
 import 'package:opennutritracker/features/label_scan/data/household_label_reader.dart';
 import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/guided_capture_screen.dart';
-import 'package:opennutritracker/features/today/presentation/today_page.dart';
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen.dart';
@@ -160,9 +159,6 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
             const RecipeLogScreen(),
         NavigationOptions.llmRecipeRoute: (context) =>
             const LlmRecipeScreen(),
-        NavigationOptions.todayRoute: (context) => const Scaffold(
-              body: SafeArea(child: TodayPage()),
-            ),
         // Photographing a packet: three shots in order, resumable.
         NavigationOptions.labelCaptureRoute: (context) => GuidedCaptureScreen(
               capture: locator<GuidedCapture>(),

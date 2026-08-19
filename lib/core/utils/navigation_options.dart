@@ -13,7 +13,6 @@ class NavigationOptions {
   static const labelScanRoute = "labelScan";
   static const recipeLogRoute = "recipeLog";
   static const llmRecipeRoute = "llmRecipe";
-  static const todayRoute = "today";
   static const labelCaptureRoute = "labelCapture";
   static const addFoodByHandRoute = "addFoodByHand";
 }
