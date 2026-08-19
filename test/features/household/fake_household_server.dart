@@ -65,6 +65,20 @@ class FakeHouseholdServer {
   /// asked on this person's behalf rather than in general.
   int? askedFoodsFor;
 
+  /// What a hunt around the web comes back with. Empty is the default, because
+  /// finding nothing is the ordinary case and a test that wants candidates
+  /// should have to say so.
+  List<Map<String, dynamic>> webCandidates = [];
+
+  /// Whether this server can look things up on the web at all. False is an
+  /// older kitchen computer, which does not know the route — the phone has to
+  /// treat that exactly like finding nothing.
+  bool canHuntTheWeb = true;
+
+  /// What the hunt was asked to look for, so a test can show the phone passed
+  /// on what was typed rather than something of its own.
+  String? huntedFor;
+
   /// Whether the photographs can be read at all. False is an ordinary day, not
   /// a broken server: the panel was creased, the light was poor.
   bool labelReadable = true;
@@ -287,6 +301,19 @@ class FakeHouseholdServer {
           final id = (body['client_id'] ?? 'food-${foods.length + 1}') as String;
           foods.putIfAbsent(id, () => {...body, 'id': foods.length + 1});
           result = {'ok': true, 'food': foods[id]};
+        } else if (path == '/household/food/find') {
+          huntedFor = body['name'] as String?;
+          if (!canHuntTheWeb) {
+            return http.Response(
+                jsonEncode({
+                  'ok': false,
+                  'error': 'could not look that up just now',
+                  'candidates': [],
+                }),
+                503,
+                headers: {'content-type': 'application/json'});
+          }
+          result = {'ok': true, 'candidates': webCandidates};
         } else if (path == '/household/foods') {
           final q = request.url.queryParameters['q'];
           final barcode = request.url.queryParameters['barcode'];

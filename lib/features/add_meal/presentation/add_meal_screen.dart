@@ -10,6 +10,7 @@ import 'package:opennutritracker/features/add_meal/presentation/bloc/add_meal_bl
 import 'package:opennutritracker/features/add_meal/presentation/bloc/food_bloc.dart';
 import 'package:opennutritracker/features/add_meal/presentation/bloc/recent_meal_bloc.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/default_results_widget.dart';
+import 'package:opennutritracker/features/add_meal/presentation/widgets/look_it_up_widget.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/meal_search_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/no_results_widget.dart';
@@ -19,6 +20,8 @@ import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_b
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_screen.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
+import 'package:opennutritracker/features/household/data/food_finder.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/features/scanner/scanner_screen.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -159,6 +162,22 @@ class _AddMealScreenState extends State<AddMealScreen>
                                         .textTheme
                                         .headlineSmall)),
                             _productsBody(state),
+                            // Last, under everything the two food lists
+                            // offered. See LookItUpWidget for why it is a
+                            // button and why it is here rather than higher up.
+                            Flexible(
+                              child: SingleChildScrollView(
+                                child: ValueListenableBuilder<String>(
+                                  valueListenable: _searchStringListener,
+                                  builder: (context, searchText, _) =>
+                                      LookItUpWidget(
+                                    finder: locator<FoodFinder>(),
+                                    logger: locator<HouseholdLogger>(),
+                                    searchText: searchText,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ]);
                         },
                       )

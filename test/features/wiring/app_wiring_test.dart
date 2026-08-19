@@ -264,6 +264,41 @@ void main() {
     });
   });
 
+  group('looking a food up online', () {
+    test('the offer is on the search screen, under the results', () {
+      final screen =
+          _read('lib/features/add_meal/presentation/add_meal_screen.dart');
+      expect(screen.contains('LookItUpWidget('), isTrue,
+          reason: 'there is no way to ask, so a food neither list has is a '
+              'dead end');
+
+      final results = screen.indexOf('_productsBody(state)');
+      final hunt = screen.indexOf('LookItUpWidget(');
+      expect(results, greaterThan(-1));
+      expect(hunt, greaterThan(results),
+          reason: 'the least-checked numbers would sit above the two lists '
+              'whose numbers somebody has actually checked');
+    });
+
+    test('the hunt is a button, not something that runs on its own', () {
+      final widget = _read(
+          'lib/features/add_meal/presentation/widgets/look_it_up_widget.dart');
+      expect(widget.contains('initState'), isFalse,
+          reason: 'a hunt started on screen open runs before anybody has '
+              'looked at what the two better lists offered');
+    });
+
+    test('what a hunt finds is written only through the confirmation screen',
+        () {
+      final widget = _read(
+          'lib/features/add_meal/presentation/widgets/look_it_up_widget.dart');
+      expect(widget.contains('ConfirmFoodScreen('), isTrue);
+      expect(widget.contains('addFood('), isFalse,
+          reason: 'a second write path means a food can reach the household '
+              'list without anybody having looked at its numbers');
+    });
+  });
+
   group('the figure already in the amount box', () {
     test('the screen asks for one rather than choosing its own', () {
       final screen = _read('lib/features/meal_detail/meal_detail_screen.dart');

@@ -25,6 +25,13 @@ class ConfirmFoodScreen extends StatefulWidget {
   /// out which blanks were meant.
   static const couldNotRead = "Couldn't read this — check the packet";
 
+  /// The same message for a food that came off a web page rather than a
+  /// photograph. Different words because it is a different situation: nothing
+  /// failed to be read, the page simply never said, and telling somebody to
+  /// check a reading that never happened sends them looking for the wrong
+  /// thing.
+  static const pageDidNotSay = "The page didn't say — check the packet";
+
   final HouseholdLogger logger;
 
   /// What to open with. Null starts an empty form, which is the hand-typed
@@ -127,6 +134,9 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
     switch (draft.trust) {
       case 'photo':
         return 'These numbers came off the photographs.';
+      case 'web':
+        return 'These came off a web page. Nobody here has checked them '
+            'against the packet.';
       case 'typed':
         return draft.source == 'photo'
             ? 'You corrected these, so they are recorded as typed in.'
@@ -187,8 +197,11 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
           decoration: InputDecoration(
             labelText: label,
             helperText: readingKey != null && _unread(readingKey, controller)
-                ? ConfirmFoodScreen.couldNotRead
+                ? (_draft.trust == 'web'
+                    ? ConfirmFoodScreen.pageDidNotSay
+                    : ConfirmFoodScreen.couldNotRead)
                 : null,
+            helperMaxLines: 2,
           ),
         ),
       );

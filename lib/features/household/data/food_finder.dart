@@ -6,6 +6,7 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dar
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/domain/household_food.dart';
+import 'package:opennutritracker/features/label_scan/domain/food_draft.dart';
 
 /// What the house has, before anything from the internet.
 ///
@@ -56,6 +57,35 @@ class FoodFinder {
   Future<MealEntity?> withBarcode(String barcode) async {
     final found = await _ask(() => _api.foods(barcode: barcode));
     return found.isEmpty ? null : found.first;
+  }
+
+  /// Go and look a packet up on the web, when neither list here had it.
+  ///
+  /// Last, always. The order is the point of the whole release: the
+  /// household's own foods carry numbers somebody here checked, the public
+  /// database carries numbers somebody somewhere checked, and this carries
+  /// numbers a model read off a shop's page ten seconds ago. Putting it above
+  /// either of the others would be putting the least-checked figures in front
+  /// of the most-checked ones.
+  ///
+  /// What comes back are drafts, not foods. Nothing is saved by asking — a
+  /// person picks one and confirms it on the same screen a photographed label
+  /// goes through, and that screen is the only place a food is written.
+  ///
+  /// An empty list covers three different situations on purpose: nothing was
+  /// found, the kitchen computer could not be reached, and the kitchen computer
+  /// is too old to know how to look. All three mean the same thing to the
+  /// person holding the phone — no, and you can still type it in yourself.
+  Future<List<FoodDraft>> huntFor(String text) async {
+    final name = text.trim();
+    if (name.isEmpty) return const [];
+    try {
+      final candidates = await _api.findFood(name);
+      return [for (final c in candidates) FoodDraft.fromWebCandidate(c)];
+    } catch (e) {
+      _log.info('[HOUSE] the hunt for "$name" did not come back: $e');
+      return const [];
+    }
   }
 
   Future<List<MealEntity>> _ask(

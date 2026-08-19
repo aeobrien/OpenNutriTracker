@@ -210,6 +210,26 @@ class HouseholdApi {
         .toList();
   }
 
+  /// Ask the kitchen computer to go and look a packet up on the web.
+  ///
+  /// Returns candidates, not foods: nothing is saved anywhere by this call, at
+  /// either end. A person picks one, checks it, and only then does it become
+  /// one of the household's foods — which is the same shape as reading a label
+  /// off a photograph, and for the same reason.
+  ///
+  /// An empty list is a normal answer. So is a kitchen computer too old to know
+  /// this route at all, which is why the caller treats a failure and a
+  /// nothing-found the same way.
+  Future<List<Map<String, dynamic>>> findFood(String name,
+      {Duration? timeout}) async {
+    final body = await post('/household/food/find', {'name': name},
+        timeout: timeout ?? const Duration(seconds: 45));
+    return [
+      for (final c in (body['candidates'] as List? ?? const []))
+        c as Map<String, dynamic>,
+    ];
+  }
+
   Future<Map<String, dynamic>> day(int personId, String day) async {
     return get('/household/day/$personId/$day');
   }

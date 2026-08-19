@@ -63,6 +63,51 @@ class FoodDraft {
         unreadable: unreadable,
       );
 
+  /// A draft from what a hunt around the web turned up.
+  ///
+  /// The trust is `web` and it is set here rather than taken from the answer,
+  /// because what a page said about itself is not evidence of anything. `web`
+  /// sits below `photo` in the household's ordering on purpose: a photograph is
+  /// of the packet in this kitchen, and a shop's listing is of a packet
+  /// somewhere, once, possibly a different size.
+  ///
+  /// [source] carries the page it was read off rather than the word "web", so
+  /// that months later the list can still say *which* page — that is the only
+  /// thing that makes a wrong figure traceable.
+  ///
+  /// Anything the page did not state is left empty and named in [unreadable],
+  /// so the confirmation screen points at the gap rather than leaving somebody
+  /// to notice a blank box and wonder whether it means zero.
+  factory FoodDraft.fromWebCandidate(Map<String, dynamic> candidate) {
+    num? at(String key) => candidate[key] as num?;
+    String? text(String key) {
+      final value = candidate[key];
+      return value is String && value.trim().isNotEmpty ? value.trim() : null;
+    }
+
+    const figures = [
+      'kcal_100',
+      'protein_100',
+      'fat_100',
+      'carbs_100',
+      'serving_g',
+    ];
+    return FoodDraft(
+      name: text('name') ?? '',
+      brand: text('brand'),
+      barcode: text('barcode'),
+      kcal100: at('kcal_100'),
+      protein100: at('protein_100'),
+      fat100: at('fat_100'),
+      carbs100: at('carbs_100'),
+      packGrams: at('pack_grams'),
+      servingG: at('serving_g'),
+      trust: 'web',
+      source: text('source') ?? 'web',
+      unreadable: [for (final f in figures) if (candidate[f] == null) f],
+    );
+  }
+
   /// The same food after a person has changed something. The trust drops to
   /// what a person typed, because that is now what it is — and the source stays
   /// as it was, because the photograph still happened.
