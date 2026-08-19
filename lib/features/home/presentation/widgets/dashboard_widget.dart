@@ -1,6 +1,7 @@
 import 'package:animated_flip_counter/animated_flip_counter.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/macro_nutriments_widget.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -65,8 +66,11 @@ class DashboardWidget extends StatelessWidget {
               // Date row
               _buildDateRow(context, subdued),
               const SizedBox(height: 12),
-              // Calorie circle
-              CircularPercentIndicator(
+              // Calorie circle. Hidden entirely when this person has figures
+              // switched off — and so is the gauge, because a ring whose fill
+              // is your calorie total is a calorie figure drawn as a picture.
+              if (!Figures.off(context))
+                CircularPercentIndicator(
                 radius: 90.0,
                 lineWidth: 13.0,
                 animation: true,
@@ -94,20 +98,25 @@ class DashboardWidget extends StatelessWidget {
                         color: onSurface,
                       ),
                     ),
+                    // NOTE: everything in this centre column is inside the
+                    // `if (!Figures.off(context))` above.
                   ],
                 ),
                 circularStrokeCap: CircularStrokeCap.round,
               ),
               const SizedBox(height: 12),
               // Allowance breakdown row
-              _buildAllowanceRow(context, onSurface, subdued),
+              if (!Figures.off(context))
+                _buildAllowanceRow(context, onSurface, subdued),
               // Active calories line (HealthKit)
-              if (healthKitConnected && activeCaloriesToday > 0) ...[
+              if (!Figures.off(context) &&
+                  healthKitConnected &&
+                  activeCaloriesToday > 0) ...[
                 const SizedBox(height: 4),
                 _buildActiveCaloriesLine(context, subdued),
               ],
-              // Weekly context line
-              if (weeklyRemaining != null) ...[
+              // Weekly context line — a calories-remaining figure of its own.
+              if (!Figures.off(context) && weeklyRemaining != null) ...[
                 const SizedBox(height: 8),
                 _buildWeeklyLine(context, subdued),
               ],
@@ -159,26 +168,29 @@ class DashboardWidget extends StatelessWidget {
 
   Widget _buildAllowanceRow(
       BuildContext context, Color onSurface, Color subdued) {
+    // Bare numbers rather than "1700 kcal" three times over — the row's own
+    // labels say what they are. Still routed through the one formatter, which
+    // is what keeps them off the screen when figures are switched off.
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         _buildAllowanceColumn(
           context,
-          '${totalKcalBase.toInt()}',
+          Figures.bare(context, totalKcalBase),
           S.of(context).baseLabel,
           onSurface,
           subdued,
         ),
         _buildAllowanceColumn(
           context,
-          '+${totalKcalEarned.toInt()}',
+          Figures.bare(context, totalKcalEarned, sign: true),
           S.of(context).earnedLabel,
           onSurface,
           subdued,
         ),
         _buildAllowanceColumn(
           context,
-          '${totalKcalSupplied.toInt()}',
+          Figures.bare(context, totalKcalSupplied),
           S.of(context).eatenLabel,
           onSurface,
           subdued,
@@ -214,7 +226,7 @@ class DashboardWidget extends StatelessWidget {
 
   Widget _buildActiveCaloriesLine(BuildContext context, Color subdued) {
     String text =
-        '${S.of(context).activeCaloriesLabel}: ${activeCaloriesToday.toInt()} kcal';
+        '${S.of(context).activeCaloriesLabel}: ${Figures.kcal(context, activeCaloriesToday) ?? ''}';
     if (activeCaloriesUpdatedAt != null) {
       final minutesAgo =
           DateTime.now().difference(activeCaloriesUpdatedAt!).inMinutes;

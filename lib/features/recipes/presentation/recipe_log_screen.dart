@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_entity.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
@@ -96,7 +97,9 @@ class _RecipeLogBodyState extends State<_RecipeLogBody> {
                 const SizedBox(height: 8),
                 Text(
                   '${S.of(context).perServingLabel}: '
-                  '${recipe.kcalPerServing.round()} kcal · '
+                  // The whole calorie segment goes, separator and all, so the
+                  // line does not start with a stray middle dot.
+                  '${Figures.segmentWithSeparator(context, recipe.kcalPerServing)}'
                   'P ${recipe.proteinPerServing.round()}g · '
                   'C ${recipe.carbsPerServing.round()}g · '
                   'F ${recipe.fatPerServing.round()}g',
@@ -138,7 +141,8 @@ class _RecipeLogBodyState extends State<_RecipeLogBody> {
                           style: theme.textTheme.titleSmall,
                         ),
                         const SizedBox(height: 8),
-                        _NutritionRow('kcal', nutrition.kcal, theme),
+                        if (!Figures.off(context))
+                          _NutritionRow('kcal', nutrition.kcal, theme),
                         _NutritionRow('Protein', nutrition.protein, theme),
                         _NutritionRow('Carbs', nutrition.carbs, theme),
                         _NutritionRow('Fat', nutrition.fat, theme),

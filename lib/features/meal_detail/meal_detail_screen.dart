@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/domain/usecase/get_intake_usecase.dart';
 import 'package:opennutritracker/core/presentation/widgets/meal_value_unit_text.dart';
@@ -236,7 +237,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Text('${totalKcal.toInt()} ${S.of(context).kcalLabel}',
+                    Figures.kcalText(context, totalKcal,
                         style: Theme.of(context).textTheme.headlineSmall),
                     MealValueUnitText(
                       value: double.parse(totalQuantity),

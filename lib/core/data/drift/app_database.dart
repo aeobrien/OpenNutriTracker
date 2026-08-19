@@ -6,6 +6,7 @@ import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/outbox_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/recipe_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_activity_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
@@ -13,6 +14,7 @@ import 'package:opennutritracker/core/data/drift/tables/config.dart';
 import 'package:opennutritracker/core/data/drift/tables/daily_stats.dart';
 import 'package:opennutritracker/core/data/drift/tables/food_items.dart';
 import 'package:opennutritracker/core/data/drift/tables/log_entries.dart';
+import 'package:opennutritracker/core/data/drift/tables/outbox_items.dart';
 import 'package:opennutritracker/core/data/drift/tables/recipe_ingredients.dart';
 import 'package:opennutritracker/core/data/drift/tables/recipes.dart';
 import 'package:opennutritracker/core/data/drift/tables/user_activities.dart';
@@ -25,14 +27,14 @@ import 'package:sqlite3/sqlite3.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients],
-  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao],
+  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients, OutboxItems],
+  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao, OutboxDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -76,6 +78,9 @@ class AppDatabase extends _$AppDatabase {
           // index makes a re-pull idempotent; NULLs (local entries) are exempt.
           await customStatement(
             'CREATE UNIQUE INDEX IF NOT EXISTS idx_log_entries_external_id ON log_entries(external_id)',
+          );
+          await customStatement(
+            'CREATE INDEX IF NOT EXISTS idx_outbox_items_queued_at ON outbox_items(queued_at)',
           );
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -173,6 +178,26 @@ class AppDatabase extends _$AppDatabase {
             );
             await customStatement(
               'CREATE UNIQUE INDEX IF NOT EXISTS idx_log_entries_external_id ON log_entries(external_id)',
+            );
+          }
+          if (from < 7) {
+            // The one outbound queue. Purely additive — nothing already in the
+            // database changes shape, so an upgrade cannot disturb a diary.
+            await customStatement('''
+              CREATE TABLE IF NOT EXISTS outbox_items (
+                client_id TEXT NOT NULL PRIMARY KEY,
+                path TEXT NOT NULL,
+                body TEXT NOT NULL,
+                owner_id INTEGER NOT NULL,
+                author_id INTEGER NOT NULL,
+                logged_at INTEGER NOT NULL,
+                queued_at INTEGER NOT NULL,
+                attempts INTEGER NOT NULL DEFAULT 0,
+                last_error TEXT
+              )
+            ''');
+            await customStatement(
+              'CREATE INDEX IF NOT EXISTS idx_outbox_items_queued_at ON outbox_items(queued_at)',
             );
           }
         },

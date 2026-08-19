@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/tracked_day_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
@@ -87,7 +88,8 @@ class DayInfoWidget extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8.0, vertical: 8.0),
                             child: Text(
-                              _getCaloriesTrackedDisplayString(trackedDay),
+                              _getCaloriesTrackedDisplayString(
+                                  context, trackedDay),
                               style: Theme.of(context)
                                   .textTheme
                                   .titleLarge
@@ -185,7 +187,9 @@ class DayInfoWidget extends StatelessWidget {
     );
   }
 
-  String _getCaloriesTrackedDisplayString(TrackedDayEntity trackedDay) {
+  String _getCaloriesTrackedDisplayString(
+      BuildContext context, TrackedDayEntity trackedDay) {
+    if (Figures.off(context)) return '';
     int caloriesTracked;
     if (trackedDay.caloriesTracked.isNegative) {
       caloriesTracked = 0;
@@ -193,7 +197,8 @@ class DayInfoWidget extends StatelessWidget {
       caloriesTracked = trackedDay.caloriesTracked.toInt();
     }
 
-    return '$caloriesTracked/${trackedDay.calorieGoal.toInt()} kcal';
+    return '${Figures.bare(context, caloriesTracked)}/'
+        '${Figures.kcal(context, trackedDay.calorieGoal) ?? ''}';
   }
 
   String _getMacroTrackedDisplayString(TrackedDayEntity trackedDay) {

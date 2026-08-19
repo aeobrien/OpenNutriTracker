@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -106,7 +107,7 @@ class WeeklySummaryCard extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              row.tracked ? '${row.kcalIntake.round()}' : '—',
+              row.tracked ? Figures.bare(context, row.kcalIntake) : '—',
               textAlign: TextAlign.end,
               style: theme.textTheme.bodyMedium,
             ),
@@ -114,7 +115,7 @@ class WeeklySummaryCard extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              row.tracked ? '${row.kcalTarget.round()}' : '—',
+              row.tracked ? Figures.bare(context, row.kcalTarget) : '—',
               textAlign: TextAlign.end,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.outline,
@@ -124,7 +125,7 @@ class WeeklySummaryCard extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Text(
-              row.tracked ? _formatNet(row.net) : '—',
+              row.tracked && !Figures.off(context) ? _formatNet(row.net) : '—',
               textAlign: TextAlign.end,
               style: theme.textTheme.bodyMedium,
             ),

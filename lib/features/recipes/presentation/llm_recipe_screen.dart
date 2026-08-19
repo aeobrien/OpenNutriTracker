@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_ingredient_entity.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
@@ -281,7 +282,8 @@ class _LlmRecipeBodyState extends State<_LlmRecipeBody> {
                     children: [
                       Text(S.of(context).perServingLabel,
                           style: theme.textTheme.labelMedium),
-                      Text('${state.perServingNutrition.kcal.round()} kcal'),
+                      Figures.kcalText(
+                          context, state.perServingNutrition.kcal),
                       Text(
                           'P ${state.perServingNutrition.protein.round()}g'),
                       Text('C ${state.perServingNutrition.carbs.round()}g'),
@@ -398,9 +400,9 @@ class _ResolvedIngredientTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Row(
                   children: [
-                    if (needsFix)
+                    if (needsFix && !Figures.off(context))
                       Text(
-                        '${ingredient.kcalPer100.round()} kcal/100g',
+                        Figures.per100(context, ingredient.kcalPer100) ?? '',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: ingredient.kcalPer100 == 0
                               ? theme.colorScheme.error

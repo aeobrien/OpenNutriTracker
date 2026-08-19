@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
 
 class ActivityCard extends StatelessWidget {
@@ -36,27 +37,32 @@ class ActivityCard extends StatelessWidget {
                     },
                     child: Stack(
                       children: [
-                        Container(
-                          margin: const EdgeInsets.all(8.0),
-                          padding:
-                              const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
-                          decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .tertiaryContainer
-                                  .withValues(alpha: 0.8),
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Text(
-                            "🔥${activityEntity.burnedKcal.toInt()} kcal",
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onTertiaryContainer),
+                        // The whole pill goes when figures are off — an empty
+                        // badge would be a gap where a number used to be.
+                        if (!Figures.off(context))
+                          Container(
+                            margin: const EdgeInsets.all(8.0),
+                            padding:
+                                const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+                            decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .tertiaryContainer
+                                    .withValues(alpha: 0.8),
+                                borderRadius: BorderRadius.circular(12)),
+                            child: Figures.kcalText(
+                              context,
+                              activityEntity.burnedKcal,
+                              prefix: '🔥',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onTertiaryContainer),
+                            ),
                           ),
-                        ),
                         Center(
                           child: Icon(
                             activityEntity.physicalActivityEntity.displayIcon,

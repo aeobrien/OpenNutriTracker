@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/add_meal/data/data_sources/off_data_source.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_ingredient_entity.dart';
@@ -168,8 +169,10 @@ class _IngredientSearchSheetState extends State<IngredientSearchSheet> {
                       title: Text(item.name, maxLines: 1,
                           overflow: TextOverflow.ellipsis),
                       subtitle: Text(
-                        '${item.kcalPer100.round()} kcal/100g'
-                        '${item.brand != null ? ' · ${item.brand}' : ''}',
+                        [
+                          Figures.per100(context, item.kcalPer100),
+                          item.brand,
+                        ].whereType<String>().join(' · '),
                         style: theme.textTheme.bodySmall,
                       ),
                       onTap: () => setState(() => _selected = item),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/data/data_source/health_data_source.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/health_repository.dart';
@@ -51,7 +52,9 @@ class _HealthDebugScreenState extends State<HealthDebugScreen> {
     // 3. Try reading active calories
     try {
       final calories = await healthDataSource.getActiveCaloriesToday();
-      _log('getActiveCaloriesToday(): $calories kcal');
+      // This debug screen prints to the screen, not to the log, so it is a
+      // calorie-bearing surface like any other.
+      _log('getActiveCaloriesToday(): ${Figures.kcal(context, calories) ?? ''}');
     } catch (e) {
       _log('getActiveCaloriesToday() ERROR: $e');
     }

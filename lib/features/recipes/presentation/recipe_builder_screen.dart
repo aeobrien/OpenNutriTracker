@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_entity.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_ingredient_entity.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
@@ -254,7 +255,8 @@ class _IngredientTileState extends State<_IngredientTile> {
       child: ListTile(
         title: Text(widget.ingredient.name,
             maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text('$kcal kcal', style: theme.textTheme.bodySmall),
+        subtitle: Figures.kcalText(context, kcal,
+            style: theme.textTheme.bodySmall),
         trailing: SizedBox(
           width: 80,
           child: TextField(
@@ -311,8 +313,10 @@ class _NutritionSummaryBar extends StatelessWidget {
                 children: [
                   Text(S.of(context).perServingLabel,
                       style: theme.textTheme.labelMedium),
-                  _NutritionChip(
-                      '${(nutrition.kcal as double).round()} kcal', theme),
+                  if (!Figures.off(context))
+                    _NutritionChip(
+                        Figures.kcal(context, nutrition.kcal as double) ?? '',
+                        theme),
                   _NutritionChip(
                       'P ${(nutrition.protein as double).round()}g', theme),
                   _NutritionChip(

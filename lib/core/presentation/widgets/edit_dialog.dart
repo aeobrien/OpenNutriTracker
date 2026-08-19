@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -121,8 +122,9 @@ class _EditDialogState extends State<EditDialog> {
           ],
         ),
         const SizedBox(height: 8.0),
-        Text(
-          '${_currentKcalEstimate.toInt()} ${S.of(context).kcalLabel}',
+        Figures.kcalText(
+          context,
+          _currentKcalEstimate,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context)
                   .colorScheme

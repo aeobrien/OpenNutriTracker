@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/tracked_day_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/copy_dialog.dart';
@@ -89,8 +90,9 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
               ),
               const Spacer(),
               if (totalKcal > 0) ...[
-                Text(
-                  '${totalKcal.toInt()} ${S.of(context).kcalLabel}',
+                Figures.kcalText(
+                  context,
+                  totalKcal,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context)
                           .colorScheme

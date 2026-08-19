@@ -2,6 +2,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/meal_value_unit_text.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
@@ -103,23 +104,28 @@ class IntakeCard extends StatelessWidget {
                             .withValues(alpha: 0.5),
                       ),
                     ),
-                    Container(
-                      margin: const EdgeInsets.all(8.0),
-                      padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
-                      decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .tertiaryContainer
-                              .withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(20)),
-                      child: Text(
-                        '${intake.totalKcal.toInt()} kcal',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    if (!Figures.off(context))
+                      Container(
+                        margin: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+                        decoration: BoxDecoration(
                             color: Theme.of(context)
                                 .colorScheme
-                                .onTertiaryContainer),
+                                .tertiaryContainer
+                                .withValues(alpha: 0.8),
+                            borderRadius: BorderRadius.circular(20)),
+                        child: Figures.kcalText(
+                          context,
+                          intake.totalKcal,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onTertiaryContainer),
+                        ),
                       ),
-                    ),
                     Container(
                         padding: const EdgeInsets.all(8.0),
                         alignment: Alignment.bottomLeft,

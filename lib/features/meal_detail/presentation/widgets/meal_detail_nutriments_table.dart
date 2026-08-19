@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/utils/extensions.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -45,10 +46,17 @@ class MealDetailNutrimentsTable extends StatelessWidget {
                   .withValues(alpha: 0.5)),
           children: <TableRow>[
             _getNutrimentsTableRow("", headerText, textStyleBold),
-            _getNutrimentsTableRow(
-                S.of(context).energyLabel,
-                "${_adjustValueForServing(product.nutriments.energyKcal100?.toDouble() ?? 0).toInt()} ${S.of(context).kcalLabel}",
-                textStyleNormal),
+            // The energy row disappears with figures off; the macro rows stay,
+            // because grams of protein are not a calorie figure.
+            if (!Figures.off(context))
+              _getNutrimentsTableRow(
+                  S.of(context).energyLabel,
+                  Figures.kcal(
+                          context,
+                          _adjustValueForServing(
+                              product.nutriments.energyKcal100?.toDouble() ?? 0)) ??
+                      '',
+                  textStyleNormal),
             _getNutrimentsTableRow(
                 S.of(context).fatLabel,
                 "${_adjustValueForServing(product.nutriments.fat100 ?? 0).roundToPrecision(2)}g",

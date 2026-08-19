@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/recipe_entity.dart';
 
 class RecipeCard extends StatelessWidget {
@@ -43,7 +44,7 @@ class RecipeCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${recipe.kcalPerServing.round()} kcal · '
+                      '${Figures.segmentWithSeparator(context, recipe.kcalPerServing)}'
                       'P ${recipe.proteinPerServing.round()}g · '
                       'C ${recipe.carbsPerServing.round()}g · '
                       'F ${recipe.fatPerServing.round()}g',

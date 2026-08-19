@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/core/domain/entity/physical_activity_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_entity.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
@@ -150,9 +151,12 @@ class _ActivityDetailScreenState extends State<ActivityDetailScreen> {
                 Row(
                   children: [
                     // set Focus
-                    Text('~${totalKcal.toInt()} ${S.of(context).kcalLabel}',
+                    Figures.kcalText(context, totalKcal,
+                        prefix: '~',
                         style: Theme.of(context).textTheme.headlineSmall),
-                    Text(' / ${totalQuantity.toInt()} min')
+                    Text(Figures.off(context)
+                        ? '${totalQuantity.toInt()} min'
+                        : ' / ${totalQuantity.toInt()} min')
                   ],
                 ),
                 const SizedBox(height: 8.0),

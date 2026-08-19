@@ -5398,6 +5398,566 @@ class RecipeIngredientsCompanion extends UpdateCompanion<RecipeIngredient> {
   }
 }
 
+class $OutboxItemsTable extends OutboxItems
+    with TableInfo<$OutboxItemsTable, OutboxItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OutboxItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _clientIdMeta = const VerificationMeta(
+    'clientId',
+  );
+  @override
+  late final GeneratedColumn<String> clientId = GeneratedColumn<String>(
+    'client_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _pathMeta = const VerificationMeta('path');
+  @override
+  late final GeneratedColumn<String> path = GeneratedColumn<String>(
+    'path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<int> ownerId = GeneratedColumn<int>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _authorIdMeta = const VerificationMeta(
+    'authorId',
+  );
+  @override
+  late final GeneratedColumn<int> authorId = GeneratedColumn<int>(
+    'author_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _loggedAtMeta = const VerificationMeta(
+    'loggedAt',
+  );
+  @override
+  late final GeneratedColumn<int> loggedAt = GeneratedColumn<int>(
+    'logged_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _queuedAtMeta = const VerificationMeta(
+    'queuedAt',
+  );
+  @override
+  late final GeneratedColumn<int> queuedAt = GeneratedColumn<int>(
+    'queued_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _attemptsMeta = const VerificationMeta(
+    'attempts',
+  );
+  @override
+  late final GeneratedColumn<int> attempts = GeneratedColumn<int>(
+    'attempts',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
+  @override
+  late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
+    'last_error',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    clientId,
+    path,
+    body,
+    ownerId,
+    authorId,
+    loggedAt,
+    queuedAt,
+    attempts,
+    lastError,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'outbox_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OutboxItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('client_id')) {
+      context.handle(
+        _clientIdMeta,
+        clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientIdMeta);
+    }
+    if (data.containsKey('path')) {
+      context.handle(
+        _pathMeta,
+        path.isAcceptableOrUnknown(data['path']!, _pathMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_pathMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('author_id')) {
+      context.handle(
+        _authorIdMeta,
+        authorId.isAcceptableOrUnknown(data['author_id']!, _authorIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_authorIdMeta);
+    }
+    if (data.containsKey('logged_at')) {
+      context.handle(
+        _loggedAtMeta,
+        loggedAt.isAcceptableOrUnknown(data['logged_at']!, _loggedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_loggedAtMeta);
+    }
+    if (data.containsKey('queued_at')) {
+      context.handle(
+        _queuedAtMeta,
+        queuedAt.isAcceptableOrUnknown(data['queued_at']!, _queuedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_queuedAtMeta);
+    }
+    if (data.containsKey('attempts')) {
+      context.handle(
+        _attemptsMeta,
+        attempts.isAcceptableOrUnknown(data['attempts']!, _attemptsMeta),
+      );
+    }
+    if (data.containsKey('last_error')) {
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {clientId};
+  @override
+  OutboxItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OutboxItem(
+      clientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_id'],
+      )!,
+      path: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}path'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      authorId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}author_id'],
+      )!,
+      loggedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}logged_at'],
+      )!,
+      queuedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}queued_at'],
+      )!,
+      attempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}attempts'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
+    );
+  }
+
+  @override
+  $OutboxItemsTable createAlias(String alias) {
+    return $OutboxItemsTable(attachedDatabase, alias);
+  }
+}
+
+class OutboxItem extends DataClass implements Insertable<OutboxItem> {
+  final String clientId;
+  final String path;
+  final String body;
+  final int ownerId;
+  final int authorId;
+  final int loggedAt;
+  final int queuedAt;
+  final int attempts;
+  final String? lastError;
+  const OutboxItem({
+    required this.clientId,
+    required this.path,
+    required this.body,
+    required this.ownerId,
+    required this.authorId,
+    required this.loggedAt,
+    required this.queuedAt,
+    required this.attempts,
+    this.lastError,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['client_id'] = Variable<String>(clientId);
+    map['path'] = Variable<String>(path);
+    map['body'] = Variable<String>(body);
+    map['owner_id'] = Variable<int>(ownerId);
+    map['author_id'] = Variable<int>(authorId);
+    map['logged_at'] = Variable<int>(loggedAt);
+    map['queued_at'] = Variable<int>(queuedAt);
+    map['attempts'] = Variable<int>(attempts);
+    if (!nullToAbsent || lastError != null) {
+      map['last_error'] = Variable<String>(lastError);
+    }
+    return map;
+  }
+
+  OutboxItemsCompanion toCompanion(bool nullToAbsent) {
+    return OutboxItemsCompanion(
+      clientId: Value(clientId),
+      path: Value(path),
+      body: Value(body),
+      ownerId: Value(ownerId),
+      authorId: Value(authorId),
+      loggedAt: Value(loggedAt),
+      queuedAt: Value(queuedAt),
+      attempts: Value(attempts),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
+    );
+  }
+
+  factory OutboxItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OutboxItem(
+      clientId: serializer.fromJson<String>(json['clientId']),
+      path: serializer.fromJson<String>(json['path']),
+      body: serializer.fromJson<String>(json['body']),
+      ownerId: serializer.fromJson<int>(json['ownerId']),
+      authorId: serializer.fromJson<int>(json['authorId']),
+      loggedAt: serializer.fromJson<int>(json['loggedAt']),
+      queuedAt: serializer.fromJson<int>(json['queuedAt']),
+      attempts: serializer.fromJson<int>(json['attempts']),
+      lastError: serializer.fromJson<String?>(json['lastError']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'clientId': serializer.toJson<String>(clientId),
+      'path': serializer.toJson<String>(path),
+      'body': serializer.toJson<String>(body),
+      'ownerId': serializer.toJson<int>(ownerId),
+      'authorId': serializer.toJson<int>(authorId),
+      'loggedAt': serializer.toJson<int>(loggedAt),
+      'queuedAt': serializer.toJson<int>(queuedAt),
+      'attempts': serializer.toJson<int>(attempts),
+      'lastError': serializer.toJson<String?>(lastError),
+    };
+  }
+
+  OutboxItem copyWith({
+    String? clientId,
+    String? path,
+    String? body,
+    int? ownerId,
+    int? authorId,
+    int? loggedAt,
+    int? queuedAt,
+    int? attempts,
+    Value<String?> lastError = const Value.absent(),
+  }) => OutboxItem(
+    clientId: clientId ?? this.clientId,
+    path: path ?? this.path,
+    body: body ?? this.body,
+    ownerId: ownerId ?? this.ownerId,
+    authorId: authorId ?? this.authorId,
+    loggedAt: loggedAt ?? this.loggedAt,
+    queuedAt: queuedAt ?? this.queuedAt,
+    attempts: attempts ?? this.attempts,
+    lastError: lastError.present ? lastError.value : this.lastError,
+  );
+  OutboxItem copyWithCompanion(OutboxItemsCompanion data) {
+    return OutboxItem(
+      clientId: data.clientId.present ? data.clientId.value : this.clientId,
+      path: data.path.present ? data.path.value : this.path,
+      body: data.body.present ? data.body.value : this.body,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      authorId: data.authorId.present ? data.authorId.value : this.authorId,
+      loggedAt: data.loggedAt.present ? data.loggedAt.value : this.loggedAt,
+      queuedAt: data.queuedAt.present ? data.queuedAt.value : this.queuedAt,
+      attempts: data.attempts.present ? data.attempts.value : this.attempts,
+      lastError: data.lastError.present ? data.lastError.value : this.lastError,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutboxItem(')
+          ..write('clientId: $clientId, ')
+          ..write('path: $path, ')
+          ..write('body: $body, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('authorId: $authorId, ')
+          ..write('loggedAt: $loggedAt, ')
+          ..write('queuedAt: $queuedAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    clientId,
+    path,
+    body,
+    ownerId,
+    authorId,
+    loggedAt,
+    queuedAt,
+    attempts,
+    lastError,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OutboxItem &&
+          other.clientId == this.clientId &&
+          other.path == this.path &&
+          other.body == this.body &&
+          other.ownerId == this.ownerId &&
+          other.authorId == this.authorId &&
+          other.loggedAt == this.loggedAt &&
+          other.queuedAt == this.queuedAt &&
+          other.attempts == this.attempts &&
+          other.lastError == this.lastError);
+}
+
+class OutboxItemsCompanion extends UpdateCompanion<OutboxItem> {
+  final Value<String> clientId;
+  final Value<String> path;
+  final Value<String> body;
+  final Value<int> ownerId;
+  final Value<int> authorId;
+  final Value<int> loggedAt;
+  final Value<int> queuedAt;
+  final Value<int> attempts;
+  final Value<String?> lastError;
+  final Value<int> rowid;
+  const OutboxItemsCompanion({
+    this.clientId = const Value.absent(),
+    this.path = const Value.absent(),
+    this.body = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.authorId = const Value.absent(),
+    this.loggedAt = const Value.absent(),
+    this.queuedAt = const Value.absent(),
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OutboxItemsCompanion.insert({
+    required String clientId,
+    required String path,
+    required String body,
+    required int ownerId,
+    required int authorId,
+    required int loggedAt,
+    required int queuedAt,
+    this.attempts = const Value.absent(),
+    this.lastError = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : clientId = Value(clientId),
+       path = Value(path),
+       body = Value(body),
+       ownerId = Value(ownerId),
+       authorId = Value(authorId),
+       loggedAt = Value(loggedAt),
+       queuedAt = Value(queuedAt);
+  static Insertable<OutboxItem> custom({
+    Expression<String>? clientId,
+    Expression<String>? path,
+    Expression<String>? body,
+    Expression<int>? ownerId,
+    Expression<int>? authorId,
+    Expression<int>? loggedAt,
+    Expression<int>? queuedAt,
+    Expression<int>? attempts,
+    Expression<String>? lastError,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (clientId != null) 'client_id': clientId,
+      if (path != null) 'path': path,
+      if (body != null) 'body': body,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (authorId != null) 'author_id': authorId,
+      if (loggedAt != null) 'logged_at': loggedAt,
+      if (queuedAt != null) 'queued_at': queuedAt,
+      if (attempts != null) 'attempts': attempts,
+      if (lastError != null) 'last_error': lastError,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OutboxItemsCompanion copyWith({
+    Value<String>? clientId,
+    Value<String>? path,
+    Value<String>? body,
+    Value<int>? ownerId,
+    Value<int>? authorId,
+    Value<int>? loggedAt,
+    Value<int>? queuedAt,
+    Value<int>? attempts,
+    Value<String?>? lastError,
+    Value<int>? rowid,
+  }) {
+    return OutboxItemsCompanion(
+      clientId: clientId ?? this.clientId,
+      path: path ?? this.path,
+      body: body ?? this.body,
+      ownerId: ownerId ?? this.ownerId,
+      authorId: authorId ?? this.authorId,
+      loggedAt: loggedAt ?? this.loggedAt,
+      queuedAt: queuedAt ?? this.queuedAt,
+      attempts: attempts ?? this.attempts,
+      lastError: lastError ?? this.lastError,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (clientId.present) {
+      map['client_id'] = Variable<String>(clientId.value);
+    }
+    if (path.present) {
+      map['path'] = Variable<String>(path.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<int>(ownerId.value);
+    }
+    if (authorId.present) {
+      map['author_id'] = Variable<int>(authorId.value);
+    }
+    if (loggedAt.present) {
+      map['logged_at'] = Variable<int>(loggedAt.value);
+    }
+    if (queuedAt.present) {
+      map['queued_at'] = Variable<int>(queuedAt.value);
+    }
+    if (attempts.present) {
+      map['attempts'] = Variable<int>(attempts.value);
+    }
+    if (lastError.present) {
+      map['last_error'] = Variable<String>(lastError.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OutboxItemsCompanion(')
+          ..write('clientId: $clientId, ')
+          ..write('path: $path, ')
+          ..write('body: $body, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('authorId: $authorId, ')
+          ..write('loggedAt: $loggedAt, ')
+          ..write('queuedAt: $queuedAt, ')
+          ..write('attempts: $attempts, ')
+          ..write('lastError: $lastError, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5410,6 +5970,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RecipesTable recipes = $RecipesTable(this);
   late final $RecipeIngredientsTable recipeIngredients =
       $RecipeIngredientsTable(this);
+  late final $OutboxItemsTable outboxItems = $OutboxItemsTable(this);
   late final FoodItemDao foodItemDao = FoodItemDao(this as AppDatabase);
   late final LogEntryDao logEntryDao = LogEntryDao(this as AppDatabase);
   late final DailyStatsDao dailyStatsDao = DailyStatsDao(this as AppDatabase);
@@ -5421,6 +5982,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this as AppDatabase,
   );
   late final RecipeDao recipeDao = RecipeDao(this as AppDatabase);
+  late final OutboxDao outboxDao = OutboxDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5434,6 +5996,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     userActivities,
     recipes,
     recipeIngredients,
+    outboxItems,
   ];
 }
 
@@ -8653,6 +9216,282 @@ typedef $$RecipeIngredientsTableProcessedTableManager =
       RecipeIngredient,
       PrefetchHooks Function({bool recipeId, bool foodItemId})
     >;
+typedef $$OutboxItemsTableCreateCompanionBuilder =
+    OutboxItemsCompanion Function({
+      required String clientId,
+      required String path,
+      required String body,
+      required int ownerId,
+      required int authorId,
+      required int loggedAt,
+      required int queuedAt,
+      Value<int> attempts,
+      Value<String?> lastError,
+      Value<int> rowid,
+    });
+typedef $$OutboxItemsTableUpdateCompanionBuilder =
+    OutboxItemsCompanion Function({
+      Value<String> clientId,
+      Value<String> path,
+      Value<String> body,
+      Value<int> ownerId,
+      Value<int> authorId,
+      Value<int> loggedAt,
+      Value<int> queuedAt,
+      Value<int> attempts,
+      Value<String?> lastError,
+      Value<int> rowid,
+    });
+
+class $$OutboxItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $OutboxItemsTable> {
+  $$OutboxItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get clientId => $composableBuilder(
+    column: $table.clientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get authorId => $composableBuilder(
+    column: $table.authorId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get loggedAt => $composableBuilder(
+    column: $table.loggedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get queuedAt => $composableBuilder(
+    column: $table.queuedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OutboxItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OutboxItemsTable> {
+  $$OutboxItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get clientId => $composableBuilder(
+    column: $table.clientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get path => $composableBuilder(
+    column: $table.path,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get ownerId => $composableBuilder(
+    column: $table.ownerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get authorId => $composableBuilder(
+    column: $table.authorId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get loggedAt => $composableBuilder(
+    column: $table.loggedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get queuedAt => $composableBuilder(
+    column: $table.queuedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get attempts => $composableBuilder(
+    column: $table.attempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OutboxItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OutboxItemsTable> {
+  $$OutboxItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get clientId =>
+      $composableBuilder(column: $table.clientId, builder: (column) => column);
+
+  GeneratedColumn<String> get path =>
+      $composableBuilder(column: $table.path, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<int> get ownerId =>
+      $composableBuilder(column: $table.ownerId, builder: (column) => column);
+
+  GeneratedColumn<int> get authorId =>
+      $composableBuilder(column: $table.authorId, builder: (column) => column);
+
+  GeneratedColumn<int> get loggedAt =>
+      $composableBuilder(column: $table.loggedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get queuedAt =>
+      $composableBuilder(column: $table.queuedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get attempts =>
+      $composableBuilder(column: $table.attempts, builder: (column) => column);
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
+}
+
+class $$OutboxItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OutboxItemsTable,
+          OutboxItem,
+          $$OutboxItemsTableFilterComposer,
+          $$OutboxItemsTableOrderingComposer,
+          $$OutboxItemsTableAnnotationComposer,
+          $$OutboxItemsTableCreateCompanionBuilder,
+          $$OutboxItemsTableUpdateCompanionBuilder,
+          (
+            OutboxItem,
+            BaseReferences<_$AppDatabase, $OutboxItemsTable, OutboxItem>,
+          ),
+          OutboxItem,
+          PrefetchHooks Function()
+        > {
+  $$OutboxItemsTableTableManager(_$AppDatabase db, $OutboxItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OutboxItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OutboxItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OutboxItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> clientId = const Value.absent(),
+                Value<String> path = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> ownerId = const Value.absent(),
+                Value<int> authorId = const Value.absent(),
+                Value<int> loggedAt = const Value.absent(),
+                Value<int> queuedAt = const Value.absent(),
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OutboxItemsCompanion(
+                clientId: clientId,
+                path: path,
+                body: body,
+                ownerId: ownerId,
+                authorId: authorId,
+                loggedAt: loggedAt,
+                queuedAt: queuedAt,
+                attempts: attempts,
+                lastError: lastError,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String clientId,
+                required String path,
+                required String body,
+                required int ownerId,
+                required int authorId,
+                required int loggedAt,
+                required int queuedAt,
+                Value<int> attempts = const Value.absent(),
+                Value<String?> lastError = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OutboxItemsCompanion.insert(
+                clientId: clientId,
+                path: path,
+                body: body,
+                ownerId: ownerId,
+                authorId: authorId,
+                loggedAt: loggedAt,
+                queuedAt: queuedAt,
+                attempts: attempts,
+                lastError: lastError,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OutboxItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OutboxItemsTable,
+      OutboxItem,
+      $$OutboxItemsTableFilterComposer,
+      $$OutboxItemsTableOrderingComposer,
+      $$OutboxItemsTableAnnotationComposer,
+      $$OutboxItemsTableCreateCompanionBuilder,
+      $$OutboxItemsTableUpdateCompanionBuilder,
+      (
+        OutboxItem,
+        BaseReferences<_$AppDatabase, $OutboxItemsTable, OutboxItem>,
+      ),
+      OutboxItem,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -8673,4 +9512,6 @@ class $AppDatabaseManager {
       $$RecipesTableTableManager(_db, _db.recipes);
   $$RecipeIngredientsTableTableManager get recipeIngredients =>
       $$RecipeIngredientsTableTableManager(_db, _db.recipeIngredients);
+  $$OutboxItemsTableTableManager get outboxItems =>
+      $$OutboxItemsTableTableManager(_db, _db.outboxItems);
 }

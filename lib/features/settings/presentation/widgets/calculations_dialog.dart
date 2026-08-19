@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
@@ -174,7 +175,7 @@ class _CalculationsDialogState extends State<CalculationsDialog> {
             const SizedBox(height: 16),
             // Computed TDEE (read-only)
             Text(
-              '${S.of(context).calculatedTdeeLabel}: ${_tdee.round()} ${S.of(context).kcalLabel}',
+              '${S.of(context).calculatedTdeeLabel}: ${Figures.kcal(context, _tdee) ?? ''}',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 8),
@@ -194,7 +195,7 @@ class _CalculationsDialogState extends State<CalculationsDialog> {
             Container(
               alignment: Alignment.centerLeft,
               child: Text(
-                '${S.of(context).dailyKcalAdjustmentLabel} ${!_kcalAdjustmentSelection.isNegative ? "+" : ""}${_kcalAdjustmentSelection.round()} ${S.of(context).kcalLabel}',
+                '${S.of(context).dailyKcalAdjustmentLabel} ${Figures.bare(context, _kcalAdjustmentSelection, sign: true)}',
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
@@ -208,7 +209,7 @@ class _CalculationsDialogState extends State<CalculationsDialog> {
                   divisions: _kcalDivisions,
                   value: _kcalAdjustmentSelection,
                   label:
-                      '${_kcalAdjustmentSelection.round()} ${S.of(context).kcalLabel}',
+                      Figures.kcal(context, _kcalAdjustmentSelection) ?? '',
                   onChanged: (value) {
                     setState(() {
                       _kcalAdjustmentSelection = value;
