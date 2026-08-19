@@ -15,6 +15,7 @@ import 'package:opennutritracker/features/profile/presentation/widgets/set_weigh
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -94,10 +95,18 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           onTap: () => _showSetGoalDialog(context, user),
         ),
-        // One weight row. There used to be two on this screen — this one, and
-        // a household weight section directly above it, which is what Aidan hit
-        // when he asked why the profile weight ignored the tracking switch.
-        // The second one is gone; this one now reaches the household.
+        // One weight row, and it is never hidden. There used to be two on this
+        // screen — this one, and a household weight section directly above it,
+        // which is what Aidan hit when he asked why the profile weight ignored
+        // the tracking switch. The second one is gone; this one now reaches the
+        // household when sharing is on.
+        //
+        // Deliberately not wrapped in the weight-tracking switch. Aidan ruled
+        // on 19 August that the switch governs sharing only: this row is where
+        // the app's own calorie calculation gets a weight, so hiding it would
+        // leave a stored number that can never be corrected — and the setting
+        // is off by default, so a fresh install would lose the row before
+        // anybody had chosen anything.
         ListTile(
           title: Text(
             S.of(context).weightLabel,
@@ -230,21 +239,45 @@ class _ProfilePageState extends State<ProfilePage> {
         userEntity.weightKG = selectedWeight;
       }
       _profileBloc.updateUser(userEntity);
-      _alsoTellTheHousehold(userEntity.weightKG);
+      if (context.mounted) {
+        _alsoTellTheHousehold(context, userEntity.weightKG);
+      }
     }
   }
 
-  /// Put the weight he just typed on the household's ledger too.
+  /// Put the weight he just typed on the household's ledger too — if this
+  /// person shares their weight with the household.
   ///
-  /// The app has always kept its own current weight and uses it to work out his
-  /// target. The household keeps a dated record, which is what the other phone
-  /// and the kitchen panel read. Before tonight those were two separate places
-  /// a weight could be typed; now there is one row and it writes to both.
+  /// The app has always kept its own current weight and uses it to work out the
+  /// daily target. The household keeps a dated record, which is what the other
+  /// phone and the kitchen panel read. Before this those were two separate
+  /// places a weight could be typed; now there is one row.
+  ///
+  /// **What the weight-tracking switch does, decided by Aidan on 19 August:**
+  /// it governs the household side only — whether weights are shared and shown
+  /// in the household's history. It never hides or disables this row. The plan
+  /// originally said the switch should hide it, and that was put back to him
+  /// because the row is where the app's own calorie calculation gets a weight:
+  /// hiding it does not erase the stored number, it makes it impossible to
+  /// correct, so the app would go on working from a weight that can no longer
+  /// be updated. And since the setting is off by default in both the app and
+  /// the household's records, a fresh install would have lost the row before
+  /// anybody chose anything. His answer: the row always stays and always stays
+  /// editable.
+  ///
+  /// Turning the switch off stops new weights being shared. It deletes nothing
+  /// — the history is still there and comes back when it is turned on.
   ///
   /// Quiet on failure, and it cannot fail the app's own save: the weight is
   /// already stored by the time this runs, and the household write goes into
   /// the queue that holds and retries.
-  void _alsoTellTheHousehold(double kg) {
+  void _alsoTellTheHousehold(BuildContext context, double kg) {
+    if (!WeightTrackingScope.onIn(context)) {
+      Logger('ProfilePage').info(
+          '[WEIGHT] saved locally; not shared, because this person has weight '
+          'sharing switched off');
+      return;
+    }
     final now = DateTime.now();
     locator<HouseholdLogger>()
         .logWeight(day: ExerciseSync.dayKey(now), kg: kg)

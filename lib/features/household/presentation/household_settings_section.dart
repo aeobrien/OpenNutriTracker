@@ -192,10 +192,12 @@ class _HouseholdSettingsSectionState extends State<HouseholdSettingsSection> {
             onTap: _busy || _ownerId == null ? null : _askForTarget,
           ),
         SwitchListTile(
-          title: const Text('Track weight'),
+          title: const Text('Share weight with the household'),
           subtitle: const Text(
-              'Turning this off hides the weight tab. Nothing already recorded '
-              'is deleted.'),
+              'When this is off, weights you type stay on this phone and are '
+              'not added to the household record. Nothing already recorded is '
+              'deleted, and it all comes back if you turn this on again. Your '
+              'own weight on the Profile screen is unaffected either way.'),
           value: settings?.weightTrackingOn ?? false,
           onChanged: _busy || settings == null
               ? null

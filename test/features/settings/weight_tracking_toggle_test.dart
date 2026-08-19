@@ -15,19 +15,21 @@
 /// confuse: the server's own records are inspected directly while the switch is
 /// off, and the app is asked for the history while the switch is off — both must
 /// still have it. The switch belongs to the screen, not to the ledger.
-/// **What this file no longer covers, and why.** It used to mount a household
-/// weight section beside the settings switch and watch the switch hide it. That
-/// section is deleted: it sat directly above the app's own weight row on the
-/// Profile screen, which is what Aidan hit when he asked why the profile weight
-/// ignored the tracking switch. What the switch should hide now that there is
-/// one weight row — a row the app needs, because it is where his weight for the
-/// calorie calculation comes from — is an open question that has gone to be
-/// decided rather than settled here.
+/// **What the switch turned out to govern.** It used to have a household weight
+/// section of its own to hide, sitting directly above the app's own weight row
+/// on the Profile screen — which is what Aidan hit when he asked why the profile
+/// weight ignored the tracking switch. That section is deleted, and the question
+/// of what the switch should hide instead went to him on 19 August. His answer:
+/// it governs **sharing** — whether weights reach the household's record — and
+/// never hides the Profile row, because that row is where the app's own calorie
+/// calculation gets a weight, and the setting is off by default.
 ///
-/// Everything below is the half that does not depend on the answer: the switch
-/// belongs to one person, and it changes what is shown and never what is kept.
+/// The last group here holds that ruling to the code.
 library;
 
+import 'dart:io';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
@@ -35,6 +37,8 @@ import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/data/outbox.dart';
+import 'package:opennutritracker/features/household/domain/household_person.dart';
+import 'package:opennutritracker/features/household/presentation/figures.dart';
 
 import '../household/fake_household_server.dart';
 
@@ -161,6 +165,63 @@ void main() {
 
       expect(await repository.weights(mini.emily), hasLength(1));
       expect(await repository.weights(mini.aidan), hasLength(3));
+    });
+  });
+
+  group('what the switch governs, and what it leaves alone', () {
+    // Ruled by Aidan on 19 August. The plan originally said this switch should
+    // hide the weight row on Profile. It was put back to him because that row
+    // is where the app's own calorie calculation gets a weight: hiding it does
+    // not erase the stored number, it makes it impossible to correct. And the
+    // setting is off by default in both the app's model and the household's
+    // records, so a fresh install would have lost the row before anybody chose
+    // anything. His answer: the switch governs sharing only.
+    //
+    // Checked by reading the screen's source rather than by mounting it. That
+    // is the honest tool here — the thing being asserted is the *absence* of a
+    // condition, and a widget test can only ever show that the row appeared in
+    // the one state it was mounted in.
+
+    test('the weight row on Profile is not hidden by the switch', () {
+      final source =
+          File('lib/features/profile/profile_page.dart').readAsStringSync();
+      final row = source.substring(source.indexOf('ListTile(',
+          source.indexOf('One weight row')));
+      final untilNextTile = row.substring(0, row.indexOf('ListTile(', 10) + 1);
+      expect(untilNextTile.contains('WeightTrackingScope'), isFalse,
+          reason: 'the weight row has been put behind the switch again — a '
+              'fresh install would lose it before anybody chose anything');
+    });
+
+    test('but sharing a weight with the household is behind the switch', () {
+      final source =
+          File('lib/features/profile/profile_page.dart').readAsStringSync();
+      final share = source.substring(source.indexOf('_alsoTellTheHousehold(BuildContext'));
+      expect(share.contains('WeightTrackingScope.onIn(context)'), isTrue,
+          reason: 'a weight is being put on the household record even when '
+              'this person asked for it not to be shared');
+    });
+
+    testWidgets('a phone that has not heard from the Mini yet shares by default',
+        (tester) async {
+      // Absent is not off. Before this project every weight went to the
+      // household, and a settings read that has not come back yet must not
+      // quietly change that.
+      late bool sharing;
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(builder: (context) {
+          sharing = WeightTrackingScope.onIn(context);
+          return const SizedBox.shrink();
+        }),
+      ));
+      expect(sharing, isTrue);
+    });
+
+    test('the stored default is untouched — off means not shared', () {
+      // Explicitly asserted because the alternative ruling would have required
+      // flipping this, and a later change here would silently stop new people
+      // sharing without anybody deciding to.
+      expect(const PersonSettings(personId: 1).weightTrackingOn, isFalse);
     });
   });
 }
