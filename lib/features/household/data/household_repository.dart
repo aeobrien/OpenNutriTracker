@@ -5,6 +5,7 @@ import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
+import 'package:opennutritracker/features/household/domain/weight_record.dart';
 
 /// Who this handset belongs to, and what that person's settings are.
 ///
@@ -103,6 +104,20 @@ class HouseholdRepository {
           'weight_tracking_on': s.weightTrackingOn ? 1 : 0,
           'figures_off': s.figuresOff ? 1 : 0,
         }));
+  }
+
+  // --- weights ----------------------------------------------------------
+
+  /// Everything this person has weighed in at, oldest first.
+  ///
+  /// Asked for without consulting the weight-tracking switch on purpose. The
+  /// switch belongs to the screen — it decides whether the weight tab is shown.
+  /// If this method filtered on it, turning the switch off would look exactly
+  /// like the history having been thrown away, and the difference between those
+  /// two is the whole promise.
+  Future<List<WeightRecord>> weights(int personId) async {
+    final rows = await _api.weights(personId);
+    return rows.map(WeightRecord.fromJson).toList();
   }
 
   /// Change one person's settings. Keyed on the person throughout — there is no

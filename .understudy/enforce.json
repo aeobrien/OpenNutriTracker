@@ -1,0 +1,32 @@
+{
+  "feature_globs": [
+    "**/*.swift",
+    "templates/**/*.html",
+    "static/**/*.js",
+    "static/**/*.css",
+    "**/*.jsx",
+    "**/*.tsx",
+    "**/*.vue",
+    "**/*.py",
+    "**/*.ts",
+    "**/*.dart"
+  ],
+  "exclusions": [
+    "**/test_*.py",
+    "**/*_test.py",
+    "**/tests/**",
+    "**/conftest.py",
+    "**/setup.py",
+    "**/*.md",
+    ".understudy/**",
+    "enforcement/**",
+    "understudy-runs/**",
+    "harness-runs/**",
+    "**/*.g.dart",
+    "**/*.freezed.dart",
+    "**/build/**",
+    ".dart_tool/**"
+  ],
+  "surfaces": [],
+  "served_url": null
+}

@@ -126,6 +126,14 @@ class HouseholdApi {
     return PersonSettings.fromJson(body['settings'] as Map<String, dynamic>);
   }
 
+  /// Everything this person has weighed in at. Asked for regardless of the
+  /// weight-tracking switch — the switch decides what is shown, never what is
+  /// kept.
+  Future<List<Map<String, dynamic>>> weights(int personId) async {
+    final body = await get('/household/weights/$personId');
+    return (body['weights'] as List).cast<Map<String, dynamic>>();
+  }
+
   Future<Map<String, dynamic>> day(int personId, String day) async {
     return get('/household/day/$personId/$day');
   }
