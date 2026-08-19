@@ -39,7 +39,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// Reload the day. Everything on Home that can go stale goes through here so
   /// that no future call site can reload half of it.
   void _reload() {
-    _reload();
+    _homeBloc.add(const LoadItemsEvent());
     _planned.currentState?.reload();
   }
 

@@ -46,6 +46,23 @@ void main() {
               'sitting there until the app was restarted');
     });
 
+    test('and the one reload does not call itself', () {
+      // Written after doing exactly this. Routing every reload in Home through
+      // one helper is right; a search-and-replace that rewrites the helper's
+      // own body along with its call sites turns it into infinite recursion.
+      // Nothing caught it, because no test mounts Home — which is the same
+      // blind spot this file exists for.
+      final home = _read('lib/features/home/home_page.dart');
+      final body = RegExp(r'void _reload\(\) \{(.*?)\n  \}', dotAll: true)
+          .firstMatch(home)
+          ?.group(1);
+      expect(body, isNotNull, reason: 'Home has no single reload any more');
+      expect(body!.contains('_reload()'), isFalse,
+          reason: 'Home\'s reload calls itself');
+      expect(body.contains('LoadItemsEvent'), isTrue,
+          reason: 'Home\'s reload no longer reloads Home');
+    });
+
     test('there is no second day anywhere', () {
       final shell = _read('lib/core/presentation/main_screen.dart');
       expect(shell.contains('TodayPage'), isFalse,
