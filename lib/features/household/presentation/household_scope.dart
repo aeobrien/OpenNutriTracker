@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/data/outbox_sender.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/household/presentation/whose_phone_page.dart';
 
@@ -14,18 +15,28 @@ import 'package:opennutritracker/features/household/presentation/whose_phone_pag
 ///  * **Whether this person sees calorie figures.** [FiguresScope] has to be
 ///    above every screen that could show one, or a screen further down would
 ///    quietly keep its numbers after the switch was thrown.
+///  * **Emptying the queue.** [OutboxSender] is started here rather than from a
+///    screen because work held while the Mini was unreachable has to be sent
+///    whatever the person happens to be looking at — including nothing, on an
+///    app they have just brought back to the front.
 ///
 /// It reads the settings from the person's own record, so handing the phone to
 /// the other person changes both at once — call [refreshed] after a change and
 /// the app redraws as the new person's.
 class HouseholdScope extends StatefulWidget {
   final HouseholdRepository repository;
+
+  /// Empties the household queue. Optional only so a test can mount the scope
+  /// without one; the running app always passes it.
+  final OutboxSender? sender;
+
   final Widget child;
 
   const HouseholdScope({
     super.key,
     required this.repository,
     required this.child,
+    this.sender,
   });
 
   /// Reload the household settings — after the phone changes hands, or after
@@ -45,6 +56,13 @@ class _HouseholdScopeState extends State<HouseholdScope> {
   void initState() {
     super.initState();
     _load();
+    widget.sender?.start();
+  }
+
+  @override
+  void dispose() {
+    widget.sender?.stop();
+    super.dispose();
   }
 
   Future<void> _load() async {

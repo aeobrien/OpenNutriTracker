@@ -292,6 +292,7 @@ void main() {
         if (entity.path.endsWith('outbox.dart') ||
             entity.path.endsWith('outbox_dao.dart') ||
             entity.path.endsWith('outbox_items.dart') ||
+            entity.path.endsWith('outbox_sender.dart') ||
             entity.path.endsWith('.g.dart')) {
           continue;
         }
@@ -303,6 +304,30 @@ void main() {
       }
       expect(suspects, isEmpty,
           reason: 'a second outbound queue would compete with the first');
+    });
+
+    test('the sender keeps no queue of its own', () {
+      // outbox_sender.dart is exempt from the sweep above because its name
+      // matches while its job does not: it decides *when* to send and holds
+      // nothing. That exemption is only safe while it stays true, so this
+      // reads the file and checks it never touches the store — no DAO, no
+      // table companion, no enqueueing. A sender that started keeping its own
+      // list would be the second queue the sweep exists to catch.
+      final source =
+          File('lib/features/household/data/outbox_sender.dart').readAsStringSync();
+      for (final storing in const [
+        'OutboxDao',
+        'OutboxItemsCompanion',
+        'OutboxItem ',
+        'enqueue(',
+        'AppDatabase',
+      ]) {
+        expect(source.contains(storing), isFalse,
+            reason: 'the sender stores work itself ($storing) — that is a '
+                'second queue wearing a different name');
+      }
+      expect(source.contains('.drain()'), isTrue,
+          reason: 'the sender must send through the one queue');
     });
 
     test('nothing posts to the household server except the queue', () async {

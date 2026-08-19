@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
+import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/today/domain/day_view.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meal_row.dart';
@@ -54,12 +55,28 @@ extension on LoggedItem {
 class TodayScreen extends StatefulWidget {
   final DayRepository repository;
 
+  /// Exercise, by either route. Optional only so a test can render the day
+  /// without one; the running app always passes it. When it is here the watch
+  /// is read once each time the day is opened, and the person is offered the
+  /// typed route for whatever it missed.
+  final ExerciseSync? sync;
+
+  /// Opens the form for typing exercise in. Supplied by whoever mounts the
+  /// screen, so this file does not have to know how the app navigates.
+  final Future<void> Function(BuildContext context, String day)? onAddExercise;
+
   /// The day being shown, as 'YYYY-MM-DD'. Passed in rather than read from the
   /// clock so the screen can be shown for any day and so a test is not at the
   /// mercy of what time it is run.
   final String day;
 
-  const TodayScreen({super.key, required this.repository, required this.day});
+  const TodayScreen({
+    super.key,
+    required this.repository,
+    required this.day,
+    this.sync,
+    this.onAddExercise,
+  });
 
   @override
   State<TodayScreen> createState() => _TodayScreenState();
@@ -84,6 +101,7 @@ class _TodayScreenState extends State<TodayScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
+    await _readTheWatch();
     try {
       final day = await widget.repository.today(widget.day);
       if (!mounted) return;
@@ -102,6 +120,23 @@ class _TodayScreenState extends State<TodayScreen> {
             '(${e.message})';
         _loading = false;
       });
+    }
+  }
+
+  /// Ask the watch for today's active calories before showing the day.
+  ///
+  /// Deliberately quiet: a watch with nothing to say, a refused permission or
+  /// an unreachable Mini are all ordinary, and none of them should stop the day
+  /// being shown. The sync is safe to repeat — the id is worked out from the
+  /// person and the day — so opening the screen twice does not double anything.
+  Future<void> _readTheWatch() async {
+    final sync = widget.sync;
+    if (sync == null) return;
+    try {
+      await sync.syncFromHealth(day: widget.day);
+    } catch (_) {
+      // Nothing to tell the person: the day below is what matters, and the
+      // typed route is offered whether or not the watch had anything.
     }
   }
 
@@ -130,10 +165,23 @@ class _TodayScreenState extends State<TodayScreen> {
               const _Quiet('Nothing logged yet today.')
             else
               for (final item in day.logged) LoggedItemRow(item: item),
-            if (day.exercise.isNotEmpty) ...[
-              const _SectionHeading('Exercise'),
+            const _SectionHeading('Exercise'),
+            if (day.exercise.isEmpty)
+              const _Quiet('Nothing from the watch yet today.')
+            else
               for (final e in day.exercise) _ExerciseRow(item: e),
-            ],
+            if (widget.onAddExercise != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextButton.icon(
+                  onPressed: () async {
+                    await widget.onAddExercise!(context, widget.day);
+                    await _load();
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add exercise the watch missed'),
+                ),
+              ),
             const _SectionHeading('Still planned'),
             if (day.planned.isEmpty)
               const _Quiet('Nothing planned for today.')

@@ -8,6 +8,7 @@ import 'package:opennutritracker/features/home/home_page.dart';
 import 'package:opennutritracker/core/presentation/widgets/main_appbar.dart';
 import 'package:opennutritracker/features/profile/profile_page.dart';
 import 'package:opennutritracker/features/recipes/recipes_page.dart';
+import 'package:opennutritracker/features/today/presentation/today_page.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class MainScreen extends StatefulWidget {
@@ -30,6 +31,10 @@ class _MainScreenState extends State<MainScreen> {
       const DiaryPage(),
       const RecipesPage(),
       const ProfilePage(),
+      // The household day. Appended rather than inserted so the tabs that were
+      // already here keep their positions — the two floating buttons above are
+      // chosen by index, and moving Home or Recipes would move them with it.
+      const TodayPage(),
     ];
     _appbarPages = [
       const HomeAppbar(),
@@ -38,7 +43,8 @@ class _MainScreenState extends State<MainScreen> {
           title: S.of(context).recipesLabel,
           iconData: Icons.restaurant_menu),
       MainAppbar(
-          title: S.of(context).profileLabel, iconData: Icons.account_circle)
+          title: S.of(context).profileLabel, iconData: Icons.account_circle),
+      const MainAppbar(title: 'Today', iconData: Icons.today),
     ];
     super.didChangeDependencies();
   }
@@ -94,7 +100,12 @@ class _MainScreenState extends State<MainScreen> {
               icon: _selectedPageIndex == 3
                   ? const Icon(Icons.account_circle)
                   : const Icon(Icons.account_circle_outlined),
-              label: S.of(context).profileLabel)
+              label: S.of(context).profileLabel),
+          NavigationDestination(
+              icon: _selectedPageIndex == 4
+                  ? const Icon(Icons.today)
+                  : const Icon(Icons.today_outlined),
+              label: 'Today')
         ],
       ),
     );

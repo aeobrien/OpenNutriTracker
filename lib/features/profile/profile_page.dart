@@ -6,6 +6,7 @@ import 'package:opennutritracker/core/domain/entity/user_pal_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_weight_goal_entity.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
+import 'package:opennutritracker/features/household/presentation/owner_weight_section.dart';
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_gender_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_goal_dialog.dart';
@@ -91,6 +92,11 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           onTap: () => _showSetGoalDialog(context, user),
         ),
+        // The household's own weight history, for the person this phone
+        // belongs to. Takes up no room when they have the switch off — which is
+        // what "turning it off removes it from view" has to mean somewhere a
+        // person actually looks.
+        const OwnerWeightSection(),
         ListTile(
           title: Text(
             S.of(context).weightLabel,

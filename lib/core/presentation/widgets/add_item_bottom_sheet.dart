@@ -56,6 +56,64 @@ class AddItemBottomSheet extends StatelessWidget {
             },
           ),
           const Divider(indent: 16, endIndent: 16),
+          // The two ways a packet the app has never seen gets into the
+          // household food list. They sit together on purpose: the hand-typed
+          // one is not a fallback for a failed photograph, it is the route that
+          // works on the days the camera does not.
+          ListTile(
+            title: Text(
+              'Photograph a packet',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            subtitle: Text(
+              'Front, nutrition panel, ingredients — three shots',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7)),
+            ),
+            leading: SizedBox(
+                height: double.infinity,
+                child: Icon(Icons.photo_camera,
+                    color: Theme.of(context).colorScheme.primary)),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context)
+                  .pushNamed(NavigationOptions.labelCaptureRoute);
+            },
+          ),
+          const Divider(indent: 16, endIndent: 16),
+          ListTile(
+            title: Text(
+              'Add a food by hand',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ),
+            subtitle: Text(
+              'Type the numbers off the packet yourself',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.7)),
+            ),
+            leading: SizedBox(
+                height: double.infinity,
+                child: Icon(Icons.edit_note,
+                    color: Theme.of(context).colorScheme.primary)),
+            onTap: () {
+              Navigator.of(context).pop();
+              Navigator.of(context)
+                  .pushNamed(NavigationOptions.addFoodByHandRoute);
+            },
+          ),
+          const Divider(indent: 16, endIndent: 16),
           ListTile(
             title: Text(
               S.of(context).quickAddLabel,

@@ -21,7 +21,14 @@ import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.
 import 'package:opennutritracker/features/add_activity/presentation/add_activity_screen.dart';
 import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_screen.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/data/outbox_sender.dart';
 import 'package:opennutritracker/features/household/presentation/household_scope.dart';
+import 'package:opennutritracker/features/label_scan/data/guided_capture.dart';
+import 'package:opennutritracker/features/label_scan/data/household_label_reader.dart';
+import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
+import 'package:opennutritracker/features/label_scan/presentation/guided_capture_screen.dart';
+import 'package:opennutritracker/features/today/presentation/today_page.dart';
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen.dart';
@@ -120,6 +127,10 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
       // write to a ledger.
       builder: (context, child) => HouseholdScope(
         repository: locator<HouseholdRepository>(),
+        // Started here, above every screen: anything held while the Mini was
+        // unreachable is sent when the app opens and again when it comes back
+        // to the front, whatever the person is looking at.
+        sender: locator<OutboxSender>(),
         child: child ?? const SizedBox.shrink(),
       ),
       initialRoute: widget.userInitialized
@@ -149,6 +160,18 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
             const RecipeLogScreen(),
         NavigationOptions.llmRecipeRoute: (context) =>
             const LlmRecipeScreen(),
+        NavigationOptions.todayRoute: (context) => const Scaffold(
+              body: SafeArea(child: TodayPage()),
+            ),
+        // Photographing a packet: three shots in order, resumable.
+        NavigationOptions.labelCaptureRoute: (context) => GuidedCaptureScreen(
+              capture: locator<GuidedCapture>(),
+              reader: locator<HouseholdLabelReader>(),
+              logger: locator<HouseholdLogger>(),
+            ),
+        // The same form, opened empty — a packet typed in by hand.
+        NavigationOptions.addFoodByHandRoute: (context) =>
+            ConfirmFoodScreen(logger: locator<HouseholdLogger>()),
       },
     );
   }

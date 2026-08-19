@@ -38,6 +38,13 @@ import 'package:opennutritracker/core/domain/usecase/get_user_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/update_intake_usecase.dart';
 import 'package:opennutritracker/core/utils/hive_db_provider.dart';
 import 'package:opennutritracker/core/utils/ont_image_cache_manager.dart';
+import 'package:opennutritracker/features/household/data/exercise_sync.dart';
+import 'package:opennutritracker/features/household/data/outbox_sender.dart';
+import 'package:opennutritracker/features/label_scan/data/guided_capture.dart';
+import 'package:opennutritracker/features/label_scan/data/household_label_reader.dart';
+import 'package:opennutritracker/features/label_scan/data/picker_label_camera.dart';
+import 'package:path_provider/path_provider.dart' as paths;
+import 'package:path/path.dart' as p;
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 import 'package:opennutritracker/features/activity_detail/presentation/bloc/activity_detail_bloc.dart';
 import 'package:opennutritracker/features/add_activity/presentation/bloc/activities_bloc.dart';
@@ -136,6 +143,29 @@ Future<void> initLocator() async {
       () => HouseholdLogger(householdRepository, householdOutbox));
   locator.registerLazySingleton<DayRepository>(
       () => DayRepository(householdApi, householdRepository));
+
+  // Emptying the queue. Registered here and started by HouseholdScope, because
+  // work held while the Mini was unreachable has to be sent whatever screen the
+  // person happens to be on.
+  locator.registerLazySingleton<OutboxSender>(
+      () => OutboxSender(householdOutbox));
+
+  // Exercise, by either route: the watch through HealthKit, or typed in.
+  locator.registerLazySingleton<ExerciseSync>(() => ExerciseSync(
+      householdRepository,
+      locator(),
+      HealthActiveCalories(locator())));
+
+  // Photographing a packet. The shots are written into the app's own storage —
+  // never the photo library — so an interrupted capture can be picked back up.
+  final labelShotsDirectory =
+      p.join((await paths.getApplicationDocumentsDirectory()).path,
+          'label_captures');
+  locator.registerLazySingleton<GuidedCapture>(() => GuidedCapture.of(
+      appDatabase, PickerLabelCamera(),
+      directory: labelShotsDirectory));
+  locator.registerLazySingleton<HouseholdLabelReader>(
+      () => HouseholdLabelReader(householdApi));
 
   // Cache manager
   locator
