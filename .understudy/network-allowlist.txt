@@ -1,0 +1,25 @@
+# Hosts this app's builds may legitimately reach.
+#
+# One host per line, `#` comments allowed. Understudy's diff-judge reads the
+# COMMITTED copy of this file. An empty or missing list means "any network use
+# fails"; a non-empty list means "anything NOT listed here fails" — so adding a
+# host is a declaration, not a loosening, and a genuinely new destination still
+# blocks until it is written down here.
+
+# The Mac Mini, over Tailscale. The household ledger lives at :8770 (Mantel) and
+# the recipe store at :9000 (Mealie). The address is set by the person in
+# Settings — this is the default the field suggests, and the only one the app
+# ships knowing about.
+100.71.40.51
+
+# Barcode lookups.
+world.openfoodfacts.org
+
+# USDA FoodData Central — the food search behind "Add meal".
+api.nal.usda.gov
+
+# Reading the numbers off a photographed packet.
+api.openai.com
+
+# Turning a recipe page into structured ingredients.
+api.anthropic.com
