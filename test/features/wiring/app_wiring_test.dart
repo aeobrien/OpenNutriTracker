@@ -155,9 +155,23 @@ void main() {
     });
   });
 
-  test('the weight view is mounted where a person looks', () {
-    expect(_read('lib/features/profile/profile_page.dart')
-        .contains('OwnerWeightSection()'), isTrue,
-        reason: 'the switch hides a view nobody can see either way');
+  group('weight', () {
+    test('there is one weight row on Profile, not two', () {
+      final profile = _read('lib/features/profile/profile_page.dart');
+      expect(profile.contains('OwnerWeightSection'), isFalse,
+          reason: 'a household weight section sitting above the app\'s own '
+              'weight row is the thing he tripped over');
+      expect(
+          File('lib/features/household/presentation/weight_section.dart')
+              .existsSync(),
+          isFalse,
+          reason: 'the deleted section is still on disk to be re-mounted');
+    });
+
+    test('the row that is left reaches the household', () {
+      final profile = _read('lib/features/profile/profile_page.dart');
+      expect(profile.contains('logWeight('), isTrue,
+          reason: 'a weight typed on Profile never leaves the phone');
+    });
   });
 }

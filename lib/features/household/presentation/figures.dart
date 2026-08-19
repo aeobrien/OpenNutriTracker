@@ -30,6 +30,41 @@ class FiguresScope extends InheritedWidget {
       oldWidget.figuresOff != figuresOff;
 }
 
+/// Whether the person using this phone is keeping track of their weight.
+///
+/// A display setting in exactly the same way [FiguresScope] is: the ledger
+/// underneath keeps every weight that was ever recorded, and turning the switch
+/// back on shows a real history rather than a gap.
+///
+/// It exists because the switch did not reach the place a person looks. Aidan
+/// wrote: *"the 'weight' item on the profile menu is there regardless of
+/// whether the 'track weight' toggle is on or off."* It was true — the switch
+/// hid a second weight section this project had added, next to the app's own
+/// weight row, which it did not touch. The second section is gone and the
+/// switch now hides the row that was always there.
+///
+/// Where the scope is absent — an isolated widget in a test — weight tracking
+/// is on, which is what the app did before any of this existed.
+class WeightTrackingScope extends InheritedWidget {
+  final bool trackingOn;
+
+  const WeightTrackingScope({
+    super.key,
+    required this.trackingOn,
+    required super.child,
+  });
+
+  static bool onIn(BuildContext context) {
+    final scope =
+        context.dependOnInheritedWidgetOfExactType<WeightTrackingScope>();
+    return scope?.trackingOn ?? true;
+  }
+
+  @override
+  bool updateShouldNotify(WeightTrackingScope oldWidget) =>
+      oldWidget.trackingOn != trackingOn;
+}
+
 /// The single place a calorie value becomes something a person can read.
 ///
 /// Every calorie figure anywhere in the app goes through here. That is not

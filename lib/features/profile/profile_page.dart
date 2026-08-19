@@ -6,13 +6,15 @@ import 'package:opennutritracker/core/domain/entity/user_pal_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_weight_goal_entity.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
-import 'package:opennutritracker/features/household/presentation/owner_weight_section.dart';
 import 'package:opennutritracker/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_gender_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_goal_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_height_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_pal_category_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_weight_dialog.dart';
+import 'package:logging/logging.dart';
+import 'package:opennutritracker/features/household/data/exercise_sync.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -92,11 +94,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           onTap: () => _showSetGoalDialog(context, user),
         ),
-        // The household's own weight history, for the person this phone
-        // belongs to. Takes up no room when they have the switch off — which is
-        // what "turning it off removes it from view" has to mean somewhere a
-        // person actually looks.
-        const OwnerWeightSection(),
+        // One weight row. There used to be two on this screen — this one, and
+        // a household weight section directly above it, which is what Aidan hit
+        // when he asked why the profile weight ignored the tracking switch.
+        // The second one is gone; this one now reaches the household.
         ListTile(
           title: Text(
             S.of(context).weightLabel,
@@ -229,7 +230,29 @@ class _ProfilePageState extends State<ProfilePage> {
         userEntity.weightKG = selectedWeight;
       }
       _profileBloc.updateUser(userEntity);
+      _alsoTellTheHousehold(userEntity.weightKG);
     }
+  }
+
+  /// Put the weight he just typed on the household's ledger too.
+  ///
+  /// The app has always kept its own current weight and uses it to work out his
+  /// target. The household keeps a dated record, which is what the other phone
+  /// and the kitchen panel read. Before tonight those were two separate places
+  /// a weight could be typed; now there is one row and it writes to both.
+  ///
+  /// Quiet on failure, and it cannot fail the app's own save: the weight is
+  /// already stored by the time this runs, and the household write goes into
+  /// the queue that holds and retries.
+  void _alsoTellTheHousehold(double kg) {
+    final now = DateTime.now();
+    locator<HouseholdLogger>()
+        .logWeight(day: ExerciseSync.dayKey(now), kg: kg)
+        .catchError((Object e) {
+      Logger('ProfilePage')
+          .warning('Weight saved locally but not put to the household: $e');
+      return '';
+    });
   }
 
   Future<void> _showSetBirthdayDialog(

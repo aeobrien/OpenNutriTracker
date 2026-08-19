@@ -12,8 +12,9 @@ import 'package:opennutritracker/features/household/presentation/whose_phone_pag
 ///  * **Whose phone this is.** Until somebody has said, the app does not open —
 ///    every entry has to belong to one of the two people, and there is no
 ///    sensible default. [HouseholdGate] asks once and then gets out of the way.
-///  * **Whether this person sees calorie figures.** [FiguresScope] has to be
-///    above every screen that could show one, or a screen further down would
+///  * **Whether this person sees calorie figures, and whether they are keeping
+///    track of their weight.** [FiguresScope] and [WeightTrackingScope] have to
+///    be above every screen that could show one, or a screen further down would
 ///    quietly keep its numbers after the switch was thrown.
 ///  * **Emptying the queue.** [OutboxSender] is started here rather than from a
 ///    screen because work held while the Mini was unreachable has to be sent
@@ -51,6 +52,7 @@ class HouseholdScope extends StatefulWidget {
 
 class _HouseholdScopeState extends State<HouseholdScope> {
   bool _figuresOff = false;
+  bool _weightTrackingOn = true;
 
   @override
   void initState() {
@@ -72,11 +74,17 @@ class _HouseholdScopeState extends State<HouseholdScope> {
     // whatever the server says.
     final cached = await widget.repository.cachedSettings(owner);
     if (!mounted) return;
-    setState(() => _figuresOff = cached.figuresOff);
+    setState(() {
+      _figuresOff = cached.figuresOff;
+      _weightTrackingOn = cached.weightTrackingOn;
+    });
     try {
       final fresh = await widget.repository.settings(owner);
       if (!mounted) return;
-      setState(() => _figuresOff = fresh.figuresOff);
+      setState(() {
+        _figuresOff = fresh.figuresOff;
+        _weightTrackingOn = fresh.weightTrackingOn;
+      });
     } on HouseholdUnreachable {
       // The cached answer stands. Somebody who asked not to see figures must
       // not start seeing them because the Mini is off.
@@ -87,10 +95,13 @@ class _HouseholdScopeState extends State<HouseholdScope> {
   Widget build(BuildContext context) {
     return FiguresScope(
       figuresOff: _figuresOff,
-      child: HouseholdGate(
-        repository: widget.repository,
-        onAnswered: _load,
-        child: widget.child,
+      child: WeightTrackingScope(
+        trackingOn: _weightTrackingOn,
+        child: HouseholdGate(
+          repository: widget.repository,
+          onAnswered: _load,
+          child: widget.child,
+        ),
       ),
     );
   }

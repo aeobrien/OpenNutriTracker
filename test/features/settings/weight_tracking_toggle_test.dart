@@ -15,9 +15,19 @@
 /// confuse: the server's own records are inspected directly while the switch is
 /// off, and the app is asked for the history while the switch is off — both must
 /// still have it. The switch belongs to the screen, not to the ledger.
+/// **What this file no longer covers, and why.** It used to mount a household
+/// weight section beside the settings switch and watch the switch hide it. That
+/// section is deleted: it sat directly above the app's own weight row on the
+/// Profile screen, which is what Aidan hit when he asked why the profile weight
+/// ignored the tracking switch. What the switch should hide now that there is
+/// one weight row — a row the app needs, because it is where his weight for the
+/// calorie calculation comes from — is an open question that has gone to be
+/// decided rather than settled here.
+///
+/// Everything below is the half that does not depend on the answer: the switch
+/// belongs to one person, and it changes what is shown and never what is kept.
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
@@ -25,8 +35,6 @@ import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/data/outbox.dart';
-import 'package:opennutritracker/features/household/presentation/household_settings_section.dart';
-import 'package:opennutritracker/features/household/presentation/weight_section.dart';
 
 import '../household/fake_household_server.dart';
 
@@ -36,8 +44,6 @@ void main() {
   late HouseholdRepository repository;
   late Outbox outbox;
   late HouseholdLogger logger;
-
-  final weightKey = GlobalKey<State<WeightSection>>();
 
   setUp(() async {
     db = AppDatabase.createInMemory();
@@ -61,48 +67,7 @@ void main() {
     await outbox.drain();
   }
 
-  /// Settings and the weight tab on one screen, so a flick of the switch is seen
-  /// to take effect on what is shown.
-  Widget screen() => MaterialApp(
-        home: Scaffold(
-          body: SingleChildScrollView(
-            child: Column(
-              children: [
-                HouseholdSettingsSection(
-                  repository: repository,
-                  onChanged: () {
-                    final state = weightKey.currentState;
-                    if (state != null) (state as dynamic).refresh();
-                  },
-                ),
-                WeightSection(
-                  key: weightKey,
-                  repository: repository,
-                  personId: mini.aidan,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-
-  Future<void> flipTheSwitch(WidgetTester tester) async {
-    await tester.tap(find.text('Track weight'));
-    await tester.pumpAndSettle();
-  }
-
   group('while it is on', () {
-    testWidgets('the weight tab is there, with what has been recorded',
-        (tester) async {
-      await recordWeights();
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      expect(find.text('Weight'), findsOneWidget);
-      expect(find.text('82.4 kg'), findsOneWidget);
-      expect(find.text('81.9 kg'), findsOneWidget);
-    });
-
     test('the switch is this person\'s own', () async {
       expect((await repository.settings(mini.aidan)).weightTrackingOn, isTrue);
       expect((await repository.settings(mini.emily)).weightTrackingOn, isFalse,
@@ -112,27 +77,6 @@ void main() {
   });
 
   group('turning it off', () {
-    testWidgets('takes the weight tab out of view', (tester) async {
-      await recordWeights();
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-      expect(find.text('82.4 kg'), findsOneWidget);
-
-      await flipTheSwitch(tester);
-
-      expect(find.text('Weight'), findsNothing);
-      expect(find.text('82.4 kg'), findsNothing);
-    });
-
-    testWidgets('and says plainly that nothing has been deleted',
-        (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('Nothing already recorded is deleted'),
-          findsOneWidget);
-    });
-
     test('leaves every weigh-in on the server', () async {
       await recordWeights();
       expect(mini.weights, hasLength(3));
@@ -169,24 +113,6 @@ void main() {
   });
 
   group('turning it back on', () {
-    testWidgets('the weights come back when it is turned on again',
-        (tester) async {
-      await recordWeights();
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await flipTheSwitch(tester); // off
-      expect(find.text('82.4 kg'), findsNothing);
-
-      await flipTheSwitch(tester); // on again
-      await tester.pumpAndSettle();
-
-      expect(find.text('Weight'), findsOneWidget);
-      expect(find.text('82.4 kg'), findsOneWidget);
-      expect(find.text('82.1 kg'), findsOneWidget);
-      expect(find.text('81.9 kg'), findsOneWidget);
-    });
-
     test('with the same days and the same figures as before', () async {
       await recordWeights();
       final before = await repository.weights(mini.aidan);
