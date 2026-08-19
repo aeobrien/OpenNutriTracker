@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/features/household/domain/household_food.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 
 /// The Mac Mini could not be reached — no network, wrong address, or the server
@@ -177,6 +178,36 @@ class HouseholdApi {
   Future<List<Map<String, dynamic>>> weights(int personId) async {
     final body = await get('/household/weights/$personId');
     return (body['weights'] as List).cast<Map<String, dynamic>>();
+  }
+
+  /// The household's own food list.
+  ///
+  /// One call with three optional narrowings, matching the server: [q] is a
+  /// search over names and brands, [barcode] is an exact lookup, and
+  /// [forPerson] puts the list in that person's order — what they actually eat,
+  /// first.
+  ///
+  /// [forPerson] is sent rather than inferred from the handset because the
+  /// phone can be handed over: the list should follow whoever the app says it
+  /// belongs to, not the device.
+  Future<List<HouseholdFood>> foods({
+    String? q,
+    String? barcode,
+    int? forPerson,
+  }) async {
+    final query = <String, String>{
+      if (q != null && q.trim().isNotEmpty) 'q': q.trim(),
+      if (barcode != null && barcode.trim().isNotEmpty)
+        'barcode': barcode.trim(),
+      if (forPerson != null) 'for': forPerson.toString(),
+    };
+    final path = query.isEmpty
+        ? '/household/foods'
+        : '/household/foods?${Uri(queryParameters: query).query}';
+    final body = await get(path);
+    return (body['foods'] as List)
+        .map((f) => HouseholdFood.fromJson(f as Map<String, dynamic>))
+        .toList();
   }
 
   Future<Map<String, dynamic>> day(int personId, String day) async {

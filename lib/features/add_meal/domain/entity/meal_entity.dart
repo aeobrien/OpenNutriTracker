@@ -9,6 +9,7 @@ import 'package:opennutritracker/features/add_meal/data/dto/fdc/fdc_const.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/fdc/fdc_food_dto.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/off/off_product_dto.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_nutriments_entity.dart';
+import 'package:opennutritracker/features/household/domain/household_food.dart';
 
 class MealEntity extends Equatable {
   static const liquidUnits = {'ml', 'l', 'dl', 'cl', 'fl oz', 'fl.oz'};
@@ -114,6 +115,39 @@ class MealEntity extends Equatable {
       nutriments:
           MealNutrimentsEntity.fromMealNutrimentsDBO(mealDBO.nutriments),
       source: MealSourceEntity.fromMealSourceDBO(mealDBO.source));
+
+  /// A food out of the household's own list, as the rest of the app sees any
+  /// other food.
+  ///
+  /// Mapped rather than kept apart on purpose: the picker rows, the portion
+  /// sheet and the adding all already work, and a household food that took a
+  /// different path through them would be a second version of the screen that
+  /// already exists — which is the mistake this whole project is undoing.
+  ///
+  /// The unit is grams because the household list does not record whether a
+  /// food is a solid or a liquid. That is a real gap and it is left visible
+  /// here rather than guessed at from the name.
+  factory MealEntity.fromHouseholdFood(HouseholdFood food) => MealEntity(
+        code: food.code,
+        name: food.name,
+        brands: food.brand,
+        url: null,
+        mealQuantity: food.packGrams?.toString(),
+        mealUnit: 'g',
+        servingQuantity: food.servingG?.toDouble(),
+        servingUnit: food.servingG == null ? null : 'g',
+        servingSize: null,
+        nutriments: MealNutrimentsEntity(
+          energyKcal100: food.kcal100?.toDouble(),
+          carbohydrates100: food.carbs100?.toDouble(),
+          fat100: food.fat100?.toDouble(),
+          proteins100: food.protein100?.toDouble(),
+          sugars100: null,
+          saturatedFat100: null,
+          fiber100: null,
+        ),
+        source: MealSourceEntity.custom,
+      );
 
   factory MealEntity.fromOFFProduct(OFFProductDTO offProduct) {
     return MealEntity(
