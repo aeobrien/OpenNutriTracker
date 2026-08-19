@@ -35,6 +35,15 @@ class FakeHouseholdServer {
   final Map<String, Map<String, dynamic>> exercise = {};
   final Map<String, Map<String, dynamic>> foods = {};
 
+  /// What the household has planned, by day. Kept the way the server keeps it:
+  /// one row per meal for the *household*, with each person's portion held
+  /// separately — so a fake that stored one figure per meal could not reproduce
+  /// the two people seeing different amounts, which is the thing under test.
+  final List<Map<String, dynamic>> plan = [];
+
+  /// plan id → person id → how many portions of it are theirs.
+  final Map<int, Map<int, num>> portions = {};
+
   /// Every request that arrived, so a test can count deliveries.
   final List<String> requests = [];
 
@@ -42,6 +51,39 @@ class FakeHouseholdServer {
 
   int get aidan => 1;
   int get emily => 2;
+
+  /// Put a meal on a day. [mealKcal] is one standard portion of it; null means
+  /// the meal's own numbers are not known yet.
+  int planMeal({
+    required String day,
+    required String title,
+    num? mealKcal,
+    Map<int, num> forPeople = const {},
+  }) {
+    final planId = plan.length + 1;
+    plan.add({'plan_id': planId, 'day': day, 'title': title, 'meal_kcal': mealKcal});
+    portions[planId] = {...forPeople};
+    return planId;
+  }
+
+  void setPortion(int planId, int personId, num howMany) {
+    (portions[planId] ??= {})[personId] = howMany;
+  }
+
+  List<Map<String, dynamic>> plannedFor(int personId, String day) {
+    return plan.where((p) => p['day'] == day).map((p) {
+      final planId = p['plan_id'] as int;
+      final mine = portions[planId]?[personId];
+      final perPortion = p['meal_kcal'] as num?;
+      return {
+        'plan_id': planId,
+        'title': p['title'],
+        'portions': mine,
+        'kcal': (mine == null || perPortion == null) ? null : perPortion * mine,
+        'meal_kcal_known': perPortion != null,
+      };
+    }).toList();
+  }
 
   Map<String, dynamic> settingsFor(int personId) => settings.putIfAbsent(
       personId,
@@ -135,6 +177,7 @@ class FakeHouseholdServer {
           final myExercise = exercise.values
               .where((e) => e['owner_id'] == personId && e['day'] == day)
               .toList();
+          final planned = plannedFor(personId, day);
           result = {
             'ok': true,
             'day': day,
@@ -142,10 +185,15 @@ class FakeHouseholdServer {
             'settings': settingsFor(personId),
             'entries': mine,
             'exercise': myExercise,
+            'planned': planned,
             'eaten_kcal':
                 mine.fold<num>(0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
             'exercise_kcal': myExercise.fold<num>(
                 0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
+            'planned_kcal': planned.fold<num>(
+                0, (sum, p) => sum + ((p['kcal'] ?? 0) as num)),
+            'planned_unknown':
+                planned.where((p) => p['kcal'] == null).length,
           };
         }
 
