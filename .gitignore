@@ -61,3 +61,6 @@ result
 
 # Walkthrough test runs
 walkthrough-runs/
+
+# Understudy diff-judge run artefacts — local, regenerated per run.
+understudy-runs/
