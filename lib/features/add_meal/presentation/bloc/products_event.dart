@@ -22,3 +22,12 @@ class RefreshProductsEvent extends ProductsEvent {
   @override
   List<Object?> get props => [];
 }
+
+/// Open the picker on the foods this household already has, before anybody has
+/// typed anything.
+class LoadOurFoodsEvent extends ProductsEvent {
+  const LoadOurFoodsEvent();
+
+  @override
+  List<Object?> get props => [];
+}

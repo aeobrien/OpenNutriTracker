@@ -83,6 +83,7 @@ import 'package:opennutritracker/features/settings/presentation/bloc/export_impo
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
@@ -146,6 +147,8 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<Outbox>(() => householdOutbox);
   locator.registerLazySingleton<HouseholdLogger>(
       () => HouseholdLogger(householdRepository, householdOutbox));
+  locator.registerLazySingleton<FoodFinder>(
+      () => FoodFinder(locator<HouseholdApi>(), locator<HouseholdRepository>()));
   locator.registerLazySingleton<FoodLedger>(
       () => FoodLedger(locator<HouseholdLogger>()));
   locator.registerLazySingleton<DayRepository>(
@@ -242,9 +245,9 @@ Future<void> initLocator() async {
   locator
       .registerLazySingleton<AddUserUsecase>(() => AddUserUsecase(locator()));
   locator.registerLazySingleton<SearchProductsUseCase>(
-      () => SearchProductsUseCase(locator()));
+      () => SearchProductsUseCase(locator(), locator()));
   locator.registerLazySingleton<SearchProductByBarcodeUseCase>(
-      () => SearchProductByBarcodeUseCase(locator()));
+      () => SearchProductByBarcodeUseCase(locator(), locator()));
   locator.registerLazySingleton<GetIntakeUsecase>(
       () => GetIntakeUsecase(locator()));
   locator.registerLazySingleton<AddIntakeUsecase>(

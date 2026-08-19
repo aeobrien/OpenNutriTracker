@@ -84,6 +84,23 @@ class HouseholdFood {
 
   String get code => codeFor(id);
 
+  /// Whether this food is one the person meant when they typed [text].
+  ///
+  /// The kitchen computer does this match itself and is the authority on it.
+  /// This is a second, identical check made on the phone, and it exists for one
+  /// specific reason: an older kitchen computer does not understand being asked
+  /// for a *search* and answers with the entire list. Without this the person
+  /// types "banana", gets last week's curry back, and reasonably concludes the
+  /// search is broken. Filtering here means the worst an out-of-date kitchen
+  /// computer can do is show fewer of our own foods than it should — never the
+  /// wrong ones.
+  bool matches(String text) {
+    final needle = text.trim().toLowerCase();
+    if (needle.isEmpty) return true;
+    return name.toLowerCase().contains(needle) ||
+        (brand ?? '').toLowerCase().contains(needle);
+  }
+
   @override
   bool operator ==(Object other) => other is HouseholdFood && other.id == id;
 

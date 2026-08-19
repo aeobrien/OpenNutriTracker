@@ -11,6 +11,7 @@ import 'package:opennutritracker/features/household/data/food_shares.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/who_was_it_for.dart';
+import 'package:opennutritracker/features/meal_detail/domain/default_portion.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -19,6 +20,10 @@ class MealDetailBottomSheet extends StatefulWidget {
   final DateTime day;
   final IntakeTypeEntity intakeTypeEntity;
   final TextEditingController quantityTextController;
+
+  /// Where the figure the box opened on came from, so the screen can say so.
+  /// Null when nothing was suggested.
+  final DefaultPortion? portion;
   final MealDetailBloc mealDetailBloc;
 
   final String selectedUnit;
@@ -35,6 +40,7 @@ class MealDetailBottomSheet extends StatefulWidget {
       required this.day,
       required this.intakeTypeEntity,
       required this.quantityTextController,
+      this.portion,
       required this.onQuantityOrUnitChanged,
       required this.mealDetailBloc,
       required this.selectedUnit,
@@ -107,6 +113,17 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                               decoration: InputDecoration(
                                 border: const OutlineInputBorder(),
                                 labelText: S.of(context).quantityLabel,
+                                // Only while the figure is still the one we
+                                // put there. The moment they type their own
+                                // amount the sentence would be describing a
+                                // number no longer on the screen, and a caption
+                                // that quietly stops being true is worse than
+                                // no caption at all.
+                                helperText: quantityTextController.text ==
+                                        widget.portion?.amount
+                                    ? widget.portion?.explanation
+                                    : null,
+                                helperMaxLines: 2,
                               ),
                             ),
                           ),

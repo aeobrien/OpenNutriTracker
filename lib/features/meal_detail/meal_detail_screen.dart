@@ -12,6 +12,7 @@ import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/edit_meal/presentation/edit_meal_screen.dart';
+import 'package:opennutritracker/features/meal_detail/domain/default_portion.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/widgets/meal_detail_bottom_sheet.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/widgets/meal_detail_macro_nutrients.dart';
@@ -32,8 +33,6 @@ class MealDetailScreen extends StatefulWidget {
 class _MealDetailScreenState extends State<MealDetailScreen> {
   static const _containerSize = 350.0;
 
-  static const String _initialQuantityMetric = '100';
-  static const String _initialQuantityImperial = '1';
 
   final log = Logger('ItemDetailScreen');
 
@@ -50,6 +49,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
 
   String _initialUnit = "";
   String _initialQuantity = "";
+
+  /// Where the figure already in the box came from, kept so the sheet can say
+  /// so underneath it.
+  DefaultPortion? _portion;
 
   @override
   void initState() {
@@ -88,25 +91,15 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
           .add(UpdateKcalEvent(meal: meal, selectedUnit: _initialUnit));
     }
 
-    // Set initial quantity — prefer last-used amount when available
+    // The box opens on a number rather than empty, and the screen says where
+    // that number came from. The order it chooses in lives in
+    // [defaultPortionFor] so that it can be tested, and so the reason survives
+    // the journey to the label instead of being lost the moment it is worked
+    // out.
     if (_initialQuantity == "") {
-      if (meal.lastUsedGrams != null && meal.lastUsedGrams! > 0) {
-        final lastGrams = meal.lastUsedGrams!;
-        // Show whole number if no decimals, otherwise 1 decimal place
-        _initialQuantity = lastGrams == lastGrams.roundToDouble()
-            ? lastGrams.toInt().toString()
-            : lastGrams.toStringAsFixed(1);
-        quantityTextController.text = _initialQuantity;
-      } else if (meal.hasServingValues) {
-        _initialQuantity = "1";
-        quantityTextController.text = "1";
-      } else if (_usesImperialUnits) {
-        _initialQuantity = _initialQuantityImperial;
-        quantityTextController.text = _initialQuantityImperial;
-      } else {
-        _initialQuantity = _initialQuantityMetric;
-        quantityTextController.text = _initialQuantityMetric;
-      }
+      _portion = defaultPortionFor(meal, usesImperialUnits: _usesImperialUnits);
+      _initialQuantity = _portion!.amount;
+      quantityTextController.text = _portion!.amount;
       _mealDetailBloc.add(UpdateKcalEvent(
           meal: meal, totalQuantity: quantityTextController.text));
     }
@@ -138,6 +131,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
                 selectedUnit: state.selectedUnit,
                 mealDetailBloc: _mealDetailBloc,
                 quantityTextController: quantityTextController,
+                portion: _portion,
                 onQuantityOrUnitChanged: onQuantityOrUnitChanged,
               ),
             );

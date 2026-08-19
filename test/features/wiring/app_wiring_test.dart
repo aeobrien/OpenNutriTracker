@@ -226,4 +226,60 @@ void main() {
           reason: 'a weight typed on Profile never leaves the phone');
     });
   });
+
+  group("the house's own foods", () {
+    test('the picker opens by asking the house', () {
+      final screen =
+          _read('lib/features/add_meal/presentation/add_meal_screen.dart');
+      expect(screen.contains('LoadOurFoodsEvent()'), isTrue,
+          reason: 'the picker still opens on an empty screen telling him to '
+              'start typing');
+      expect(screen.contains('AddMealScreen.ourFoodsLabel'), isTrue,
+          reason: "his own foods would appear under the heading 'Search "
+              "results', before he has searched for anything");
+    });
+
+    test('searching and scanning are given the house to ask', () {
+      final locator = _read('lib/core/utils/locator.dart');
+      expect(locator.contains('FoodFinder('), isTrue,
+          reason: 'nothing builds the thing that asks the house');
+      expect(locator.contains('SearchProductsUseCase(locator(), locator())'),
+          isTrue,
+          reason: 'the search is built without the house, so it silently goes '
+              'straight to the internet as it always did');
+      expect(
+          locator.contains(
+              'SearchProductByBarcodeUseCase(locator(), locator())'),
+          isTrue,
+          reason: 'the scanner is built without the house, so a packet already '
+              'read here is looked up on the internet anyway');
+    });
+
+    test('a food logged from our own list says which food it was', () {
+      final bloc = _read(
+          'lib/features/meal_detail/presentation/bloc/meal_detail_bloc.dart');
+      expect(bloc.contains('HouseholdFood.idFromCode(meal.code)'), isTrue,
+          reason: "entries never say which food they were, so 'your own foods "
+              "first' has nothing to count");
+    });
+  });
+
+  group('the figure already in the amount box', () {
+    test('the screen asks for one rather than choosing its own', () {
+      final screen = _read('lib/features/meal_detail/meal_detail_screen.dart');
+      expect(screen.contains('defaultPortionFor('), isTrue,
+          reason: 'the order lives inline again where it cannot be tested');
+      expect(screen.contains('portion: _portion'), isTrue,
+          reason: 'the reason is worked out and then thrown away before the '
+              'sheet can say it');
+    });
+
+    test('the sheet says where the figure came from', () {
+      final sheet = _read(
+          'lib/features/meal_detail/presentation/widgets/meal_detail_bottom_sheet.dart');
+      expect(sheet.contains('widget.portion?.explanation'), isTrue,
+          reason: 'a figure nobody typed appears with nothing saying what it '
+              'is');
+    });
+  });
 }

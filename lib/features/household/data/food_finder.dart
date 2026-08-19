@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/domain/household_food.dart';
 
 /// What the house has, before anything from the internet.
 ///
@@ -33,10 +34,17 @@ class FoodFinder {
 
   /// The household's foods matching what was typed, still in this person's
   /// order.
+  ///
+  /// The match is checked twice — once by the kitchen computer, which is the
+  /// authority, and once here. See [HouseholdFood.matches] for why the second
+  /// check is not redundant.
   Future<List<MealEntity>> matching(String text) {
     if (text.trim().isEmpty) return theirs();
-    return _ask(() async =>
-        _api.foods(q: text, forPerson: await _household.storedOwner()));
+    return _ask(() async {
+      final found =
+          await _api.foods(q: text, forPerson: await _household.storedOwner());
+      return [for (final f in found) if (f.matches(text)) f];
+    });
   }
 
   /// The household's own food for a barcode, or null if the house has never
@@ -51,7 +59,7 @@ class FoodFinder {
   }
 
   Future<List<MealEntity>> _ask(
-      Future<List<dynamic>> Function() call) async {
+      Future<List<HouseholdFood>> Function() call) async {
     try {
       final foods = await call();
       return [

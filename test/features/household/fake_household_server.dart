@@ -54,6 +54,17 @@ class FakeHouseholdServer {
 
   bool reachable = true;
 
+  /// Whether this server is new enough to understand being asked for a *search*
+  /// rather than the whole food list. False reproduces an older kitchen
+  /// computer, which answers every search with everything it has — the state
+  /// the real machine was in on 19 August, and the reason the phone checks the
+  /// match a second time.
+  bool understandsFoodSearch = true;
+
+  /// Who the food list was ordered for, recorded so a test can show the phone
+  /// asked on this person's behalf rather than in general.
+  int? askedFoodsFor;
+
   /// Whether the photographs can be read at all. False is an ordinary day, not
   /// a broken server: the panel was creased, the light was poor.
   bool labelReadable = true;
@@ -61,6 +72,36 @@ class FakeHouseholdServer {
   /// What a reading gives back, and which fields it could not make out.
   Map<String, dynamic> labelRead = const {'name': 'A packet', 'kcal_100': 400};
   List<String> labelUnreadable = const [];
+
+  /// Put a food in the household's own list, the way the kitchen computer
+  /// holds it.
+  Map<String, dynamic> addFood({
+    required String name,
+    String? brand,
+    String? barcode,
+    num? kcal100,
+    num? protein100,
+    num? fat100,
+    num? carbs100,
+    num? servingG,
+  }) {
+    final id = foods.length + 1;
+    final row = <String, dynamic>{
+      'id': id,
+      'name': name,
+      'brand': brand,
+      'barcode': barcode,
+      'kcal_100': kcal100,
+      'protein_100': protein100,
+      'fat_100': fat100,
+      'carbs_100': carbs100,
+      'serving_g': servingG,
+      'trust': 'typed',
+      'source': 'typed',
+    };
+    foods['seeded-$id'] = row;
+    return row;
+  }
 
   int get aidan => 1;
   int get emily => 2;
@@ -247,7 +288,25 @@ class FakeHouseholdServer {
           foods.putIfAbsent(id, () => {...body, 'id': foods.length + 1});
           result = {'ok': true, 'food': foods[id]};
         } else if (path == '/household/foods') {
-          result = {'ok': true, 'foods': foods.values.toList()};
+          final q = request.url.queryParameters['q'];
+          final barcode = request.url.queryParameters['barcode'];
+          askedFoodsFor =
+              int.tryParse(request.url.queryParameters['for'] ?? '');
+          var found = foods.values.toList();
+          if (understandsFoodSearch) {
+            if (barcode != null) {
+              found = found.where((f) => f['barcode'] == barcode).toList();
+            }
+            if (q != null && q.trim().isNotEmpty) {
+              final needle = q.trim().toLowerCase();
+              found = found.where((f) {
+                final name = ((f['name'] ?? '') as String).toLowerCase();
+                final brand = ((f['brand'] ?? '') as String).toLowerCase();
+                return name.contains(needle) || brand.contains(needle);
+              }).toList();
+            }
+          }
+          result = {'ok': true, 'foods': found};
         } else if (path.startsWith('/household/day/')) {
           final parts = path.split('/');
           final personId = int.parse(parts[3]);

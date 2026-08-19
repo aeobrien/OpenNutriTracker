@@ -36,6 +36,19 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
         }
       }
     });
+    on<LoadOurFoodsEvent>((event, emit) async {
+      // No loading spinner and no error state on purpose. This runs before the
+      // person has asked for anything, so it must never take the screen over
+      // or accuse the kitchen computer of anything: it either quietly puts
+      // their own foods up, or leaves the screen exactly as it was.
+      final ours = await _searchProductUseCase.ourFoods();
+      if (ours.isEmpty) return;
+      final config = await _getConfigUsecase.getConfig();
+      emit(ProductsLoadedState(
+          products: ours,
+          usesImperialUnits: config.usesImperialUnits,
+          ours: true));
+    });
     on<RefreshProductsEvent>((event, emit) async {
       emit(ProductsLoadingState());
       try {

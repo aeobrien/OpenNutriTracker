@@ -24,6 +24,12 @@ import 'package:opennutritracker/features/scanner/scanner_screen.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class AddMealScreen extends StatefulWidget {
+  /// What the picker calls the household's own list, named once here so the
+  /// test asserts on the words the screen shows rather than a copy of them.
+  /// Not translated, in keeping with the rest of the household work — this is
+  /// one house, and the strings it added are written the way they are spoken.
+  static const ourFoodsLabel = 'Foods you already have';
+
   const AddMealScreen({super.key});
 
   @override
@@ -48,6 +54,13 @@ class _AddMealScreenState extends State<AddMealScreen>
     _productsBloc = locator<ProductsBloc>();
     _foodBloc = locator<FoodBloc>();
     _recentMealBloc = locator<RecentMealBloc>();
+    // Open on the foods this house already has, rather than on an empty
+    // screen telling somebody to start typing. Most of what anybody adds is
+    // something they have eaten before, and a packet the household has already
+    // read the label of carries better numbers than anything a search will
+    // find. If the kitchen computer is not there, nothing happens and the
+    // screen is exactly as it always was.
+    _productsBloc.add(const LoadOurFoodsEvent());
     _tabController = TabController(length: 3, vsync: this);
     _tabController.addListener(() {
       // Update search results when tab changes
@@ -129,45 +142,24 @@ class _AddMealScreenState extends State<AddMealScreen>
                 child: TabBarView(controller: _tabController, children: [
                   Column(
                     children: [
-                      Container(
-                          padding: const EdgeInsets.only(left: 8.0),
-                          alignment: Alignment.centerLeft,
-                          child: Text(S.of(context).searchResultsLabel,
-                              style:
-                                  Theme.of(context).textTheme.headlineSmall)),
                       BlocBuilder<ProductsBloc, ProductsState>(
                         bloc: _productsBloc,
                         builder: (context, state) {
-                          if (state is ProductsInitial) {
-                            return const DefaultsResultsWidget();
-                          } else if (state is ProductsLoadingState) {
-                            return const Padding(
-                              padding: EdgeInsets.only(top: 32),
-                              child: CircularProgressIndicator(),
-                            );
-                          } else if (state is ProductsLoadedState) {
-                            return state.products.isNotEmpty
-                                ? Flexible(
-                                    child: ListView.builder(
-                                        itemCount: state.products.length,
-                                        itemBuilder: (context, index) {
-                                          return MealItemCard(
-                                            day: _day,
-                                            mealEntity: state.products[index],
-                                            addMealType: _mealType,
-                                            usesImperialUnits:
-                                                state.usesImperialUnits,
-                                          );
-                                        }))
-                                : const NoResultsWidget();
-                          } else if (state is ProductsFailedState) {
-                            return ErrorDialog(
-                              errorText: S.of(context).errorFetchingProductData,
-                              onRefreshPressed: _onProductsRefreshButtonPressed,
-                            );
-                          } else {
-                            return const SizedBox();
-                          }
+                          final ours =
+                              state is ProductsLoadedState && state.ours;
+                          return Column(children: [
+                            Container(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                    ours
+                                        ? AddMealScreen.ourFoodsLabel
+                                        : S.of(context).searchResultsLabel,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall)),
+                            _productsBody(state),
+                          ]);
                         },
                       )
                     ],
@@ -223,6 +215,40 @@ class _AddMealScreenState extends State<AddMealScreen>
             ],
           ),
         ));
+  }
+
+  /// What the products tab shows under its heading. Pulled out of the builder
+  /// only so the heading above it can change with the state without the whole
+  /// thing nesting three levels deeper.
+  Widget _productsBody(ProductsState state) {
+    if (state is ProductsLoadingState) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 32),
+        child: CircularProgressIndicator(),
+      );
+    }
+    if (state is ProductsLoadedState) {
+      return state.products.isNotEmpty
+          ? Flexible(
+              child: ListView.builder(
+                  itemCount: state.products.length,
+                  itemBuilder: (context, index) {
+                    return MealItemCard(
+                      day: _day,
+                      mealEntity: state.products[index],
+                      addMealType: _mealType,
+                      usesImperialUnits: state.usesImperialUnits,
+                    );
+                  }))
+          : const NoResultsWidget();
+    }
+    if (state is ProductsFailedState) {
+      return ErrorDialog(
+        errorText: S.of(context).errorFetchingProductData,
+        onRefreshPressed: _onProductsRefreshButtonPressed,
+      );
+    }
+    return const DefaultsResultsWidget();
   }
 
   Widget _buildRecentlyTab() {

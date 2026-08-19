@@ -13,6 +13,7 @@ import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/household/data/food_shares.dart';
 import 'package:opennutritracker/features/household/data/food_ledger.dart';
+import 'package:opennutritracker/features/household/domain/household_food.dart';
 
 part 'meal_detail_event.dart';
 
@@ -130,6 +131,7 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
       liquid: meal.isLiquid,
       mine: mine,
       alsoFor: alsoFor,
+      foodId: HouseholdFood.idFromCode(meal.code),
       kcalPerUnit: n.energyPerUnit,
       proteinPerUnit: n.proteinsPerUnit,
       fatPerUnit: n.fatPerUnit,
