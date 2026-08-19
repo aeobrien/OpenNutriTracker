@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/today/domain/day_view.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meal_row.dart';
@@ -27,6 +29,15 @@ import 'package:opennutritracker/features/today/presentation/planned_meal_row.da
 class PlannedMealsSection extends StatefulWidget {
   final DayRepository repository;
 
+  /// Puts the answer on the queue. Optional only so a test can mount the
+  /// section read-only; Home always passes it, and without it the row shows no
+  /// buttons rather than showing buttons that do nothing.
+  final HouseholdLogger? logger;
+
+  /// Called after an answer is given, so the screen around this can redraw —
+  /// eating a planned dinner changes what is left of the day.
+  final VoidCallback? onDecided;
+
   /// The day, as 'YYYY-MM-DD'. Passed in rather than read from the clock so a
   /// test is not at the mercy of what time it runs.
   final String day;
@@ -35,6 +46,8 @@ class PlannedMealsSection extends StatefulWidget {
     super.key,
     required this.repository,
     required this.day,
+    this.logger,
+    this.onDecided,
   });
 
   /// What today is called, in the form the server uses.
@@ -49,6 +62,15 @@ class PlannedMealsSection extends StatefulWidget {
 class PlannedMealsSectionState extends State<PlannedMealsSection> {
   List<PlannedItem>? _planned;
   String? _problem;
+
+  /// Meals answered on this phone whose answer has not reached the Mac Mini
+  /// yet. The queue will deliver it; until it does the server still calls the
+  /// meal planned, and showing it again would be asking somebody to confirm
+  /// their dinner twice. Kept here rather than pretended into the server's
+  /// answer, so the two facts stay separate.
+  final _answered = <int>{};
+
+  final _log = Logger('PlannedMealsSection');
 
   @override
   void initState() {
@@ -70,7 +92,8 @@ class PlannedMealsSectionState extends State<PlannedMealsSection> {
       final day = await widget.repository.today(widget.day);
       if (!mounted) return;
       setState(() {
-        _planned = day.planned;
+        _planned =
+            day.planned.where((p) => !_answered.contains(p.planId)).toList();
         _problem = null;
       });
     } on HouseholdUnreachable catch (e) {
@@ -84,6 +107,35 @@ class PlannedMealsSectionState extends State<PlannedMealsSection> {
       if (!mounted) return;
       setState(() => _planned = const []);
     }
+  }
+
+  /// Record what they did about a planned meal.
+  ///
+  /// The row goes as soon as they tap, before the Mini has heard. That is not
+  /// optimism about the network — the answer is on the queue, which is where
+  /// every other write on this phone waits too, and the queue's whole promise
+  /// is that it arrives. What would be dishonest is the opposite: leaving a
+  /// meal on the day looking undecided when the person has decided.
+  Future<void> _decide(PlannedItem item, bool ate) async {
+    final logger = widget.logger;
+    if (logger == null) return;
+    setState(() {
+      _answered.add(item.planId);
+      _planned = _planned?.where((p) => p.planId != item.planId).toList();
+    });
+    try {
+      await logger.decidePlan(planId: item.planId, ate: ate);
+    } catch (e) {
+      // Putting work on the queue is a local write and should not fail. If it
+      // somehow did, the meal has to come back — a decision the person made
+      // that nothing recorded is worse than asking them again.
+      _log.warning('[PLAN] could not queue the answer for ${item.planId}: $e');
+      if (!mounted) return;
+      setState(() => _answered.remove(item.planId));
+      await reload();
+      return;
+    }
+    widget.onDecided?.call();
   }
 
   @override
@@ -107,7 +159,12 @@ class PlannedMealsSectionState extends State<PlannedMealsSection> {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
           child: Text('Planned today', style: theme.textTheme.titleSmall),
         ),
-        for (final item in planned) PlannedMealRow(item: item),
+        for (final item in planned)
+          PlannedMealRow(
+            item: item,
+            onAte: widget.logger == null ? null : () => _decide(item, true),
+            onNotEaten: widget.logger == null ? null : () => _decide(item, false),
+          ),
       ],
     );
   }

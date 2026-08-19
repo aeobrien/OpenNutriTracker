@@ -17,6 +17,7 @@ import 'package:opennutritracker/features/home/presentation/widgets/intake_verti
 import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -173,6 +174,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           key: _planned,
           repository: locator<DayRepository>(),
           day: PlannedMealsSection.dayKey(DateTime.now()),
+          logger: locator<HouseholdLogger>(),
+          // Confirming a planned dinner changes what is left of the day, so
+          // the ring above has to be redrawn — not just the list it came from.
+          onDecided: () => _homeBloc.add(const LoadItemsEvent()),
         ),
         ActivityVerticalList(
           day: DateTime.now(),

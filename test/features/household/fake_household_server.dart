@@ -44,6 +44,11 @@ class FakeHouseholdServer {
   /// plan id → person id → how many portions of it are theirs.
   final Map<int, Map<int, num>> portions = {};
 
+  /// plan id → person id → 'ate' | 'skipped'. Kept per person exactly as the
+  /// server keeps it, so a fake could not accidentally make one person's answer
+  /// settle the meal for both — which is the mistake the tests are watching for.
+  final Map<int, Map<int, String>> decisions = {};
+
   /// Every request that arrived, so a test can count deliveries.
   final List<String> requests = [];
 
@@ -78,8 +83,13 @@ class FakeHouseholdServer {
     (portions[planId] ??= {})[personId] = howMany;
   }
 
+  String? decisionFor(int planId, int personId) => decisions[planId]?[personId];
+
   List<Map<String, dynamic>> plannedFor(int personId, String day) {
-    return plan.where((p) => p['day'] == day).map((p) {
+    return plan
+        .where((p) => p['day'] == day)
+        .where((p) => decisionFor(p['plan_id'] as int, personId) == null)
+        .map((p) {
       final planId = p['plan_id'] as int;
       final mine = portions[planId]?[personId];
       final perPortion = p['meal_kcal'] as num?;
@@ -149,6 +159,51 @@ class FakeHouseholdServer {
           final id = body['client_id'] as String;
           entries.putIfAbsent(id, () => {...body, 'id': entries.length + 1});
           result = {'ok': true, 'entry': entries[id]};
+        } else if (path == '/household/plan/decide') {
+          final planId = body['plan_id'] as int;
+          final person = body['owner_id'] as int;
+          final known = plan.any((p) => p['plan_id'] == planId);
+          if (!known) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'no such plan'}), 404,
+                headers: {'content-type': 'application/json'});
+          }
+          final state = body['state'] as String;
+          final settled = (decisions[planId] ??= {});
+          // First answer stands, as on the real server. A resend replays it.
+          final decided = settled.putIfAbsent(person, () => state);
+          Map<String, dynamic>? madeEntry;
+          if (decided == 'ate') {
+            final entryId = '${body['client_id']}-entry';
+            final row = plan.firstWhere((p) => p['plan_id'] == planId);
+            final mine = portions[planId]?[person];
+            final perPortion = row['meal_kcal'] as num?;
+            madeEntry = entries.putIfAbsent(
+                entryId,
+                () => {
+                      'id': entries.length + 1,
+                      'client_id': entryId,
+                      'day': row['day'],
+                      'owner_id': person,
+                      'author_id': body['author_id'],
+                      'label': row['title'],
+                      'qty': mine,
+                      'unit': mine == null ? null : 'portion',
+                      'kcal': (mine == null || perPortion == null)
+                          ? null
+                          : perPortion * mine,
+                    });
+          }
+          result = {
+            'ok': true,
+            'decision': {
+              'plan_id': planId,
+              'person_id': person,
+              'state': decided,
+              'id': 1,
+            },
+            'entry': madeEntry,
+          };
         } else if (path == '/household/exercise') {
           final id = body['client_id'] as String;
           exercise.putIfAbsent(id, () => {...body, 'id': exercise.length + 1});

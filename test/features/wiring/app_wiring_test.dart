@@ -39,6 +39,18 @@ void main() {
               'ask');
     });
 
+    test('the planned rows can actually be answered', () {
+      // The buttons only appear when the section is given something to put the
+      // answer on. A section mounted without it renders the plan perfectly and
+      // silently offers no way to confirm it — which looks like a design
+      // choice rather than a missing line.
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('logger: locator<HouseholdLogger>()'), isTrue,
+          reason: 'the planned meals on Home have no way to be confirmed');
+      expect(home.contains('onDecided:'), isTrue,
+          reason: 'eating a planned meal would not redraw the day it changed');
+    });
+
     test('reloading Home reloads the planned meals with it', () {
       final home = _read('lib/features/home/home_page.dart');
       expect(home.contains('_planned.currentState?.reload()'), isTrue,

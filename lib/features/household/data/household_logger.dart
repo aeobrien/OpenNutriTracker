@@ -69,6 +69,35 @@ class HouseholdLogger {
     );
   }
 
+  /// What happened to a planned meal: eaten, or not.
+  ///
+  /// One call, not two. The obvious shape — post an entry, then mark the plan
+  /// settled — can half-succeed and leave the day showing a meal that is also
+  /// still planned. The server makes the ledger row itself, so both happen or
+  /// neither does.
+  ///
+  /// Queued like everything else, so tapping it on a train works and the meal
+  /// lands when the phone gets home.
+  Future<String> decidePlan({
+    required int planId,
+    required bool ate,
+    int? owner,
+    int? author,
+    DateTime? at,
+  }) async {
+    final holder = await _whoseDay();
+    return _outbox.enqueue(
+      path: '/household/plan/decide',
+      body: {
+        'plan_id': planId,
+        'state': ate ? 'ate' : 'skipped',
+      },
+      ownerId: owner ?? holder,
+      authorId: author ?? holder,
+      loggedAt: at,
+    );
+  }
+
   /// Exercise, from the Watch or typed in. [source] says which, because a day
   /// that shows both needs to be able to tell them apart.
   Future<String> logExercise({

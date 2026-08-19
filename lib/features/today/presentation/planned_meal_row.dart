@@ -22,7 +22,19 @@ class PlannedMealRow extends StatelessWidget {
 
   final PlannedItem item;
 
-  const PlannedMealRow({super.key, required this.item});
+  /// Tapped when they had it. Null on a screen that only shows the plan.
+  final VoidCallback? onAte;
+
+  /// Tapped when they didn't. A separate answer from doing nothing: a meal
+  /// nobody decided about is still coming, and one that was skipped is not.
+  final VoidCallback? onNotEaten;
+
+  const PlannedMealRow({
+    super.key,
+    required this.item,
+    this.onAte,
+    this.onNotEaten,
+  });
 
   /// This person's share, in words. Deliberately says nothing when nobody has
   /// said what the portion is: "1 portion" would be a guess, and a guess here
@@ -46,11 +58,16 @@ class PlannedMealRow extends StatelessWidget {
     return 'Awaiting a portion';
   }
 
+  /// The two answers, named once so a test asserts on the same words the
+  /// screen shows rather than a copy of them.
+  static const ateLabel = 'Ate it';
+  static const notEatenLabel = "Didn't have it";
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final gap = gapText(item);
-    return Opacity(
+    final row = Opacity(
       opacity: plannedOpacity,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -86,6 +103,38 @@ class PlannedMealRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    if (onAte == null && onNotEaten == null) return row;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        row,
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Saying you did not have it is deliberately the quieter of the
+              // two. Both are one tap, but the common answer is the solid one,
+              // so the button under a thumb at dinner time is the right one.
+              if (onNotEaten != null)
+                TextButton(
+                  onPressed: onNotEaten,
+                  child: const Text(notEatenLabel),
+                ),
+              if (onAte != null) ...[
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: onAte,
+                  child: const Text(ateLabel),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
