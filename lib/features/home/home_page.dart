@@ -19,6 +19,8 @@ import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
+import 'package:opennutritracker/features/week/data/week_repository.dart';
+import 'package:opennutritracker/features/week/presentation/week_ahead_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -38,11 +40,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// whenever Home reloads — see [_reload].
   final _planned = GlobalKey<PlannedMealsSectionState>();
 
+  /// The week, held the same way and for the same reason. Logging a meal
+  /// changes today's figure on it, so it has to be told when Home reloads or
+  /// it would sit there showing the week as it was when the app opened.
+  final _week = GlobalKey<WeekAheadSectionState>();
+
   /// Reload the day. Everything on Home that can go stale goes through here so
   /// that no future call site can reload half of it.
   void _reload() {
     _homeBloc.add(const LoadItemsEvent());
     _planned.currentState?.reload();
+    _week.currentState?.reload();
   }
 
   @override
@@ -179,6 +187,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // the ring above has to be redrawn — not just the list it came from.
           onDecided: () => _homeBloc.add(const LoadItemsEvent()),
         ),
+        // The week, on the same screen. A view and not a second planner: it
+        // shows what is planned and what has been eaten and changes nothing,
+        // because the planning itself stays on the kitchen panel.
+        WeekAheadSection(key: _week, repository: locator<WeekRepository>()),
         ActivityVerticalList(
           day: DateTime.now(),
           title: S.of(context).activityLabel,

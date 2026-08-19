@@ -90,6 +90,7 @@ import 'package:opennutritracker/features/household/data/household_repository.da
 import 'package:opennutritracker/features/household/data/outbox.dart';
 import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
+import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:logging/logging.dart';
 
 final locator = GetIt.instance;
@@ -153,6 +154,8 @@ Future<void> initLocator() async {
       () => FoodLedger(locator<HouseholdLogger>()));
   locator.registerLazySingleton<DayRepository>(
       () => DayRepository(householdApi, householdRepository));
+  locator.registerLazySingleton<WeekRepository>(
+      () => WeekRepository(householdApi, householdRepository));
 
   // Emptying the queue. Registered here and started by HouseholdScope, because
   // work held while the Mini was unreachable has to be sent whatever screen the

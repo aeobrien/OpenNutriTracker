@@ -164,6 +164,62 @@ class FakeHouseholdServer {
     }).toList();
   }
 
+  /// The Monday of the week a date falls in — the same rule the real server
+  /// uses, written here so a test can leave `start` off and still know which
+  /// seven days it will get.
+  static String mondayOf(String day) {
+    final d = DateTime.parse(day);
+    return d
+        .subtract(Duration(days: d.weekday - 1))
+        .toIso8601String()
+        .substring(0, 10);
+  }
+
+  /// What the fake calls today. The real server decides this, not the phone,
+  /// so a test that wants a past day says so here rather than waiting.
+  String today = '2026-08-19';
+
+  /// One day as the server assembles it, used by both the day route and the
+  /// week route — the same reason the real server has one `day_for`: a day and
+  /// a week that disagree about the same Tuesday is a bug nobody can report.
+  Map<String, dynamic> dayLine(int personId, String day) {
+    final mine = entries.values
+        .where((e) => e['owner_id'] == personId && e['day'] == day)
+        .toList();
+    final myExercise = exercise.values
+        .where((e) => e['owner_id'] == personId && e['day'] == day)
+        .toList();
+    // A day already gone is read off the ledger alone.
+    final planned =
+        day.compareTo(today) < 0 ? <Map<String, dynamic>>[] : plannedFor(personId, day);
+    final awaiting = [
+      for (final p in planned)
+        if (p['kcal'] == null)
+          {
+            'plan_id': p['plan_id'],
+            'title': p['title'],
+            'why': (p['meal_kcal_known'] as bool)
+                ? 'nobody has said how much of this is yours'
+                : "this meal's calories have not been worked out yet",
+          }
+    ];
+    return {
+      'day': day,
+      'past': day.compareTo(today) < 0,
+      'entries': mine,
+      'exercise': myExercise,
+      'planned': planned,
+      'eaten_kcal':
+          mine.fold<num>(0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
+      'exercise_kcal': myExercise.fold<num>(
+          0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
+      'planned_kcal':
+          planned.fold<num>(0, (sum, p) => sum + ((p['kcal'] ?? 0) as num)),
+      'awaiting': awaiting,
+      'awaiting_count': awaiting.length,
+    };
+  }
+
   Map<String, dynamic> settingsFor(int personId) => settings.putIfAbsent(
       personId,
       () => {
@@ -368,30 +424,43 @@ class FakeHouseholdServer {
         } else if (path.startsWith('/household/day/')) {
           final parts = path.split('/');
           final personId = int.parse(parts[3]);
-          final day = parts[4];
-          final mine = entries.values
-              .where((e) => e['owner_id'] == personId && e['day'] == day)
-              .toList();
-          final myExercise = exercise.values
-              .where((e) => e['owner_id'] == personId && e['day'] == day)
-              .toList();
-          final planned = plannedFor(personId, day);
+          final line = dayLine(personId, parts[4]);
           result = {
             'ok': true,
-            'day': day,
             'person_id': personId,
             'settings': settingsFor(personId),
-            'entries': mine,
-            'exercise': myExercise,
-            'planned': planned,
-            'eaten_kcal':
-                mine.fold<num>(0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
-            'exercise_kcal': myExercise.fold<num>(
-                0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
-            'planned_kcal': planned.fold<num>(
-                0, (sum, p) => sum + ((p['kcal'] ?? 0) as num)),
-            'planned_unknown':
-                planned.where((p) => p['kcal'] == null).length,
+            ...line,
+            'planned_unknown': line['awaiting_count'],
+          };
+        } else if (path.startsWith('/household/week/')) {
+          final personId = int.parse(path.split('/')[3]);
+          final asked = request.url.queryParameters['start'];
+          final start = asked ?? mondayOf(today);
+          final days = [
+            for (var i = 0; i < 7; i++)
+              dayLine(
+                  personId,
+                  DateTime.parse(start)
+                      .add(Duration(days: i))
+                      .toIso8601String()
+                      .substring(0, 10))
+          ];
+          result = {
+            'ok': true,
+            'person_id': personId,
+            'start': start,
+            'today': today,
+            'settings': settingsFor(personId),
+            'days': days,
+            'counted_kcal': days.fold<num>(
+                0,
+                (sum, d) =>
+                    sum + (d['eaten_kcal'] as num) + (d['planned_kcal'] as num)),
+            'awaiting_count':
+                days.fold<int>(0, (sum, d) => sum + (d['awaiting_count'] as int)),
+            'target_kcal': settingsFor(personId)['daily_target_kcal'] == null
+                ? null
+                : (settingsFor(personId)['daily_target_kcal'] as int) * 7,
           };
         }
 

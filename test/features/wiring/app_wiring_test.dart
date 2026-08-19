@@ -371,4 +371,32 @@ void main() {
               'logged from this screen can ever be corrected or withdrawn');
     });
   });
+
+  group('the week', () {
+    test('is mounted on Home, and Home is where it stays', () {
+      // Its own tab is exactly what this project already got wrong once: a
+      // second Today beside a Home that was already the day. The week is a
+      // section on the screen that exists, or it is nothing.
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('WeekAheadSection('), isTrue,
+          reason: 'the week is built nowhere a person can see it');
+      expect(home.contains('locator<WeekRepository>()'), isTrue,
+          reason: 'the section is mounted but never given the household to ask');
+    });
+
+    test('is redrawn when the day it sits under is', () {
+      // Logging a meal changes today's figure on the week. Without this the
+      // section sits showing the week as it was when the app opened, which
+      // reads as a wrong figure rather than a stale one.
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('_week.currentState?.reload()'), isTrue,
+          reason: 'the week goes stale the moment anything is logged');
+    });
+
+    test('the repository it needs is built', () {
+      expect(_read('lib/core/utils/locator.dart')
+          .contains('WeekRepository(householdApi, householdRepository)'), isTrue,
+          reason: 'Home asks for something nothing ever registered');
+    });
+  });
 }

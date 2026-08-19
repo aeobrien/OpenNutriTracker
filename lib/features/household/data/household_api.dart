@@ -233,4 +233,12 @@ class HouseholdApi {
   Future<Map<String, dynamic>> day(int personId, String day) async {
     return get('/household/day/$personId/$day');
   }
+
+  /// One person's week, assembled on the server. [start] names the Monday;
+  /// leaving it off lets the kitchen computer decide which week today is in,
+  /// so the two handsets and the panel cannot disagree about it.
+  Future<Map<String, dynamic>> week(int personId, {String? start}) async {
+    final query = start == null ? '' : '?start=$start';
+    return get('/household/week/$personId$query');
+  }
 }
