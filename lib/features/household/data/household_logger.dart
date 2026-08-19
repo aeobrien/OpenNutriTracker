@@ -46,9 +46,18 @@ class HouseholdLogger {
     int? owner,
     int? author,
     DateTime? at,
+    /// The name this row already has on the phone.
+    ///
+    /// Passed in rather than minted here so that the phone's own diary row and
+    /// the household's row share one name. That shared name is the only way
+    /// the phone can ever say *which* row it means afterwards — it has no idea
+    /// what number the kitchen computer gave it, and asking would mean a round
+    /// trip at the exact moment the kitchen computer may be asleep.
+    String? clientId,
   }) async {
     final holder = await _whoseDay();
     return _outbox.enqueue(
+      clientId: clientId,
       path: '/household/entry',
       body: {
         'day': day,
@@ -142,6 +151,67 @@ class HouseholdLogger {
       ownerId: owner ?? holder,
       authorId: author ?? holder,
       loggedAt: at,
+    );
+  }
+
+  /// Take something back off a day.
+  ///
+  /// Soft at the other end: the row and its numbers stay and stop counting, and
+  /// if it was a planned meal being confirmed, the meal goes back to waiting
+  /// for an answer. Queued like everything else, so deleting something on a
+  /// train works.
+  ///
+  /// [entryClientId] is the name the phone gave the row when it logged it —
+  /// see [logFood].
+  Future<String> retireFood(String entryClientId) async {
+    final holder = await _whoseDay();
+    return _outbox.enqueue(
+      path: '/household/entry/by-client/$entryClientId/retire',
+      body: const {},
+      ownerId: holder,
+      authorId: holder,
+    );
+  }
+
+  /// Correct something already on a day — including moving it to the other
+  /// person, which is [owner].
+  ///
+  /// One call, not two, for the same reason confirming a planned meal is one
+  /// call: a move that landed without its figure would leave both people's
+  /// totals wrong with nothing to say so.
+  Future<String> amendFood(
+    String entryClientId, {
+    int? owner,
+    String? label,
+    num? kcal,
+    num? qty,
+    String? unit,
+    num? protein,
+    num? fat,
+    num? carbs,
+    String? slot,
+    String? day,
+  }) async {
+    final holder = await _whoseDay();
+    return _outbox.enqueue(
+      path: '/household/entry/by-client/$entryClientId/amend',
+      body: {
+        // Who made the correction. Recorded beside whoever entered the row
+        // rather than replacing them.
+        'author_id': holder,
+        if (owner != null) 'owner_id': owner,
+        if (label != null) 'label': label,
+        if (kcal != null) 'kcal': kcal,
+        if (qty != null) 'qty': qty,
+        if (unit != null) 'unit': unit,
+        if (protein != null) 'protein': protein,
+        if (fat != null) 'fat': fat,
+        if (carbs != null) 'carbs': carbs,
+        if (slot != null) 'slot': slot,
+        if (day != null) 'day': day,
+      },
+      ownerId: owner ?? holder,
+      authorId: holder,
     );
   }
 

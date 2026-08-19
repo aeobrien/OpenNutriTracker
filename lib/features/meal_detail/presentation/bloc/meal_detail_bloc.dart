@@ -118,13 +118,17 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
         dateTime: day);
     await _addIntakeUseCase.addIntake(intakeEntity);
     _updateTrackedDay(intakeEntity, day);
-    await _alsoTellTheHousehold(type, meal, day, quantity, alsoFor);
+    await _alsoTellTheHousehold(
+        intakeEntity.id, type, meal, day, quantity, alsoFor);
   }
 
-  Future<void> _alsoTellTheHousehold(IntakeTypeEntity type, MealEntity meal,
-      DateTime day, double mine, List<FoodShare> alsoFor) {
+  Future<void> _alsoTellTheHousehold(String intakeId, IntakeTypeEntity type,
+      MealEntity meal, DateTime day, double mine, List<FoodShare> alsoFor) {
     final n = meal.nutriments;
     return _household.add(
+      // The diary row's own id, so both machines call this the same thing and
+      // the phone can still say which row it means afterwards.
+      intakeId: intakeId,
       day: day,
       slot: type.name,
       label: meal.name ?? '',

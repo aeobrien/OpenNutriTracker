@@ -20,6 +20,61 @@ class FoodLedger {
 
   FoodLedger(this._logger);
 
+  /// The name the household's row for [intakeId] is known by.
+  ///
+  /// The person holding the phone gets the intake's own id, unchanged, so the
+  /// diary row and the household row are the same name on both machines. A
+  /// second person's share gets that name plus who it is for, because two rows
+  /// cannot share one id and the second one still has to be nameable later.
+  ///
+  /// Worked out rather than stored: the phone must be able to say which
+  /// household row it means months later, from nothing but the diary row in
+  /// front of it.
+  static String nameFor(String intakeId, {int? forPerson}) =>
+      forPerson == null ? intakeId : '$intakeId-p$forPerson';
+
+  /// Take a logged food back off the day, at the household end.
+  ///
+  /// Only the row belonging to the person holding the phone. A share logged for
+  /// the other person is on *their* day and is theirs to take off — this phone
+  /// does not know, from the diary row alone, that there ever was one.
+  Future<void> retire(String intakeId) async {
+    try {
+      await _logger.retireFood(nameFor(intakeId));
+    } catch (e) {
+      _log.severe('[HOUSE] removed from this phone but not from the '
+          'household: $e');
+    }
+  }
+
+  /// Correct a logged food at the household end — its amount, its figures, and
+  /// whose day it counts against.
+  ///
+  /// One call. See HouseholdLogger.amendFood for why moving is not separate.
+  Future<void> amend(
+    String intakeId, {
+    int? moveTo,
+    double? quantity,
+    num? kcal,
+    num? protein,
+    num? fat,
+    num? carbs,
+  }) async {
+    try {
+      await _logger.amendFood(
+        nameFor(intakeId),
+        owner: moveTo,
+        qty: quantity,
+        kcal: kcal,
+        protein: protein,
+        fat: fat,
+        carbs: carbs,
+      );
+    } catch (e) {
+      _log.severe('[HOUSE] changed on this phone but not in the household: $e');
+    }
+  }
+
   /// One food, on one day, for one or two people.
   ///
   /// [mine] is the amount the person holding the phone had; [alsoFor] is
@@ -32,6 +87,9 @@ class FoodLedger {
   /// its turn behind the first. Neither is ever dropped, which is the promise
   /// that actually matters.
   Future<void> add({
+    /// The diary row this is the household half of. Its id becomes the name
+    /// the household row carries — see [nameFor].
+    required String intakeId,
     required DateTime day,
     required String slot,
     required String label,
@@ -51,6 +109,7 @@ class FoodLedger {
     final unit = liquid ? 'ml' : 'g';
 
     Future<void> send(FoodShare share, {int? owner}) async {
+      final name = nameFor(intakeId, forPerson: owner);
       final row = portionFor(share,
           kcalPerUnit: kcalPerUnit,
           proteinPerUnit: proteinPerUnit,
@@ -68,6 +127,7 @@ class FoodLedger {
         slot: slot,
         owner: owner,
         foodId: foodId,
+        clientId: name,
       );
     }
 

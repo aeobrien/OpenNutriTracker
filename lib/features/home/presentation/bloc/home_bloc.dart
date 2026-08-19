@@ -219,13 +219,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   }
 
   Future<void> updateIntakeItem(
-      String intakeId, Map<String, dynamic> fields) async {
+      String intakeId, Map<String, dynamic> fields, {int? moveTo}) async {
     final dateTime = DateTime.now();
     // Get old intake values
     final oldIntakeObject = await _getIntakeUsecase.getIntakeById(intakeId);
     assert(oldIntakeObject != null);
     final newIntakeObject =
-        await _updateIntakeUsecase.updateIntake(intakeId, fields);
+        await _updateIntakeUsecase.updateIntake(intakeId, fields,
+            moveTo: moveTo);
     assert(newIntakeObject != null);
     if (oldIntakeObject!.amount > newIntakeObject!.amount) {
       // Amounts shrunk

@@ -279,13 +279,13 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final messenger = ScaffoldMessenger.of(context);
     final updatedText = S.of(context).itemUpdatedSnackbar;
 
-    final changeIntakeAmount = await showDialog<double>(
+    final edit = await showDialog<IntakeEdit>(
         context: context,
         builder: (context) => EditDialog(
             intakeEntity: intakeEntity, usesImperialUnits: usesImperialUnits));
-    if (changeIntakeAmount != null) {
-      _homeBloc
-          .updateIntakeItem(intakeEntity.id, {'amount': changeIntakeAmount});
+    if (edit != null) {
+      _homeBloc.updateIntakeItem(intakeEntity.id, {'amount': edit.amount},
+          moveTo: edit.moveTo);
       _reload();
       messenger.showSnackBar(
           SnackBar(

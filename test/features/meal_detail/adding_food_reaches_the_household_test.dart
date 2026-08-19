@@ -59,8 +59,10 @@ void main() {
     List<FoodShare> alsoFor = const [],
     bool liquid = false,
     num? kcalPer100 = 450,
+    String intakeId = 'intake-1',
   }) =>
       ledger.add(
+        intakeId: intakeId,
         day: day,
         slot: 'snack',
         label: 'Oat biscuits',

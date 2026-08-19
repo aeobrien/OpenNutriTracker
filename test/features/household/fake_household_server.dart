@@ -49,6 +49,12 @@ class FakeHouseholdServer {
   /// settle the meal for both — which is the mistake the tests are watching for.
   final Map<int, Map<int, String>> decisions = {};
 
+  /// What a correction is allowed to touch, matching the real server.
+  static const amendable = [
+    'day', 'owner_id', 'label', 'qty', 'unit',
+    'kcal', 'protein', 'fat', 'carbs', 'slot',
+  ];
+
   /// Every request that arrived, so a test can count deliveries.
   final List<String> requests = [];
 
@@ -301,6 +307,31 @@ class FakeHouseholdServer {
           final id = (body['client_id'] ?? 'food-${foods.length + 1}') as String;
           foods.putIfAbsent(id, () => {...body, 'id': foods.length + 1});
           result = {'ok': true, 'food': foods[id]};
+        } else if (path.startsWith('/household/entry/by-client/')) {
+          // The server keeps its rows under the id the phone minted, so the
+          // phone naming a row is a lookup rather than a translation.
+          final rest = path.substring('/household/entry/by-client/'.length);
+          final cid = rest.substring(0, rest.lastIndexOf('/'));
+          final action = rest.substring(rest.lastIndexOf('/') + 1);
+          final row = entries[cid];
+          if (row == null) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'no entry called $cid'}), 404,
+                headers: {'content-type': 'application/json'});
+          }
+          if (action == 'retire') {
+            // Soft, like the real server: the row and its numbers stay and stop
+            // counting. What the real server also does — putting a planned meal
+            // back to waiting — is its own behaviour and is held to account in
+            // its own tests, not reproduced here.
+            row['deleted_at'] = 'then';
+          } else {
+            for (final field in amendable) {
+              if (body.containsKey(field)) row[field] = body[field];
+            }
+            row['amended_by'] = body['author_id'];
+          }
+          result = {'ok': true, 'entry': row};
         } else if (path == '/household/food/find') {
           huntedFor = body['name'] as String?;
           if (!canHuntTheWeb) {

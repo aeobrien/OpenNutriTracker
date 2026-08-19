@@ -261,6 +261,7 @@ void main() {
       final ours = (await finder.theirs()).single;
 
       await ledger.add(
+        intakeId: 'intake-1',
         day: DateTime(2026, 8, 19),
         slot: 'snack',
         label: ours.name!,
@@ -281,6 +282,7 @@ void main() {
 
     test('a food from the internet is not named as one of ours', () async {
       await ledger.add(
+        intakeId: 'intake-1',
         day: DateTime(2026, 8, 19),
         slot: 'snack',
         label: 'Oaty bars',

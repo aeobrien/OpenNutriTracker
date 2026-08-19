@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
+import 'package:opennutritracker/features/household/presentation/whose_day_is_it.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
+
+/// What the edit dialog was asked to change.
+///
+/// The amount and whose day it is come back together rather than one at a time.
+/// They are noticed at the same moment and they save at the same moment: a move
+/// that landed without its corrected figure would leave two people's totals
+/// wrong with nothing to say so.
+class IntakeEdit {
+  /// In metric, as the rest of the app holds it.
+  final double amount;
+
+  /// Who to move it to, or null to leave it where it is.
+  final int? moveTo;
+
+  const IntakeEdit(this.amount, {this.moveTo});
+}
 
 class EditDialog extends StatefulWidget {
   final IntakeEntity intakeEntity;
@@ -18,6 +36,7 @@ class EditDialog extends StatefulWidget {
 class _EditDialogState extends State<EditDialog> {
   late TextEditingController amountEditingController;
   late double _currentKcalEstimate;
+  HouseholdPerson? _moveTo;
 
   @override
   void initState() {
@@ -122,6 +141,8 @@ class _EditDialogState extends State<EditDialog> {
           ],
         ),
         const SizedBox(height: 8.0),
+        WhoseDayIsIt(onChanged: (person) => _moveTo = person),
+        const SizedBox(height: 8.0),
         Figures.kcalText(
           context,
           _currentKcalEstimate,
@@ -136,8 +157,10 @@ class _EditDialogState extends State<EditDialog> {
         TextButton(
             onPressed: () {
               double newAmount = double.parse(amountEditingController.text);
-              Navigator.of(context).pop(_convertBackToMetricValue(
-                  newAmount, widget.intakeEntity.meal.mealUnit));
+              Navigator.of(context).pop(IntakeEdit(
+                  _convertBackToMetricValue(
+                      newAmount, widget.intakeEntity.meal.mealUnit),
+                  moveTo: _moveTo?.id));
             },
             child: Text(S.of(context).dialogOKLabel)),
         TextButton(

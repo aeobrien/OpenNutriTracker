@@ -317,4 +317,58 @@ void main() {
               'is');
     });
   });
+
+  group('correcting something already logged', () {
+    // Release D's three promises each die at a different call site, and each
+    // death is invisible to the tests that cover the pieces: the ledger's own
+    // tests build it by hand, so they cannot see whether the app ever builds
+    // it that way.
+
+    test('the two use cases are given the household to tell', () {
+      final locator = _read('lib/core/utils/locator.dart');
+      expect(locator.contains('DeleteIntakeUsecase(locator(), locator())'),
+          isTrue,
+          reason: 'taking a row off this phone leaves it standing in the '
+              "house, and nothing on either screen says so");
+      expect(locator.contains('UpdateIntakeUsecase(locator(), locator())'),
+          isTrue,
+          reason: 'a corrected figure stays corrected only here, so the two '
+              'people are looking at different numbers');
+    });
+
+    test('the edit box offers the other person', () {
+      final dialog = _read('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('WhoseDayIsIt('), isTrue,
+          reason: 'a row logged against the wrong person can be changed in '
+              'every way except the one that is wrong');
+    });
+
+    test('the person picked is carried through to the house', () {
+      // Three hops, and the choice is silently dropped at any of them: the
+      // screen reads the dialog's answer, the bloc forwards it, the use case
+      // sends it. A move that stops halfway leaves the amount corrected on one
+      // day and the row still on the other.
+      expect(_read('lib/features/home/home_page.dart')
+          .contains('moveTo: edit.moveTo'), isTrue,
+          reason: 'the screen asks whose day it is and then throws the answer '
+              'away');
+      expect(_read('lib/features/home/presentation/bloc/home_bloc.dart')
+          .contains('moveTo: moveTo'), isTrue,
+          reason: 'the answer reaches the bloc and stops there');
+      expect(_read('lib/core/domain/usecase/update_intake_usecase.dart')
+          .contains('moveTo: moveTo'), isTrue,
+          reason: 'the move is worked out and never sent');
+    });
+
+    test('a logged food is given the name both machines will use', () {
+      // Without this the phone's diary row and the household's row have no
+      // name in common, and there is nothing for a later correction to land
+      // on. It is the one line the other three tests all rest on.
+      final bloc = _read(
+          'lib/features/meal_detail/presentation/bloc/meal_detail_bloc.dart');
+      expect(bloc.contains('intakeId: intakeId'), isTrue,
+          reason: 'the household mints its own name for the row, so nothing '
+              'logged from this screen can ever be corrected or withdrawn');
+    });
+  });
 }
