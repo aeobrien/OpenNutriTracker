@@ -170,8 +170,20 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
               logger: locator<HouseholdLogger>(),
             ),
         // The same form, opened empty — a packet typed in by hand.
-        NavigationOptions.addFoodByHandRoute: (context) =>
-            ConfirmFoodScreen(logger: locator<HouseholdLogger>()),
+        //
+        // The form is a section, not a page: it is a bare Column so the guided
+        // capture flow can drop it into its own layout. A route has to supply
+        // what a page needs — a Material ancestor for the fields, somewhere to
+        // scroll, and a way back — or seven text fields land on nothing.
+        NavigationOptions.addFoodByHandRoute: (context) => Scaffold(
+              appBar: AppBar(title: const Text('Add a food by hand')),
+              body: SafeArea(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.only(bottom: 24),
+                  child: ConfirmFoodScreen(logger: locator<HouseholdLogger>()),
+                ),
+              ),
+            ),
       },
     );
   }

@@ -116,10 +116,18 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
     final navigator = Navigator.of(context);
     final saved = await navigator.push<String>(
       MaterialPageRoute(
-        builder: (formContext) => ConfirmFoodScreen(
-          logger: widget.logger,
-          draft: draft,
-          onSaved: (clientId) => Navigator.of(formContext).pop(clientId),
+        builder: (formContext) => Scaffold(
+          appBar: AppBar(title: const Text('Check the numbers')),
+          body: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(bottom: 24),
+              child: ConfirmFoodScreen(
+                logger: widget.logger,
+                draft: draft,
+                onSaved: (clientId) => Navigator.of(formContext).pop(clientId),
+              ),
+            ),
+          ),
         ),
       ),
     );

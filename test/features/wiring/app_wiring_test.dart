@@ -85,6 +85,31 @@ void main() {
       expect(main.contains('ConfirmFoodScreen('), isTrue);
     });
 
+    test('wherever the form is opened, it is opened as a page', () {
+      // The form is deliberately a bare Column so the capture flow can place
+      // it inside its own layout. That makes every place that opens it as a
+      // whole screen responsible for the page around it: a Material ancestor
+      // for the text fields, somewhere to scroll seven of them, and a way
+      // back. Its own test supplies all three, which is exactly why the test
+      // cannot notice when a route does not.
+      for (final file in const [
+        'lib/main.dart',
+        'lib/features/label_scan/presentation/guided_capture_screen.dart',
+      ]) {
+        final source = _read(file);
+        final at = source.indexOf('ConfirmFoodScreen(');
+        expect(at, greaterThan(-1), reason: '$file no longer opens the form');
+        // Look back a little way from the call for the page it sits in.
+        final before = source.substring((at - 400).clamp(0, at), at);
+        expect(before.contains('Scaffold('), isTrue,
+            reason: '$file opens the form with no Material around it — the '
+                'fields will not render');
+        expect(before.contains('SingleChildScrollView('), isTrue,
+            reason: '$file opens the form with nowhere to scroll — the lower '
+                'fields fall off the bottom');
+      }
+    });
+
     test('the camera behind the flow is a real one', () {
       final locator = _read('lib/core/utils/locator.dart');
       expect(locator.contains('PickerLabelCamera()'), isTrue,
