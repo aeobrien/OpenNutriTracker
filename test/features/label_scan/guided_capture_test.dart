@@ -95,7 +95,7 @@ void main() {
       await capture.takeNext(id);
       expect(await capture.nextShot(id), LabelShot.nutrition);
       await capture.takeNext(id);
-      expect(await capture.nextShot(id), LabelShot.ingredients);
+      expect(await capture.nextShot(id), LabelShot.barcode);
       await capture.takeNext(id);
       expect(await capture.nextShot(id), isNull);
     });
@@ -107,14 +107,14 @@ void main() {
       await capture.takeNext(id);
 
       expect(camera.asked,
-          [LabelShot.front, LabelShot.nutrition, LabelShot.ingredients]);
+          [LabelShot.front, LabelShot.nutrition, LabelShot.barcode]);
     });
 
     test('it says what to point the camera at', () {
       expect(LabelShot.front.instruction,
           'Photograph the front of the packet');
       expect(LabelShot.nutrition.instruction, 'Now the nutrition panel');
-      expect(LabelShot.ingredients.instruction, 'And the ingredients');
+      expect(LabelShot.barcode.instruction, 'And the barcode');
     });
 
     test('a shot backed out of leaves the flow where it was', () async {
@@ -138,7 +138,7 @@ void main() {
       expect(taken.length, 2, reason: 'a retake replaces, it does not add');
       expect(taken.map((s) => s.shot).toSet(),
           {LabelShot.front, LabelShot.nutrition});
-      expect(await capture.nextShot(id), LabelShot.ingredients,
+      expect(await capture.nextShot(id), LabelShot.barcode,
           reason: 'retaking one does not send the flow backwards');
     });
   });
@@ -163,11 +163,11 @@ void main() {
       await db.close();
       capture = open();
 
-      expect(await capture.nextShot(id), LabelShot.ingredients,
+      expect(await capture.nextShot(id), LabelShot.barcode,
           reason: 'coming back must not start again from the front');
       await capture.takeNext(id);
       expect(await capture.isComplete(id), isTrue);
-      expect(camera.asked, [LabelShot.ingredients],
+      expect(camera.asked, [LabelShot.barcode],
           reason: 'the two photographs already taken were not asked for again');
     });
 
@@ -208,7 +208,7 @@ void main() {
 
       final ready = await capture.shotsForReading(id);
       expect(ready, isNotNull);
-      expect(ready!.keys.toSet(), {'front', 'nutrition', 'ingredients'});
+      expect(ready!.keys.toSet(), {'front', 'nutrition', 'barcode'});
     });
   });
 

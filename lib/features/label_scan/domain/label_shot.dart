@@ -1,13 +1,19 @@
 /// The three photographs a packet needs, in the order they are asked for.
 ///
 /// The order is not decoration. The front identifies the product, the nutrition
-/// panel carries the numbers, and the ingredients settle what it actually is —
-/// and a person holding a packet turns it over once, so asking in that order is
+/// panel carries the numbers, and the barcode says *which packet this is* — and
+/// a person holding a packet turns it over once, so asking in that order is
 /// asking for one turn rather than three.
+///
+/// The third shot used to be the ingredients. It was changed because the two
+/// are not equally useful: the ingredients say what is in it, which is
+/// interesting, while the barcode is what lets the same packet be scanned off
+/// a shelf next month and come straight back out of the household's own list
+/// instead of the internet's. Only one of those is worth a photograph.
 enum LabelShot {
   front,
   nutrition,
-  ingredients;
+  barcode;
 
   /// What the person is asked to point the camera at.
   String get instruction {
@@ -16,8 +22,8 @@ enum LabelShot {
         return 'Photograph the front of the packet';
       case LabelShot.nutrition:
         return 'Now the nutrition panel';
-      case LabelShot.ingredients:
-        return 'And the ingredients';
+      case LabelShot.barcode:
+        return 'And the barcode';
     }
   }
 

@@ -17,6 +17,14 @@ import 'package:opennutritracker/features/label_scan/domain/food_draft.dart';
 /// claimed to what a person typed — the list keeps saying where its numbers
 /// came from long after everybody has forgotten.
 class ConfirmFoodScreen extends StatefulWidget {
+  /// The message on a field the photographs could not read.
+  ///
+  /// It sits on the field itself rather than in a sentence underneath the form.
+  /// A blank box and a box the camera failed on look identical, and "check the
+  /// blanks" leaves somebody comparing the screen against the packet to work
+  /// out which blanks were meant.
+  static const couldNotRead = "Couldn't read this — check the packet";
+
   final HouseholdLogger logger;
 
   /// What to open with. Null starts an empty form, which is the hand-typed
@@ -82,8 +90,13 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
         : value.toString();
   }
 
+  /// Rebuilds on every keystroke, not only the first.
+  ///
+  /// The early return that used to be here was right about the flag and wrong
+  /// about the screen: filling in the second field the camera missed has to
+  /// clear the second field's warning, and it cannot if nothing redraws after
+  /// the first one.
   void _noteAnEdit() {
-    if (_touched) return;
     setState(() => _touched = true);
   }
 
@@ -156,14 +169,27 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
     }
   }
 
+  /// Whether this field is one the photographs gave up on, and is still empty.
+  ///
+  /// Still empty matters: once there is a figure in the box the warning has
+  /// done its job, and leaving it there would read as a complaint about the
+  /// number the person just typed.
+  bool _unread(String key, TextEditingController controller) =>
+      _draft.unreadable.contains(key) && controller.text.trim().isEmpty;
+
   Widget _field(String label, TextEditingController controller,
-          {bool number = false}) =>
+          {bool number = false, String? readingKey}) =>
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         child: TextField(
           controller: controller,
           keyboardType: number ? TextInputType.number : TextInputType.text,
-          decoration: InputDecoration(labelText: label),
+          decoration: InputDecoration(
+            labelText: label,
+            helperText: readingKey != null && _unread(readingKey, controller)
+                ? ConfirmFoodScreen.couldNotRead
+                : null,
+          ),
         ),
       );
 
@@ -173,20 +199,16 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _field('Name', _name),
-        _field('Brand', _brand),
-        _field('Calories per 100g', _kcal, number: true),
-        _field('Protein per 100g', _protein, number: true),
-        _field('Fat per 100g', _fat, number: true),
-        _field('Carbohydrate per 100g', _carbs, number: true),
-        _field('Serving size in grams', _serving, number: true),
-        if (_draft.unreadable.isNotEmpty && !_touched)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(
-                'The photographs did not give up everything — please check the '
-                'blanks.'),
-          ),
+        _field('Name', _name, readingKey: 'name'),
+        _field('Brand', _brand, readingKey: 'brand'),
+        _field('Calories per 100g', _kcal, number: true, readingKey: 'kcal_100'),
+        _field('Protein per 100g', _protein,
+            number: true, readingKey: 'protein_100'),
+        _field('Fat per 100g', _fat, number: true, readingKey: 'fat_100'),
+        _field('Carbohydrate per 100g', _carbs,
+            number: true, readingKey: 'carbs_100'),
+        _field('Serving size in grams', _serving,
+            number: true, readingKey: 'serving_g'),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(trustSentence(food)),

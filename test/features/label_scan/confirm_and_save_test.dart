@@ -182,7 +182,7 @@ void main() {
         reader.read(const {
           'front': 'a.jpg',
           'nutrition': 'b.jpg',
-          'ingredients': 'c.jpg',
+          'barcode': 'c.jpg',
         }),
         throwsA(isA<LabelUnreadable>()),
       );
@@ -275,7 +275,7 @@ void main() {
       final draft = await reader.read(const {
         'front': 'a.jpg',
         'nutrition': 'b.jpg',
-        'ingredients': 'c.jpg',
+        'barcode': 'c.jpg',
       });
 
       expect(draft.name, 'Oat Crunch');
@@ -293,11 +293,72 @@ void main() {
       final draft = await reader.read(const {
         'front': 'a.jpg',
         'nutrition': 'b.jpg',
-        'ingredients': 'c.jpg',
+        'barcode': 'c.jpg',
       });
 
       expect(draft.unreadable, ['fat_100', 'protein_100']);
       expect(draft.protein100, isNull);
+    });
+  });
+
+  group('the form points at what could not be read', () {
+    const half = FoodDraft(
+      name: 'Oat Crunch',
+      kcal100: 412,
+      carbs100: 60,
+      trust: 'photo',
+      source: 'photo',
+      unreadable: ['fat_100', 'protein_100'],
+    );
+
+    testWidgets('the fields it missed are marked, and only those',
+        (tester) async {
+      await tester.pumpWidget(confirm(draft: half));
+      await tester.pumpAndSettle();
+
+      // Two blanks, two warnings. A general "check the blanks" note under the
+      // form would leave somebody comparing the screen against the packet to
+      // work out which blanks were meant.
+      expect(find.text(ConfirmFoodScreen.couldNotRead), findsNWidgets(2));
+    });
+
+    testWidgets('a field that was read carries no warning', (tester) async {
+      await tester.pumpWidget(confirm(draft: half));
+      await tester.pumpAndSettle();
+
+      final calories = tester.widget<TextField>(
+          find.widgetWithText(TextField, 'Calories per 100g'));
+      expect(calories.decoration?.helperText, isNull);
+    });
+
+    testWidgets('an unread field is empty, never zero', (tester) async {
+      await tester.pumpWidget(confirm(draft: half));
+      await tester.pumpAndSettle();
+
+      final fat =
+          tester.widget<TextField>(find.widgetWithText(TextField, 'Fat per 100g'));
+      expect(fat.controller?.text, '',
+          reason: 'a zero here is a claim that the food has no fat, which is '
+              'a different thing from not having been able to read it');
+    });
+
+    testWidgets('filling one in clears its warning and leaves the other',
+        (tester) async {
+      await tester.pumpWidget(confirm(draft: half));
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+          find.widgetWithText(TextField, 'Fat per 100g'), '18');
+      await tester.pumpAndSettle();
+
+      expect(find.text(ConfirmFoodScreen.couldNotRead), findsOneWidget);
+    });
+
+    testWidgets('a hand-typed food is not marked up at all', (tester) async {
+      await tester.pumpWidget(confirm());
+      await tester.pumpAndSettle();
+
+      expect(find.text(ConfirmFoodScreen.couldNotRead), findsNothing);
     });
   });
 }
