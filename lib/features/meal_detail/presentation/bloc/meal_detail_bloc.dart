@@ -11,6 +11,8 @@ import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
+import 'package:opennutritracker/features/household/data/food_shares.dart';
+import 'package:opennutritracker/features/household/data/food_ledger.dart';
 
 part 'meal_detail_event.dart';
 
@@ -22,9 +24,10 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
   final AddTrackedDayUsecase _addTrackedDayUsecase;
   final GetKcalGoalUsecase _getKcalGoalUsecase;
   final GetMacroGoalUsecase _getMacroGoalUsecase;
+  final FoodLedger _household;
 
   MealDetailBloc(this._addIntakeUseCase, this._addTrackedDayUsecase,
-      this._getKcalGoalUsecase, this._getMacroGoalUsecase)
+      this._getKcalGoalUsecase, this._getMacroGoalUsecase, this._household)
       : super(MealDetailInitial(
             totalQuantityConverted: '100',
             selectedUnit: UnitDropdownItem.gml.toString())) {
@@ -46,18 +49,8 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
         final quantity =
             double.parse(selectedTotalQuantity.replaceAll(',', '.'));
 
-        // Convert quantity based on selected unit
-        double convertedQuantity = quantity;
-        if (selectedUnit == UnitDropdownItem.serving.toString()) {
-          // For serving size, multiply by the product's serving quantity
-          if (event.meal.servingQuantity != null) {
-            convertedQuantity = quantity * event.meal.servingQuantity!;
-          }
-        } else if (selectedUnit == UnitDropdownItem.oz.toString()) {
-          convertedQuantity = UnitCalc.ozToG(quantity);
-        } else if (selectedUnit == UnitDropdownItem.flOz.toString()) {
-          convertedQuantity = UnitCalc.flOzToMl(quantity);
-        }
+        final convertedQuantity =
+            convertQuantity(event.meal, quantity, selectedUnit);
 
         emit(state.copyWith(
             totalQuantityConverted: convertedQuantity.toString(),
@@ -72,8 +65,47 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
     });
   }
 
+  /// Put a food on a day.
+  ///
+  /// Two writes, and deliberately not one. The phone's own diary is what the
+  /// person holding this handset looks at; the household ledger is what the
+  /// house holds and what the other phone reads. Both have always been needed
+  /// and until now only the first happened, so nothing logged on a screen ever
+  /// reached the Mac Mini at all.
+  ///
+  /// This is the one place worth putting it: five different screens — Home,
+  /// Diary, the food search, the portion sheet — all add a food by calling
+  /// this method, so the household write lands on every one of them at once
+  /// rather than being remembered five times.
+  ///
+  /// [alsoFor] carries anybody else the same food was for: the "both of us"
+  /// answer. Each of them gets their own row, worked out from their own
+  /// amount, and every row is authored by whoever is holding the phone. Their
+  /// share goes to the household ledger only — this phone's diary belongs to
+  /// this phone's person.
+  /// The typed amount in the unit the ledger keeps: grams, or millilitres.
+  ///
+  /// Pulled out of the calculation event so the "both of us" field can put the
+  /// other person's amount through exactly the same arithmetic. Two copies of
+  /// this would be two people's dinners disagreeing by an ounce.
+  static double convertQuantity(MealEntity meal, double quantity, String unit) {
+    if (unit == UnitDropdownItem.serving.toString()) {
+      // For serving size, multiply by the product's serving quantity
+      if (meal.servingQuantity != null) {
+        return quantity * meal.servingQuantity!;
+      }
+      return quantity;
+    }
+    if (unit == UnitDropdownItem.oz.toString()) return UnitCalc.ozToG(quantity);
+    if (unit == UnitDropdownItem.flOz.toString()) {
+      return UnitCalc.flOzToMl(quantity);
+    }
+    return quantity;
+  }
+
   void addIntake(BuildContext context, String unit, String amountText,
-      IntakeTypeEntity type, MealEntity meal, DateTime day) async {
+      IntakeTypeEntity type, MealEntity meal, DateTime day,
+      {List<FoodShare> alsoFor = const []}) async {
     final quantity = double.parse(amountText.replaceAll(',', '.'));
 
     final intakeEntity = IntakeEntity(
@@ -85,6 +117,24 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
         dateTime: day);
     await _addIntakeUseCase.addIntake(intakeEntity);
     _updateTrackedDay(intakeEntity, day);
+    await _alsoTellTheHousehold(type, meal, day, quantity, alsoFor);
+  }
+
+  Future<void> _alsoTellTheHousehold(IntakeTypeEntity type, MealEntity meal,
+      DateTime day, double mine, List<FoodShare> alsoFor) {
+    final n = meal.nutriments;
+    return _household.add(
+      day: day,
+      slot: type.name,
+      label: meal.name ?? '',
+      liquid: meal.isLiquid,
+      mine: mine,
+      alsoFor: alsoFor,
+      kcalPerUnit: n.energyPerUnit,
+      proteinPerUnit: n.proteinsPerUnit,
+      fatPerUnit: n.fatPerUnit,
+      carbsPerUnit: n.carbohydratesPerUnit,
+    );
   }
 
   Future<void> _updateTrackedDay(

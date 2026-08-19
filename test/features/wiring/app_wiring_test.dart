@@ -167,6 +167,46 @@ void main() {
     });
   });
 
+  group('food added on a screen', () {
+    test('every screen that adds a food goes through the one method', () {
+      // Home, Diary, the food search and the portion sheet all add a food by
+      // calling MealDetailBloc.addIntake. That is why the household write was
+      // put there and not on the sheet: one line covers four screens, and a
+      // fifth screen added later gets it without anybody remembering.
+      for (final path in [
+        'lib/features/home/presentation/widgets/intake_vertical_list.dart',
+        'lib/features/diary/diary_page.dart',
+        'lib/features/add_meal/presentation/add_meal_screen.dart',
+        'lib/features/meal_detail/presentation/widgets/meal_detail_bottom_sheet.dart',
+      ]) {
+        expect(_read(path).contains('addIntake('), isTrue,
+            reason: '$path stopped adding food the shared way, so the '
+                'household write no longer reaches it');
+      }
+    });
+
+    test('that method reaches the household', () {
+      final bloc = _read(
+          'lib/features/meal_detail/presentation/bloc/meal_detail_bloc.dart');
+      expect(bloc.contains('_alsoTellTheHousehold('), isTrue,
+          reason: 'food added on any screen never leaves the phone');
+      expect(bloc.contains('FoodLedger'), isTrue,
+          reason: 'the bloc has nothing to write to the household with');
+      final locator = _read('lib/core/utils/locator.dart');
+      expect(locator.contains('FoodLedger('), isTrue,
+          reason: 'the household half of adding a food is never built');
+    });
+
+    test('the portion sheet asks who it was for', () {
+      final sheet = _read(
+          'lib/features/meal_detail/presentation/widgets/meal_detail_bottom_sheet.dart');
+      expect(sheet.contains('WhoWasItFor('), isTrue,
+          reason: 'there is no way to say a meal was for both of you');
+      expect(sheet.contains('alsoFor: _shares()'), isTrue,
+          reason: 'the answer is asked for and then thrown away');
+    });
+  });
+
   group('weight', () {
     test('there is one weight row on Profile, not two', () {
       final profile = _read('lib/features/profile/profile_page.dart');

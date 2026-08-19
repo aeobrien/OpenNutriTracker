@@ -23,6 +23,7 @@ class HouseholdRepository {
   static const _deviceIdKey = 'householdDeviceId';
   static const _ownerKey = 'householdOwnerPersonId';
   static const _settingsKeyPrefix = 'householdSettings_';
+  static const _peopleKey = 'householdPeople';
 
   final ConfigDao _config;
   final HouseholdApi _api;
@@ -57,7 +58,40 @@ class HouseholdRepository {
 
   Future<bool> needsOwnerPrompt() async => (await storedOwner()) == null;
 
-  Future<List<HouseholdPerson>> people() => _api.people();
+  /// Who lives here.
+  ///
+  /// Kept locally after the first successful answer, for the same reason the
+  /// settings are: a screen that needs to know there are two of you must still
+  /// work when the Mac Mini is asleep.
+  ///
+  /// An unreachable house is only softened into the remembered answer when
+  /// there *is* a remembered answer. With nothing to fall back on it still
+  /// throws, and that matters: the screen that asks whose phone this is has to
+  /// be able to say "can't reach the kitchen computer" rather than show an
+  /// empty house, and "we cannot ask" and "nobody lives here" must never
+  /// arrive looking the same.
+  Future<List<HouseholdPerson>> people() async {
+    try {
+      final fresh = await _api.people();
+      await _config.setValue(
+          _peopleKey,
+          jsonEncode(
+              [for (final p in fresh) {'id': p.id, 'name': p.name}]));
+      return fresh;
+    } on HouseholdUnreachable {
+      final remembered = await cachedPeople();
+      if (remembered.isEmpty) rethrow;
+      return remembered;
+    }
+  }
+
+  Future<List<HouseholdPerson>> cachedPeople() async {
+    final raw = await _config.getValue(_peopleKey);
+    if (raw == null) return const [];
+    return (jsonDecode(raw) as List)
+        .map((e) => HouseholdPerson.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
 
   /// Say who this phone belongs to — on first run, or later when it changes
   /// hands.

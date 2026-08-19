@@ -83,6 +83,7 @@ import 'package:opennutritracker/features/settings/presentation/bloc/export_impo
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/data/outbox.dart';
@@ -145,6 +146,8 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<Outbox>(() => householdOutbox);
   locator.registerLazySingleton<HouseholdLogger>(
       () => HouseholdLogger(householdRepository, householdOutbox));
+  locator.registerLazySingleton<FoodLedger>(
+      () => FoodLedger(locator<HouseholdLogger>()));
   locator.registerLazySingleton<DayRepository>(
       () => DayRepository(householdApi, householdRepository));
 
@@ -208,7 +211,8 @@ Future<void> initLocator() async {
   locator.registerFactory<ActivityDetailBloc>(() => ActivityDetailBloc(
       locator(), locator(), locator(), locator(), locator()));
   locator.registerFactory<MealDetailBloc>(
-      () => MealDetailBloc(locator(), locator(), locator(), locator()));
+      () => MealDetailBloc(
+          locator(), locator(), locator(), locator(), locator()));
   locator.registerFactory<ScannerBloc>(() => ScannerBloc(locator(), locator()));
   locator.registerFactory<EditMealBloc>(() => EditMealBloc(locator()));
   locator.registerFactory<AddMealBloc>(() => AddMealBloc(locator()));

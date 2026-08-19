@@ -7,10 +7,14 @@ import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dar
 import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
+import 'package:opennutritracker/features/household/data/food_shares.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/domain/household_person.dart';
+import 'package:opennutritracker/features/household/presentation/who_was_it_for.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
-class MealDetailBottomSheet extends StatelessWidget {
+class MealDetailBottomSheet extends StatefulWidget {
   final MealEntity product;
   final DateTime day;
   final IntakeTypeEntity intakeTypeEntity;
@@ -21,6 +25,10 @@ class MealDetailBottomSheet extends StatelessWidget {
 
   final Function(String?, String?) onQuantityOrUnitChanged;
 
+  /// Only so a test can hand in a household without a locator. The running app
+  /// leaves it null and the sheet fetches its own.
+  final HouseholdRepository? household;
+
   const MealDetailBottomSheet(
       {super.key,
       required this.product,
@@ -29,7 +37,29 @@ class MealDetailBottomSheet extends StatelessWidget {
       required this.quantityTextController,
       required this.onQuantityOrUnitChanged,
       required this.mealDetailBloc,
-      required this.selectedUnit});
+      required this.selectedUnit,
+      this.household});
+
+  @override
+  State<MealDetailBottomSheet> createState() => _MealDetailBottomSheetState();
+}
+
+class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
+  MealEntity get product => widget.product;
+  DateTime get day => widget.day;
+  IntakeTypeEntity get intakeTypeEntity => widget.intakeTypeEntity;
+  TextEditingController get quantityTextController =>
+      widget.quantityTextController;
+  MealDetailBloc get mealDetailBloc => widget.mealDetailBloc;
+  String get selectedUnit => widget.selectedUnit;
+  Function(String?, String?) get onQuantityOrUnitChanged =>
+      widget.onQuantityOrUnitChanged;
+
+  /// The other person and the amount they typed, or nulls while this is just
+  /// mine. Converted only at the moment of adding, through the same arithmetic
+  /// as my own.
+  HouseholdPerson? _other;
+  double? _theirs;
 
   @override
   Widget build(BuildContext context) {
@@ -113,6 +143,14 @@ class MealDetailBottomSheet extends StatelessWidget {
                         onQuantityOrUnitChanged: onQuantityOrUnitChanged,
                       ),
                       const SizedBox(height: 8.0),
+                      WhoWasItFor(
+                        myAmount: quantityTextController,
+                        household: widget.household,
+                        onChanged: (other, theirs) {
+                          _other = other;
+                          _theirs = theirs;
+                        },
+                      ),
                       SizedBox(
                         width: double.infinity, // Make button full width
                         child: ElevatedButton.icon(
@@ -151,6 +189,23 @@ class MealDetailBottomSheet extends StatelessWidget {
         });
   }
 
+  /// The other person's share, in the unit the ledger keeps.
+  ///
+  /// Worked out from what they had, never from what I had — the two figures
+  /// stay independent all the way to the server, which is the difference
+  /// between one meal on two days and one meal halved.
+  List<FoodShare> _shares() {
+    final other = _other;
+    final theirs = _theirs;
+    if (other == null || theirs == null) return const [];
+    return [
+      FoodShare(
+          personId: other.id,
+          quantity: MealDetailBloc.convertQuantity(
+              product, theirs, mealDetailBloc.state.selectedUnit)),
+    ];
+  }
+
   bool _hasRequiredProductInfoMissing() {
     final productNutriments = product.nutriments;
     if (productNutriments.energyKcal100 == null ||
@@ -170,7 +225,8 @@ class MealDetailBottomSheet extends StatelessWidget {
         mealDetailBloc.state.totalQuantityConverted,
         intakeTypeEntity,
         product,
-        day);
+        day,
+        alsoFor: _shares());
 
     // Refresh Home Page
     locator<HomeBloc>().add(const LoadItemsEvent());
