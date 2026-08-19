@@ -52,7 +52,7 @@ class _WhosePhonePageState extends State<WhosePhonePage> {
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() => _problem =
-          "Can't reach the kitchen computer, so I don't know who's in the "
+          "${e.headline}, so I don't know who's in the "
           'house yet. (${e.message})');
     }
   }
@@ -68,9 +68,8 @@ class _WhosePhonePageState extends State<WhosePhonePage> {
       widget.onChosen?.call();
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
-      setState(() => _problem =
-          "Couldn't tell the kitchen computer, so nothing has been saved yet. "
-          'Try again in a moment. (${e.message})');
+      setState(() => _problem = '${e.headline}, so nothing has been saved '
+          'yet. Try again in a moment. (${e.message})');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

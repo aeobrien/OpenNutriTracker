@@ -46,7 +46,8 @@ class HouseholdLabelReader {
     }
     final Map<String, dynamic> body;
     try {
-      body = await _api.post('/household/label/read', {'shots': encoded});
+      body = await _api.post('/household/label/read', {'shots': encoded},
+          timeout: HouseholdApi.readingALabel);
     } on HouseholdRefused catch (e) {
       throw LabelUnreadable(e.message);
     }

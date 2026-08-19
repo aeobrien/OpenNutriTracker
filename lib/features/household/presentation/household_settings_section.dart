@@ -83,9 +83,8 @@ class _HouseholdSettingsSectionState extends State<HouseholdSettingsSection> {
       widget.onChanged?.call();
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
-      setState(() => _problem =
-          "Couldn't tell the kitchen computer, so this phone still belongs to "
-          '${_nameOf(_ownerId)}. (${e.message})');
+      setState(() => _problem = '${e.headline}, so this phone still belongs '
+          'to ${_nameOf(_ownerId)}. (${e.message})');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -115,7 +114,7 @@ class _HouseholdSettingsSectionState extends State<HouseholdSettingsSection> {
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() => _problem =
-          "Couldn't reach the kitchen computer, so that hasn't been saved. "
+          "${e.headline}, so that hasn't been saved. "
           '(${e.message})');
     } finally {
       if (mounted) setState(() => _busy = false);

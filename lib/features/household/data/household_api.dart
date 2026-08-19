@@ -5,13 +5,42 @@ import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 
-/// The Mac Mini could not be reached — no network, wrong address, the server is
-/// down, or it took too long. Work stays in the queue and is tried again.
+/// The Mac Mini could not be reached — no network, wrong address, or the server
+/// is down. Work stays in the queue and is tried again.
 class HouseholdUnreachable implements Exception {
   final String message;
   HouseholdUnreachable(this.message);
+
+  /// The first half of the sentence a screen shows, so that every screen says
+  /// the same true thing about the same fault.
+  ///
+  /// This exists because they did not. Every screen wrote "can't reach the
+  /// kitchen computer" by hand, so a Mini that answered slowly was reported in
+  /// the same words as a Mini that was not there — and on 19 August that
+  /// sentence was shown to Aidan when the server had in fact answered him
+  /// perfectly well, just not within the time the phone was willing to wait.
+  String get headline => "Can't reach the kitchen computer";
+
   @override
   String toString() => 'HouseholdUnreachable: $message';
+}
+
+/// The Mac Mini was reachable and simply took longer than this call was willing
+/// to wait.
+///
+/// Deliberately a *kind of* [HouseholdUnreachable] rather than a separate
+/// exception: everything that queues, retries and holds work should treat it
+/// exactly as it always did. The only thing that changes is what the person is
+/// told, because "it is being slow" and "it is not there" are different facts
+/// and only one of them is fixed by walking home.
+class HouseholdTooSlow extends HouseholdUnreachable {
+  final Duration waited;
+
+  HouseholdTooSlow(this.waited)
+      : super('it did not answer within ${waited.inSeconds} seconds');
+
+  @override
+  String get headline => 'The kitchen computer is taking too long to answer';
 }
 
 /// The Mini was reached and said no. Trying the identical request again will
@@ -27,7 +56,20 @@ class HouseholdRefused implements Exception {
 
 /// The phone's side of the /household/ endpoints on the Mac Mini.
 class HouseholdApi {
-  static const _timeout = Duration(seconds: 15);
+  /// What an ordinary call is allowed to take. Reading a setting, saving a
+  /// weight, registering the phone — all of them are a small amount of work on
+  /// a machine in the next room, so a wait this long already means something is
+  /// wrong and the person is better off being told.
+  static const ordinary = Duration(seconds: 10);
+
+  /// What reading a photographed packet is allowed to take.
+  ///
+  /// That call sends three photographs to a model and waits for it to read
+  /// them. It is not the same kind of work as fetching a number, and giving it
+  /// the same allowance was the fault: on 19 August the Mini read the packet
+  /// and answered, and the phone had already given up and told Aidan it could
+  /// not reach the house.
+  static const readingALabel = Duration(minutes: 3);
 
   final String baseUrl;
   final http.Client _client;
@@ -68,14 +110,15 @@ class HouseholdApi {
     return body;
   }
 
-  Future<Map<String, dynamic>> get(String path) async {
+  Future<Map<String, dynamic>> get(String path, {Duration? timeout}) async {
+    final limit = timeout ?? ordinary;
     try {
       final r = await _client
           .get(Uri.parse('$_base$path'), headers: _headers)
-          .timeout(_timeout);
+          .timeout(limit);
       return _decode(r);
     } on TimeoutException {
-      throw HouseholdUnreachable('the server did not answer in time');
+      throw HouseholdTooSlow(limit);
     } on http.ClientException catch (e) {
       throw HouseholdUnreachable(e.message);
     }
@@ -83,14 +126,16 @@ class HouseholdApi {
 
   /// The one way anything is sent to the server. The outbox calls this and
   /// nothing else does, so there is a single place where "sent" is decided.
-  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> post(String path, Map<String, dynamic> body,
+      {Duration? timeout}) async {
+    final limit = timeout ?? ordinary;
     try {
       final r = await _client
           .post(Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body))
-          .timeout(_timeout);
+          .timeout(limit);
       return _decode(r);
     } on TimeoutException {
-      throw HouseholdUnreachable('the server did not answer in time');
+      throw HouseholdTooSlow(limit);
     } on http.ClientException catch (e) {
       throw HouseholdUnreachable(e.message);
     }

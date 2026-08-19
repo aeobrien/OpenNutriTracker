@@ -60,7 +60,7 @@ class _WeightSectionState extends State<WeightSection> {
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() => _problem =
-          "Can't reach the kitchen computer, so your weights aren't showing "
+          "${e.headline}, so your weights aren't showing "
           'right now. (${e.message})');
     }
   }

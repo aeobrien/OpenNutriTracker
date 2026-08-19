@@ -102,12 +102,12 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
       draft = await widget.reader.read(shots);
     } on LabelUnreadable catch (e) {
       couldNotRead = e.message;
-    } on HouseholdUnreachable {
+    } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() {
         _busy = false;
-        _problem = "Can't reach the kitchen computer, so the photographs "
-            "can't be read yet. They're kept — try again when you're home.";
+        _problem = '${e.headline}, so the photographs '
+            "can't be read yet. They're kept — try again in a moment.";
       });
       return;
     }

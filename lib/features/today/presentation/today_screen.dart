@@ -115,7 +115,7 @@ class _TodayScreenState extends State<TodayScreen> {
       setState(() {
         // Deliberately not an empty day: a day with nothing on it is a claim
         // that this person has eaten nothing, and that is not what happened.
-        _problem = "Can't reach the kitchen computer, so today isn't showing "
+        _problem = "${e.headline}, so today isn't showing "
             'right now. Anything you log will be sent when it comes back. '
             '(${e.message})';
         _loading = false;
