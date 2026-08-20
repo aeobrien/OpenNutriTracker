@@ -17,270 +17,277 @@ class AddItemBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Scrollable, because this list grew. On 20 August 2026 it ran off the
+    // bottom of the phone with a Flutter overflow stripe across it: Dinner was
+    // cut in half and Snack could not be reached at all. A plain Column cannot
+    // give way when its contents outgrow the screen, and this one has outgrown
+    // it — a way in has to stay reachable however many ways in there are.
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              S.of(context).addItemLabel,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                S.of(context).addItemLabel,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.onSurface),
+              ),
             ),
-          ),
-          ListTile(
-            title: Text(
-              S.of(context).addFoodLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ListTile(
+              title: Text(
+                S.of(context).addFoodLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                _suggestedMealLabel(context),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(Icons.restaurant,
+                      color: Theme.of(context).colorScheme.primary)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed(NavigationOptions.addMealRoute,
+                    arguments: AddMealScreenArguments(null, day));
+              },
             ),
-            subtitle: Text(
-              _suggestedMealLabel(context),
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            const Divider(indent: 16, endIndent: 16),
+            // The two ways a packet the app has never seen gets into the
+            // household food list. They sit together on purpose: the hand-typed
+            // one is not a fallback for a failed photograph, it is the route that
+            // works on the days the camera does not.
+            ListTile(
+              title: Text(
+                'Photograph a packet',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                'Front, nutrition panel, ingredients — three shots',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7)),
+              ),
+              leading: SizedBox(
+                  height: double.infinity,
+                  child: Icon(Icons.photo_camera,
+                      color: Theme.of(context).colorScheme.primary)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context)
+                    .pushNamed(NavigationOptions.labelCaptureRoute);
+              },
             ),
-            leading: Container(
-                height: double.infinity,
-                child: Icon(Icons.restaurant,
-                    color: Theme.of(context).colorScheme.primary)),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed(NavigationOptions.addMealRoute,
-                  arguments: AddMealScreenArguments(null, day));
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          // The two ways a packet the app has never seen gets into the
-          // household food list. They sit together on purpose: the hand-typed
-          // one is not a fallback for a failed photograph, it is the route that
-          // works on the days the camera does not.
-          ListTile(
-            title: Text(
-              'Photograph a packet',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              title: Text(
+                'Add a food by hand',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                'Type the numbers off the packet yourself',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.7)),
+              ),
+              leading: SizedBox(
+                  height: double.infinity,
+                  child: Icon(Icons.edit_note,
+                      color: Theme.of(context).colorScheme.primary)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context)
+                    .pushNamed(NavigationOptions.addFoodByHandRoute);
+              },
             ),
-            subtitle: Text(
-              'Front, nutrition panel, ingredients — three shots',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.7)),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              title: Text(
+                S.of(context).quickAddLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).quickAddSubtitle,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(Icons.bolt,
+                      color: Theme.of(context).colorScheme.primary)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed(
+                    NavigationOptions.quickAddRoute,
+                    arguments: QuickAddScreenArguments(day));
+              },
             ),
-            leading: SizedBox(
-                height: double.infinity,
-                child: Icon(Icons.photo_camera,
-                    color: Theme.of(context).colorScheme.primary)),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context)
-                  .pushNamed(NavigationOptions.labelCaptureRoute);
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          ListTile(
-            title: Text(
-              'Add a food by hand',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              title: Text(
+                S.of(context).scanLabelTitle,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).scanLabelSubtitle,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(Icons.smart_toy_outlined,
+                      color: Theme.of(context).colorScheme.primary)),
+              onTap: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushNamed(
+                    NavigationOptions.labelScanRoute,
+                    arguments: LabelScanScreenArguments(day: day));
+              },
             ),
-            subtitle: Text(
-              'Type the numbers off the packet yourself',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.7)),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              title: Text(
+                S.of(context).activityLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).activityExample,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              // ignore: sized_box_for_whitespace
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(
+                    UserActivityEntity.getIconData(),
+                    color: Theme.of(context).colorScheme.onSurface,
+                  )),
+              onTap: () {
+                _showAddActivityScreen(context);
+              },
             ),
-            leading: SizedBox(
-                height: double.infinity,
-                child: Icon(Icons.edit_note,
-                    color: Theme.of(context).colorScheme.primary)),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context)
-                  .pushNamed(NavigationOptions.addFoodByHandRoute);
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          ListTile(
-            title: Text(
-              S.of(context).quickAddLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              title: Text(
+                S.of(context).breakfastLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).breakfastExample,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              // ignore: sized_box_for_whitespace
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(IntakeTypeEntity.breakfast.getIconData())),
+              onTap: () {
+                _showAddItemScreen(context, AddMealType.breakfastType);
+              },
             ),
-            subtitle: Text(
-              S.of(context).quickAddSubtitle,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            ListTile(
+              title: Text(
+                S.of(context).lunchLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).lunchExample,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              // ignore: sized_box_for_whitespace
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(IntakeTypeEntity.lunch.getIconData())),
+              onTap: () {
+                _showAddItemScreen(context, AddMealType.lunchType);
+              },
             ),
-            leading: Container(
-                height: double.infinity,
-                child: Icon(Icons.bolt,
-                    color: Theme.of(context).colorScheme.primary)),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed(
-                  NavigationOptions.quickAddRoute,
-                  arguments: QuickAddScreenArguments(day));
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          ListTile(
-            title: Text(
-              S.of(context).scanLabelTitle,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+            ListTile(
+              title: Text(
+                S.of(context).dinnerLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).dinnerExample,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              // ignore: sized_box_for_whitespace
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(IntakeTypeEntity.dinner.getIconData())),
+              onTap: () {
+                _showAddItemScreen(context, AddMealType.dinnerType);
+              },
             ),
-            subtitle: Text(
-              S.of(context).scanLabelSubtitle,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+            ListTile(
+              title: Text(
+                S.of(context).snackLabel,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleLarge
+                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+              ),
+              subtitle: Text(
+                S.of(context).snackExample,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color:
+                        Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+              // ignore: sized_box_for_whitespace
+              leading: Container(
+                  height: double.infinity,
+                  child: Icon(IntakeTypeEntity.snack.getIconData())),
+              onTap: () {
+                _showAddItemScreen(context, AddMealType.snackType);
+              },
             ),
-            leading: Container(
-                height: double.infinity,
-                child: Icon(Icons.smart_toy_outlined,
-                    color: Theme.of(context).colorScheme.primary)),
-            onTap: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed(
-                  NavigationOptions.labelScanRoute,
-                  arguments: LabelScanScreenArguments(day: day));
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          ListTile(
-            title: Text(
-              S.of(context).activityLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-            ),
-            subtitle: Text(
-              S.of(context).activityExample,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            // ignore: sized_box_for_whitespace
-            leading: Container(
-                height: double.infinity,
-                child: Icon(
-                  UserActivityEntity.getIconData(),
-                  color: Theme.of(context).colorScheme.onSurface,
-                )),
-            onTap: () {
-              _showAddActivityScreen(context);
-            },
-          ),
-          const Divider(indent: 16, endIndent: 16),
-          ListTile(
-            title: Text(
-              S.of(context).breakfastLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-            ),
-            subtitle: Text(
-              S.of(context).breakfastExample,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            // ignore: sized_box_for_whitespace
-            leading: Container(
-                height: double.infinity,
-                child: Icon(IntakeTypeEntity.breakfast.getIconData())),
-            onTap: () {
-              _showAddItemScreen(context, AddMealType.breakfastType);
-            },
-          ),
-          ListTile(
-            title: Text(
-              S.of(context).lunchLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-            ),
-            subtitle: Text(
-              S.of(context).lunchExample,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            // ignore: sized_box_for_whitespace
-            leading: Container(
-                height: double.infinity,
-                child: Icon(IntakeTypeEntity.lunch.getIconData())),
-            onTap: () {
-              _showAddItemScreen(context, AddMealType.lunchType);
-            },
-          ),
-          ListTile(
-            title: Text(
-              S.of(context).dinnerLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-            ),
-            subtitle: Text(
-              S.of(context).dinnerExample,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            // ignore: sized_box_for_whitespace
-            leading: Container(
-                height: double.infinity,
-                child: Icon(IntakeTypeEntity.dinner.getIconData())),
-            onTap: () {
-              _showAddItemScreen(context, AddMealType.dinnerType);
-            },
-          ),
-          ListTile(
-            title: Text(
-              S.of(context).snackLabel,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
-            ),
-            subtitle: Text(
-              S.of(context).snackExample,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            // ignore: sized_box_for_whitespace
-            leading: Container(
-                height: double.infinity,
-                child: Icon(IntakeTypeEntity.snack.getIconData())),
-            onTap: () {
-              _showAddItemScreen(context, AddMealType.snackType);
-            },
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

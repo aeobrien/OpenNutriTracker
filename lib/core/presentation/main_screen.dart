@@ -117,6 +117,10 @@ class _MainScreenState extends State<MainScreen> {
     showModalBottomSheet(
         context: context,
         isScrollControlled: true,
+        // Keeps the sheet below the status bar. Without it the heading sat on
+        // top of the clock, because a scroll-controlled sheet is free to take
+        // the whole screen and this one is now tall enough to want it.
+        useSafeArea: true,
         shape: const RoundedRectangleBorder(
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(16.0),

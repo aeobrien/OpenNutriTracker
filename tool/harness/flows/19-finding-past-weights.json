@@ -1,0 +1,9 @@
+[
+  { "action": "waitfor", "label": "Profile", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Profile", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "01-profile" },
+  { "action": "press", "label": "Past weights", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "02-past-weights" }
+]

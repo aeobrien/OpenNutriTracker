@@ -1,0 +1,8 @@
+[
+  { "action": "waitfor", "label": "Home", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Home", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "press", "label": "Add", "type": "button" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "01-the-add-sheet" }
+]

@@ -1,0 +1,11 @@
+[
+  { "action": "waitfor", "label": "Home", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Home", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "press", "label": "Add", "type": "button" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "01-top-of-the-sheet" },
+  { "action": "swipe", "label": "Scan Label", "match": "contains", "direction": "up" },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "screenshot", "name": "02-scrolled-to-the-bottom" }
+]
