@@ -20,6 +20,16 @@ class WeightHistorySheet extends StatefulWidget {
   const WeightHistorySheet({super.key, required this.repository});
 
   static const heading = 'Weight';
+
+  /// What the control that opens this sheet says on the profile page.
+  ///
+  /// It used to be a bare chart icon whose only explanation was a tooltip, and
+  /// a tooltip is a thing you get by hovering a mouse — there is no mouse. On
+  /// 20 August 2026 Aidan was asked to bring his weights in from Apple Health,
+  /// which lives in here, and reported: "No idea where this is." He had been
+  /// tapping the row, which opens the weight dialog. An unlabelled icon on a
+  /// row that already has a purpose is not a way in.
+  static const openLabel = 'Past weights';
   static const nothingYet = 'No weights yet.';
   static const bringIn = 'Bring in from Apple Health';
   static const bringingIn = 'Bringing them in…';

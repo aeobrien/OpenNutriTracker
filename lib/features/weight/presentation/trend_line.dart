@@ -28,24 +28,36 @@ class TrendLine {
   static const steady = 'Holding steady';
   static const notEnoughYet = 'Not enough weigh-ins yet to say which way.';
 
-  /// Null when there is nothing to say — no readings at all. The line is left
-  /// off entirely rather than showing an empty one.
+  /// Null when there is nothing to say. The line is left off entirely rather
+  /// than showing an empty one — and, since 20 August 2026, rather than showing
+  /// a bare smoothed figure.
+  ///
+  /// The rule this file already stated at the top and then broke: a trend is a
+  /// *direction*, not a number. It used to open every line with "Trending 82.4
+  /// kg", including in the case where the very next clause admitted it could
+  /// not yet say which way anything was going. Aidan read that under a weight
+  /// of 115 kg and asked, exactly reasonably, where 82.4 had come from. It was
+  /// a smoothed average across two readings — one of them a leftover test entry
+  /// that was not his — and so it matched neither the scale nor the app, which
+  /// is the one thing a number sitting under a weight must never do. Two
+  /// figures that disagree on one row make a person distrust both, and they are
+  /// right to.
+  ///
+  /// So the figure is gone. What is left is what a person would actually say
+  /// about their own weight: which way it is going and how fast, or that it is
+  /// holding steady, or nothing at all until there is enough to know.
   static String? of(WeightHistory history, {bool imperial = false}) {
     if (history.isEmpty || history.trend == null) return null;
     final unit = imperial ? 'lbs' : 'kg';
-    final shown = imperial
-        ? history.trend!.toDouble() * perKg
-        : history.trend!.toDouble();
-    final trend = 'Trending ${shown.toStringAsFixed(1)} $unit';
 
     final week = history.aWeek;
-    if (week == null) return '$trend · $notEnoughYet';
-    if (week.abs() < steadyWithin) return '$trend · $steady';
+    if (week == null) return notEnoughYet;
+    if (week.abs() < steadyWithin) return steady;
 
     final moved = imperial
         ? week.abs().toDouble() * perKg
         : week.abs().toDouble();
-    final way = week < 0 ? 'down' : 'up';
-    return '$trend · $way ${moved.toStringAsFixed(1)} $unit a week';
+    final way = week < 0 ? 'Down' : 'Up';
+    return '$way ${moved.toStringAsFixed(1)} $unit a week';
   }
 }

@@ -67,7 +67,10 @@ class _ProfilePageState extends State<ProfilePage> {
           return _getLoadingContent();
         } else if (state is ProfileLoadedState) {
           return _getLoadedContent(
-              context, state.userEntity, state.usesImperialUnits);
+            context,
+            state.userEntity,
+            state.usesImperialUnits,
+          );
         } else {
           return _getLoadingContent();
         }
@@ -76,13 +79,14 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _getLoadingContent() {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _getLoadedContent(
-      BuildContext context, UserEntity user, bool usesImperialUnits) {
+    BuildContext context,
+    UserEntity user,
+    bool usesImperialUnits,
+  ) {
     return ListView(
       children: [
         const SizedBox(height: 32.0),
@@ -134,38 +138,43 @@ class _ProfilePageState extends State<ProfilePage> {
         // this is where a person already looks for what they weigh, and the
         // question "which way is it going" belongs beside the answer to "what
         // is it", not somewhere else in the app.
-        ListTile(
-          title: Text(
-            S.of(context).weightLabel,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          subtitle: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '${_profileBloc.getDisplayWeight(user, usesImperialUnits)} ${usesImperialUnits ? S.of(context).lbsLabel : S.of(context).kgLabel}',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              if (_trendLine(usesImperialUnits) != null)
+        Semantics(
+          identifier: 'profile-weight',
+          container: true,
+          explicitChildNodes: true,
+          child: ListTile(
+            title: Text(
+              S.of(context).weightLabel,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
-                  _trendLine(usesImperialUnits)!,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  '${_profileBloc.getDisplayWeight(user, usesImperialUnits)} ${usesImperialUnits ? S.of(context).lbsLabel : S.of(context).kgLabel}',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-            ],
+                if (_trendLine(usesImperialUnits) != null)
+                  Text(
+                    _trendLine(usesImperialUnits)!,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
+            leading: const SizedBox(
+              height: double.infinity,
+              child: Icon(Icons.monitor_weight_outlined),
+            ),
+            trailing: TextButton.icon(
+              icon: const Icon(Icons.show_chart_outlined, size: 18),
+              label: const Text(WeightHistorySheet.openLabel),
+              onPressed: () => _showWeightHistory(context),
+            ),
+            onTap: () {
+              _showSetWeightDialog(context, user, usesImperialUnits);
+            },
           ),
-          leading: const SizedBox(
-            height: double.infinity,
-            child: Icon(Icons.monitor_weight_outlined),
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.show_chart_outlined),
-            tooltip: WeightHistorySheet.heading,
-            onPressed: () => _showWeightHistory(context),
-          ),
-          onTap: () {
-            _showSetWeightDialog(context, user, usesImperialUnits);
-          },
         ),
         ListTile(
           title: Text(
@@ -223,10 +232,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showSetPALCategoryDialog(
-      BuildContext context, UserEntity userEntity) async {
+    BuildContext context,
+    UserEntity userEntity,
+  ) async {
     final selectedPalCategory = await showDialog<UserPALEntity>(
-        context: context,
-        builder: (BuildContext context) => const SetPALCategoryDialog());
+      context: context,
+      builder: (BuildContext context) => const SetPALCategoryDialog(),
+    );
     if (selectedPalCategory != null) {
       userEntity.pal = selectedPalCategory;
       _profileBloc.updateUser(userEntity);
@@ -234,26 +246,33 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showSetGoalDialog(
-      BuildContext context, UserEntity userEntity) async {
+    BuildContext context,
+    UserEntity userEntity,
+  ) async {
     final selectedGoal = await showDialog<UserWeightGoalEntity>(
-        context: context,
-        builder: (BuildContext context) => const SetWeightGoalDialog());
+      context: context,
+      builder: (BuildContext context) => const SetWeightGoalDialog(),
+    );
     if (selectedGoal != null) {
       userEntity.goal = selectedGoal;
       _profileBloc.updateUser(userEntity);
     }
   }
 
-  Future<void> _showSetHeightDialog(BuildContext context, UserEntity userEntity,
-      bool usesImperialUnits) async {
+  Future<void> _showSetHeightDialog(
+    BuildContext context,
+    UserEntity userEntity,
+    bool usesImperialUnits,
+  ) async {
     final selectedHeight = await showDialog<double>(
-        context: context,
-        builder: (context) => SetHeightDialog(
-              userHeight: usesImperialUnits
-                  ? UnitCalc.cmToFeet(userEntity.heightCM)
-                  : userEntity.heightCM,
-              usesImperialUnits: usesImperialUnits,
-            ));
+      context: context,
+      builder: (context) => SetHeightDialog(
+        userHeight: usesImperialUnits
+            ? UnitCalc.cmToFeet(userEntity.heightCM)
+            : userEntity.heightCM,
+        usesImperialUnits: usesImperialUnits,
+      ),
+    );
     if (selectedHeight != null) {
       if (usesImperialUnits) {
         userEntity.heightCM = UnitCalc.feetToCm(selectedHeight);
@@ -265,16 +284,20 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _showSetWeightDialog(BuildContext context, UserEntity userEntity,
-      bool usesImperialSystem) async {
+  Future<void> _showSetWeightDialog(
+    BuildContext context,
+    UserEntity userEntity,
+    bool usesImperialSystem,
+  ) async {
     final selectedWeight = await showDialog<double>(
-        context: context,
-        builder: (context) => SetWeightDialog(
-              userWeight: usesImperialSystem
-                  ? UnitCalc.kgToLbs(userEntity.weightKG)
-                  : userEntity.weightKG,
-              usesImperialUnits: usesImperialSystem,
-            ));
+      context: context,
+      builder: (context) => SetWeightDialog(
+        userWeight: usesImperialSystem
+            ? UnitCalc.kgToLbs(userEntity.weightKG)
+            : userEntity.weightKG,
+        usesImperialUnits: usesImperialSystem,
+      ),
+    );
     if (selectedWeight != null) {
       if (usesImperialSystem) {
         userEntity.weightKG = UnitCalc.lbsToKg(selectedWeight);
@@ -317,16 +340,21 @@ class _ProfilePageState extends State<ProfilePage> {
   void _alsoTellTheHousehold(BuildContext context, double kg) {
     if (!WeightTrackingScope.onIn(context)) {
       Logger('ProfilePage').info(
-          '[WEIGHT] saved locally; not shared, because this person has weight '
-          'sharing switched off');
+        '[WEIGHT] saved locally; not shared, because this person has weight '
+        'sharing switched off',
+      );
       return;
     }
-    locator<WeightRepository>().typed(DateTime.now(), kg).then((_) {
-      _loadWeights();
-    }).catchError((Object e) {
-      Logger('ProfilePage')
-          .warning('Weight saved locally but not put to the household: $e');
-    });
+    locator<WeightRepository>()
+        .typed(DateTime.now(), kg)
+        .then((_) {
+          _loadWeights();
+        })
+        .catchError((Object e) {
+          Logger(
+            'ProfilePage',
+          ).warning('Weight saved locally but not put to the household: $e');
+        });
   }
 
   String? _trendLine(bool usesImperialUnits) {
@@ -336,20 +364,25 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showWeightHistory(BuildContext context) async {
-    await WeightHistorySheet.show(context,
-        repository: locator<WeightRepository>());
+    await WeightHistorySheet.show(
+      context,
+      repository: locator<WeightRepository>(),
+    );
     // Readings may have been brought in while it was open, which moves the
     // trend on the row behind it.
     await _loadWeights();
   }
 
   Future<void> _showSetBirthdayDialog(
-      BuildContext context, UserEntity userEntity) async {
+    BuildContext context,
+    UserEntity userEntity,
+  ) async {
     final selectedDate = await showDatePicker(
-        context: context,
-        initialDate: userEntity.birthday,
-        firstDate: DateTime(1900),
-        lastDate: DateTime(2100));
+      context: context,
+      initialDate: userEntity.birthday,
+      firstDate: DateTime(1900),
+      lastDate: DateTime(2100),
+    );
     if (selectedDate != null) {
       userEntity.birthday = selectedDate;
       _profileBloc.updateUser(userEntity);
@@ -357,10 +390,13 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _showSetGenderDialog(
-      BuildContext context, UserEntity userEntity) async {
+    BuildContext context,
+    UserEntity userEntity,
+  ) async {
     final selectedGender = await showDialog<UserGenderEntity>(
-        context: context,
-        builder: (BuildContext context) => const SetGenderDialog());
+      context: context,
+      builder: (BuildContext context) => const SetGenderDialog(),
+    );
     if (selectedGender != null) {
       userEntity.gender = selectedGender;
 
