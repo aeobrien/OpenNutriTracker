@@ -39,7 +39,7 @@ YAML
 
 flutter pub get
 ( cd "$ROOT/ios" && pod install )
-# Where the harness's throwaway kitchen computer is. Only a build made by this
+# Where the harness's throwaway household server is. Only a build made by this
 # script carries an address; a phone build has none and behaves exactly as it
 # always did. Override with MANTEL_BASE_URL=... in the environment.
 MANTEL_URL="${MANTEL_BASE_URL:-http://127.0.0.1:8790}"

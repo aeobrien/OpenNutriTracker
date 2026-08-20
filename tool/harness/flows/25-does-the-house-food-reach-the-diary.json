@@ -1,0 +1,12 @@
+[
+  {"action": "systemalert", "button": "Allow", "timeout": 10, "optional": true},
+  {"action": "waitfor", "label": "Aidan", "type": "button", "timeout": 30},
+  {"action": "press", "label": "Aidan", "type": "button"},
+  {"action": "sleep", "seconds": 10},
+  {"action": "press", "label": "OK", "type": "button", "optional": true},
+  {"action": "sleep", "seconds": 8},
+  {"action": "screenshot", "name": "01-home"},
+  {"action": "press", "label": "Diary", "type": "button", "match": "contains"},
+  {"action": "sleep", "seconds": 8},
+  {"action": "screenshot", "name": "02-diary"}
+]
