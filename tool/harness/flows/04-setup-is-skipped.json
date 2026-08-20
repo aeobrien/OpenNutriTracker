@@ -3,5 +3,9 @@
   {"action": "waitfor", "label": "Aidan", "type": "button", "timeout": 25},
   {"action": "press", "label": "Aidan", "type": "button"},
   {"action": "sleep", "seconds": 8},
-  {"action": "screenshot", "name": "01-straight-in"}
+  {"action": "screenshot", "name": "01-straight-in"},
+  {"action": "press", "label": "OK", "type": "button", "optional": true},
+  {"action": "sleep", "seconds": 2},
+  {"action": "waitfor", "label": "Diary", "match": "contains", "timeout": 25},
+  {"action": "screenshot", "name": "02-the-app-itself"}
 ]

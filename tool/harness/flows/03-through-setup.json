@@ -1,7 +1,7 @@
 [
   {"action": "systemalert", "button": "Allow", "timeout": 8, "optional": true},
-  {"action": "waitfor", "label": "Aidan", "type": "button", "timeout": 25},
-  {"action": "press", "label": "Aidan", "type": "button"},
+  {"action": "waitfor", "label": "Emily", "type": "button", "timeout": 25},
+  {"action": "press", "label": "Emily", "type": "button"},
   {"action": "waitfor", "id": "accept-privacy-policy", "timeout": 20},
   {"action": "press", "id": "accept-privacy-policy"},
   {"action": "sleep", "seconds": 1},
