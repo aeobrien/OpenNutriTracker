@@ -3,18 +3,53 @@ import 'package:opennutritracker/features/household/domain/household_person.dart
 /// Something this person has eaten. Already on the ledger; the figure on it is
 /// the snapshot taken when it was logged, not a live lookup.
 class LoggedItem {
+  final int? id;
   final String label;
   final num? kcal;
   final String? slot;
   final int ownerId;
   final int authorId;
 
+  /// The name the phone gave this row when it logged it. How anything on this
+  /// phone says *which* row it means afterwards — it has no idea what number
+  /// the kitchen computer gave it.
+  final String? clientId;
+
+  /// 'provisional' while something is still working out what this row is,
+  /// 'settled' once it has. A provisional row counts towards the day like any
+  /// other, with whatever rough figure came with it, and says so.
+  final String state;
+
+  /// The words, verbatim, when this row came from somebody speaking.
+  final String? said;
+
+  /// What was taken for granted, in plain words — "cooked in oil, assumed".
+  /// Never folded into the figure: an assumption inside a number can only be
+  /// disagreed with by disagreeing with the number, which nobody can do.
+  final String? assumed;
+
+  /// When it started being worked out. Kept so a row that has been sitting
+  /// unfinished since this morning reads as stale rather than as new.
+  final DateTime? provisionalSince;
+
+  /// How many times the row has changed since it was written. Sent back with a
+  /// resolution request so a correction made while the kitchen computer was
+  /// thinking cannot be overwritten by the answer.
+  final int version;
+
   const LoggedItem({
     required this.label,
     required this.ownerId,
     required this.authorId,
+    this.id,
     this.kcal,
     this.slot,
+    this.clientId,
+    this.state = 'settled',
+    this.said,
+    this.assumed,
+    this.provisionalSince,
+    this.version = 0,
   });
 
   /// True when the other person put this on the day. Worth saying out loud on
@@ -22,12 +57,22 @@ class LoggedItem {
   /// is" and one of them explains a surprise.
   bool get enteredBySomebodyElse => authorId != ownerId;
 
+  bool get stillBeingWorkedOut => state == 'provisional';
+
   factory LoggedItem.fromJson(Map<String, dynamic> json) => LoggedItem(
+        id: json['id'] as int?,
         label: json['label'] as String,
         kcal: json['kcal'] as num?,
         slot: json['slot'] as String?,
         ownerId: json['owner_id'] as int,
         authorId: json['author_id'] as int,
+        clientId: json['client_id'] as String?,
+        state: (json['state'] as String?) ?? 'settled',
+        said: json['said'] as String?,
+        assumed: json['assumed'] as String?,
+        provisionalSince:
+            DateTime.tryParse((json['provisional_since'] as String?) ?? ''),
+        version: (json['version'] as int?) ?? 0,
       );
 }
 
@@ -145,6 +190,19 @@ class DayView {
   }
 
   bool get isEmpty => logged.isEmpty && planned.isEmpty && exercise.isEmpty;
+
+  /// The rows on this day that nothing has finished working out yet.
+  ///
+  /// Derived by asking the rows rather than read from a flag on the day. That
+  /// is deliberate: the mark on the total appears the moment somebody speaks a
+  /// row onto the day and clears itself the moment the last one settles, with
+  /// nothing anywhere having to remember to clear it.
+  List<LoggedItem> get workingOut =>
+      logged.where((e) => e.stillBeingWorkedOut).toList();
+
+  /// Whether the day's total is still moving. What puts the caveat under the
+  /// figure.
+  bool get totalIsRough => workingOut.isNotEmpty;
 
   factory DayView.fromJson(Map<String, dynamic> json) => DayView(
         day: json['day'] as String,

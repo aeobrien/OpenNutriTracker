@@ -55,6 +55,21 @@ class FakeHouseholdServer {
     'kcal', 'protein', 'fat', 'carbs', 'slot',
   ];
 
+  /// What the kitchen computer will say a spoken sentence turned out to be.
+  /// Set by a test; the real thing works it out with a model, which is tested
+  /// on the server side where the deciding actually happens.
+  List<Map<String, dynamic>> saidLines = const [];
+
+  /// The one question that comes back, when there is one.
+  String? saidQuestion;
+
+  /// Why the answer was not applied, when it was not. 'it was changed by hand
+  /// since' is the one that matters — the person got there first.
+  String? saidWhy;
+
+  /// Every sentence this was asked about, and what came with it.
+  final List<Map<String, dynamic>> saidAsked = [];
+
   /// Every request that arrived, so a test can count deliveries.
   final List<String> requests = [];
 
@@ -207,7 +222,10 @@ class FakeHouseholdServer {
   /// a week that disagree about the same Tuesday is a bug nobody can report.
   Map<String, dynamic> dayLine(int personId, String day) {
     final mine = entries.values
-        .where((e) => e['owner_id'] == personId && e['day'] == day)
+        .where((e) =>
+            e['owner_id'] == personId &&
+            e['day'] == day &&
+            e['deleted_at'] == null)
         .toList();
     final myExercise = exercise.values
         .where((e) => e['owner_id'] == personId && e['day'] == day)
@@ -240,7 +258,41 @@ class FakeHouseholdServer {
           planned.fold<num>(0, (sum, p) => sum + ((p['kcal'] ?? 0) as num)),
       'awaiting': awaiting,
       'awaiting_count': awaiting.length,
+      // Counted off the rows, exactly as the server counts it, so the phone
+      // cannot be tested against a mark that is kept somewhere it could drift.
+      'working_out': mine.where((e) => e['state'] == 'provisional').length,
+      'working_out_kcal': mine
+          .where((e) => e['state'] == 'provisional')
+          .fold<num>(0, (sum, e) => sum + ((e['kcal'] ?? 0) as num)),
     };
+  }
+
+  /// A row somebody spoke onto their day, as the server would have stored it.
+  Map<String, dynamic> spoke({
+    required String clientId,
+    required String words,
+    int personId = 1,
+    String? day,
+    num? kcal,
+    String? since,
+  }) {
+    final row = {
+      'id': entries.length + 1,
+      'client_id': clientId,
+      'day': day ?? today,
+      'owner_id': personId,
+      'author_id': personId,
+      'label': words,
+      'kcal': kcal,
+      'state': 'provisional',
+      'said': words,
+      'assumed': null,
+      'provisional_since': since ?? '2026-08-19T12:00:00',
+      'version': 0,
+      'deleted_at': null,
+    };
+    entries[clientId] = row;
+    return row;
   }
 
   /// Who the house was told planned each meal, in the order they were added.
@@ -289,15 +341,39 @@ class FakeHouseholdServer {
             'figures_off': 0,
           });
 
+  /// The named fields out of a multipart body. Enough to see what was asked;
+  /// the file part is noticed rather than decoded — the sound is the
+  /// transcriber's business and this fake is not one.
+  static Map<String, dynamic> _fields(String body) {
+    final out = <String, dynamic>{};
+    final boundary = body.split('\r\n').first;
+    for (final part in body.split(boundary)) {
+      final name = RegExp(r'name="([^"]+)"').firstMatch(part)?.group(1);
+      final blank = part.indexOf('\r\n\r\n');
+      if (name == null || blank < 0) continue;
+      out[name] = part.substring(blank + 4).trim();
+    }
+    final version = out['version'];
+    if (version is String) out['version'] = int.tryParse(version) ?? 0;
+    return out;
+  }
+
   http.Client get client => MockClient((request) async {
         if (!reachable) {
           throw http.ClientException('Connection refused', request.url);
         }
         final path = request.url.path;
         requests.add('${request.method} $path');
-        final body = request.body.isEmpty
-            ? <String, dynamic>{}
-            : jsonDecode(request.body) as Map<String, dynamic>;
+        // A recording arrives as a multipart form rather than as JSON. Only the
+        // fields are read back out — the sound itself is the transcriber's
+        // business, and this fake is not one.
+        final multipart =
+            request.headers['content-type']?.startsWith('multipart/') ?? false;
+        final body = multipart
+            ? _fields(request.body)
+            : request.body.isEmpty
+                ? <String, dynamic>{}
+                : jsonDecode(request.body) as Map<String, dynamic>;
 
         Map<String, dynamic>? result;
 
@@ -332,9 +408,81 @@ class FakeHouseholdServer {
             }
           }
           result = {'ok': true, 'settings': current};
+        } else if (path == '/household/said') {
+          final cid = body['client_id'] as String;
+          final row = entries[cid];
+          saidAsked.add({
+            'client_id': cid,
+            'version': body['version'],
+            'text': body['text'],
+            'clip': multipart,
+          });
+          if (row == null) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'no entry called $cid'}), 404,
+                headers: {'content-type': 'application/json'});
+          }
+          final heard = (body['text'] ?? row['said'] ?? '') as String;
+          final why = saidWhy;
+          if (why != null || saidLines.isEmpty) {
+            result = {
+              'ok': true,
+              'applied': false,
+              'why': why ?? 'nothing in it was recognised',
+              'said': heard,
+              'question': saidQuestion,
+              'entries': [row],
+              'day': dayLine(row['owner_id'] as int, row['day'] as String),
+            };
+          } else {
+            // The first line takes over the row that is already on the day and
+            // the rest arrive underneath it, exactly as the server does it.
+            row.addAll(saidLines.first);
+            row['state'] = 'settled';
+            row['provisional_since'] = null;
+            row['version'] = (row['version'] as int) + 1;
+            final made = <Map<String, dynamic>>[row];
+            for (var n = 1; n < saidLines.length; n++) {
+              final child = {
+                ...row,
+                ...saidLines[n],
+                'id': entries.length + 1,
+                'client_id': '$cid#${n + 1}',
+                'parent_id': row['id'],
+              };
+              entries['$cid#${n + 1}'] = child;
+              made.add(child);
+            }
+            result = {
+              'ok': true,
+              'applied': true,
+              'why': null,
+              'said': heard,
+              'question': saidQuestion,
+              'entries': made,
+              'day': dayLine(row['owner_id'] as int, row['day'] as String),
+            };
+          }
         } else if (path == '/household/entry') {
           final id = body['client_id'] as String;
-          entries.putIfAbsent(id, () => {...body, 'id': entries.length + 1});
+          entries.putIfAbsent(
+              id,
+              () => {
+                    // Stamped the way the real server stamps a new row, so a
+                    // row that arrived through the queue and one seeded by a
+                    // test are the same shape. A missing lifecycle is settled:
+                    // every row that existed before any of this did.
+                    'state': 'settled',
+                    'said': null,
+                    'assumed': null,
+                    'provisional_since': null,
+                    'version': 0,
+                    'deleted_at': null,
+                    ...body,
+                    'id': entries.length + 1,
+                    if (body['state'] == 'provisional')
+                      'provisional_since': '2026-08-19T12:00:00',
+                  });
           result = {'ok': true, 'entry': entries[id]};
         } else if (path == '/household/plan/decide') {
           final planId = body['plan_id'] as int;

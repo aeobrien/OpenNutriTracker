@@ -65,6 +65,11 @@ dependencies:
 
   mobile_scanner: ^6.0.2
 
+  # Recording what somebody says they ate. The transcribing happens on the Mac
+  # Mini, on the same transcriber the kitchen panel has used for years — this
+  # only captures the sound and hands it over.
+  record: ^6.2.1
+
   hive_ce: ^2.19.0
   hive_ce_flutter: ^2.1.0
 

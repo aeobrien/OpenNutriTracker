@@ -88,6 +88,9 @@ import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/data/outbox.dart';
+import 'package:opennutritracker/features/said/data/clip_store.dart';
+import 'package:opennutritracker/features/said/data/microphone.dart';
+import 'package:opennutritracker/features/said/data/said_repository.dart';
 import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
@@ -162,6 +165,18 @@ Future<void> initLocator() async {
   // so it goes straight to the kitchen computer or not at all.
   locator.registerLazySingleton<PlanRepository>(
       () => PlanRepository(householdApi, householdRepository));
+
+  // Saying what you ate. The row goes on the queue like every other write; the
+  // recording does not, because the queue carries JSON to a known route and a
+  // recording is neither. It is kept beside the row instead and offered again
+  // next time the day is read.
+  locator.registerLazySingleton<ClipStore>(() => ClipStore());
+  locator.registerLazySingleton<Microphone>(() => PhoneMicrophone());
+  locator.registerLazySingleton<SaidRepository>(() => SaidRepository(
+      householdApi,
+      locator<HouseholdLogger>(),
+      householdOutbox,
+      locator<ClipStore>()));
 
   // Emptying the queue. Registered here and started by HouseholdScope, because
   // work held while the Mini was unreachable has to be sent whatever screen the

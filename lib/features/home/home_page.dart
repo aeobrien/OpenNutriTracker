@@ -18,6 +18,9 @@ import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/said/data/microphone.dart';
+import 'package:opennutritracker/features/said/data/said_repository.dart';
+import 'package:opennutritracker/features/said/presentation/say_what_you_ate_section.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
@@ -40,6 +43,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// find it by looking up. It is held by key instead, and told to reload
   /// whenever Home reloads — see [_reload].
   final _planned = GlobalKey<PlannedMealsSectionState>();
+  final _said = GlobalKey<SayWhatYouAteSectionState>();
 
   /// The week, held the same way and for the same reason. Logging a meal
   /// changes today's figure on it, so it has to be told when Home reloads or
@@ -176,6 +180,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           activeCaloriesToday: activeCaloriesToday,
           activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
           healthKitConnected: healthKitConnected,
+        ),
+        // Saying what you ate, above the day it lands on. The button is here
+        // rather than behind a tab because the whole promise is that it takes
+        // one motion — a screen you have to find first is a screen people go
+        // back to typing instead of.
+        SayWhatYouAteSection(
+          key: _said,
+          repository: locator<DayRepository>(),
+          said: locator<SaidRepository>(),
+          microphone: locator<Microphone>(),
+          logger: locator<HouseholdLogger>(),
+          day: PlannedMealsSection.dayKey(DateTime.now()),
+          onChanged: _reload,
         ),
         // What the household has planned, on the day list that already
         // exists. Nothing is drawn here on a day with no plan.

@@ -436,4 +436,58 @@ void main() {
               'the day as it was before');
     });
   });
+
+  group('saying what you ate', () {
+    test('the button is on the screen people already look at', () {
+      // Not behind a tab. A screen you have to find first is a screen people
+      // go back to typing instead of, and the whole promise here is that it
+      // takes one motion.
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('SayWhatYouAteSection('), isTrue,
+          reason: 'nothing on Home lets anybody say what they ate');
+    });
+
+    test('everything it needs is built', () {
+      final locator = _read('lib/core/utils/locator.dart');
+      expect(locator.contains('SaidRepository('), isTrue);
+      expect(locator.contains('registerLazySingleton<Microphone>'), isTrue,
+          reason: 'Home asks for a microphone nothing ever registered');
+      expect(locator.contains('ClipStore()'), isTrue);
+    });
+
+    test('the phone does not grow a transcriber of its own', () {
+      // The transcribing is the Mac Mini's, on the one the kitchen panel has
+      // used since long before this project. A second one on the phone would
+      // mean two things that could disagree about the same sentence, and the
+      // one on the phone would be the one nobody maintained.
+      final pubspec = _read('pubspec.yaml');
+      for (final onDevice in ['speech_to_text', 'whisper', 'flutter_stt']) {
+        expect(pubspec.contains(onDevice), isFalse,
+            reason: '$onDevice would make two things that can disagree about '
+                'the same sentence, and this one nobody would maintain');
+      }
+      expect(_read('lib/features/said/data/microphone.dart').contains('Mac Mini'),
+          isTrue,
+          reason: 'say out loud where the transcribing happens');
+    });
+
+    test('the row is written before anything tries to understand it', () {
+      // The order is the design. Written down here as well as in the code
+      // because reversing it reads better and is wrong in the one case that
+      // matters — the kitchen computer asleep, and what you said simply gone.
+      final repository = _read('lib/features/said/data/said_repository.dart');
+      final heard = repository.indexOf('Future<String> heard(');
+      final logFood = repository.indexOf('_logger.logFood(', heard);
+      final workOut = repository.indexOf('Future<Understood?> workOut(');
+      expect(logFood, isNonNegative);
+      expect(logFood, lessThan(workOut),
+          reason: 'understanding it has got in front of writing it down');
+    });
+
+    test('the phone asks for the microphone in words a person can read', () {
+      final plist = _read('ios/Runner/Info.plist');
+      expect(plist.contains('NSMicrophoneUsageDescription'), isTrue,
+          reason: 'iOS kills an app that opens the microphone without one');
+    });
+  });
 }

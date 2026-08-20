@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:logging/logging.dart';
@@ -137,6 +138,61 @@ class HouseholdApi {
       return _decode(r);
     } on TimeoutException {
       throw HouseholdTooSlow(limit);
+    } on http.ClientException catch (e) {
+      throw HouseholdUnreachable(e.message);
+    }
+  }
+
+  /// What understanding a spoken sentence is allowed to take.
+  ///
+  /// Longer than an ordinary call for the same reason reading a photographed
+  /// packet is: transcribing a recording and then working out what it means is
+  /// two pieces of real work, not fetching a number. Shorter than reading a
+  /// label because the row is already on the day either way — nothing is lost
+  /// by giving up, it just stays as the words the person said until the next
+  /// try.
+  static const workingOutWhatYouSaid = Duration(seconds: 90);
+
+  /// Ask the kitchen computer what a row somebody spoke actually was.
+  ///
+  /// [clip] is the recording, when there is one. Sending it as a file rather
+  /// than as text is the whole point: the transcriber lives on the Mini, is the
+  /// same one the kitchen panel's Talk button has used for years, and this
+  /// phone has no business growing a second one.
+  ///
+  /// [version] is what the row was at when this was asked. It travels so the
+  /// answer can be thrown away if the person corrects the row while the Mini is
+  /// still thinking — see the server's settle_entry.
+  Future<Map<String, dynamic>> said({
+    required String clientId,
+    required int version,
+    String? text,
+    File? clip,
+  }) async {
+    if (clip == null) {
+      return post(
+          '/household/said',
+          {
+            'client_id': clientId,
+            'version': version,
+            if (text != null && text.trim().isNotEmpty) 'text': text.trim(),
+          },
+          timeout: workingOutWhatYouSaid);
+    }
+    final request = http.MultipartRequest(
+        'POST', Uri.parse('$_base/household/said'))
+      ..fields['client_id'] = clientId
+      ..fields['version'] = '$version'
+      ..files.add(await http.MultipartFile.fromPath('audio', clip.path));
+    if (text != null && text.trim().isNotEmpty) {
+      request.fields['text'] = text.trim();
+    }
+    try {
+      final streamed =
+          await _client.send(request).timeout(workingOutWhatYouSaid);
+      return _decode(await http.Response.fromStream(streamed));
+    } on TimeoutException {
+      throw HouseholdTooSlow(workingOutWhatYouSaid);
     } on http.ClientException catch (e) {
       throw HouseholdUnreachable(e.message);
     }

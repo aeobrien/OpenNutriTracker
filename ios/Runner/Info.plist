@@ -37,6 +37,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera permission is required for barcode scanning.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>The microphone is used when you hold the button to say what you have eaten.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>FoodTracker reads Active Energy to adjust your daily calorie allowance.</string>
 	<key>NSHealthUpdateUsageDescription</key>

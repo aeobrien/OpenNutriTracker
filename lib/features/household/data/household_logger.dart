@@ -54,6 +54,17 @@ class HouseholdLogger {
     /// what number the kitchen computer gave it, and asking would mean a round
     /// trip at the exact moment the kitchen computer may be asleep.
     String? clientId,
+
+    /// 'provisional' when the row is going on the day before anything has
+    /// worked out what it is — somebody said it out loud and it is written
+    /// down first. See SaidRepository.
+    String state = 'settled',
+
+    /// The words, verbatim, when they were spoken or typed as a sentence.
+    String? said,
+
+    /// What was taken for granted, in plain words.
+    String? assumed,
   }) async {
     final holder = await _whoseDay();
     return _outbox.enqueue(
@@ -71,6 +82,9 @@ class HouseholdLogger {
         if (slot != null) 'slot': slot,
         if (foodId != null) 'food_id': foodId,
         if (mealId != null) 'meal_id': mealId,
+        if (state != 'settled') 'state': state,
+        if (said != null) 'said': said,
+        if (assumed != null) 'assumed': assumed,
       },
       ownerId: owner ?? holder,
       authorId: author ?? holder,
