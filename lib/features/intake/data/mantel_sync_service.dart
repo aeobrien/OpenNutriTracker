@@ -1,8 +1,12 @@
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/core/domain/usecase/add_tracked_day_usecase.dart';
+import 'package:opennutritracker/core/domain/usecase/get_kcal_goal_usecase.dart';
+import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 import 'package:opennutritracker/features/intake/data/data_source/mantel_data_source.dart';
+import 'package:opennutritracker/features/intake/data/dto/mantel_intake_dto.dart';
 import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
 
 /// Result of one Mantel -> FoodTracker meal-sync pass.
@@ -54,6 +58,9 @@ class MantelSyncResult {
 class MantelSyncService {
   final IntakeRepository _intakeRepository;
   final SecureAppStorageProvider _storage;
+  final AddTrackedDayUsecase _addTrackedDayUsecase;
+  final GetKcalGoalUsecase _getKcalGoalUsecase;
+  final GetMacroGoalUsecase _getMacroGoalUsecase;
 
   /// Test seam: when set, used instead of building one from secure storage.
   final MantelDataSource? _injectedDataSource;
@@ -65,7 +72,10 @@ class MantelSyncService {
 
   MantelSyncService(
     this._intakeRepository,
-    this._storage, {
+    this._storage,
+    this._addTrackedDayUsecase,
+    this._getKcalGoalUsecase,
+    this._getMacroGoalUsecase, {
     MantelDataSource? dataSource,
   }) : _injectedDataSource = dataSource;
 
@@ -118,6 +128,7 @@ class MantelSyncService {
             mealSlot: dto.foodTrackerMealSlot,
             dateTime: dto.eatenAtLocal,
           );
+          await _countTowardsTheDay(dto);
           synced++;
           ackable.add(dto.id);
         } catch (e) {
@@ -152,5 +163,37 @@ class MantelSyncService {
         MantelSyncResult(synced: synced, skipped: skipped, failed: failed);
     _log.info('Mantel sync complete: $result');
     return result;
+  }
+
+  /// Adds a synced meal to the day's running totals, creating the day first if
+  /// this is the first thing on it.
+  ///
+  /// Every other way of logging food does this — meal detail, activity detail,
+  /// the label scanner, quick add — and this one did not, which is why a meal
+  /// spoken into Mantel moved the ring on Home (Home sums the meals themselves)
+  /// while the Diary's summary for the same day read "Nothing added" and the
+  /// week's table read zero. Those two read the day's stored totals, and
+  /// nothing was writing them.
+  Future<void> _countTowardsTheDay(MantelIntakeDto dto) async {
+    final day = dto.eatenAtLocal;
+
+    if (!await _addTrackedDayUsecase.hasTrackedDay(day)) {
+      final kcalGoal = await _getKcalGoalUsecase.getKcalGoal();
+      await _addTrackedDayUsecase.addNewTrackedDay(
+        day,
+        kcalGoal,
+        await _getMacroGoalUsecase.getCarbsGoal(kcalGoal),
+        await _getMacroGoalUsecase.getFatsGoal(kcalGoal),
+        await _getMacroGoalUsecase.getProteinsGoal(kcalGoal),
+      );
+    }
+
+    await _addTrackedDayUsecase.addDayCaloriesTracked(day, dto.kcal);
+    await _addTrackedDayUsecase.addDayMacrosTracked(
+      day,
+      carbsTracked: dto.carbs,
+      fatTracked: dto.fat,
+      proteinTracked: dto.protein,
+    );
   }
 }

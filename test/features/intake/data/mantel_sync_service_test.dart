@@ -6,12 +6,39 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
+import 'package:opennutritracker/core/data/repository/tracked_day_repository.dart';
+import 'package:opennutritracker/core/domain/usecase/add_tracked_day_usecase.dart';
+import 'package:opennutritracker/core/domain/usecase/get_kcal_goal_usecase.dart';
+import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart';
+import 'package:opennutritracker/core/domain/usecase/get_tracked_day_usecase.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/domain/entity/user_entity.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 import 'package:opennutritracker/features/intake/data/data_source/mantel_data_source.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
+
+/// Fixed goals. What a new day's targets should be is decided and tested
+/// elsewhere; here they only need to be a number so the day can be created.
+class _FixedKcalGoal extends Fake implements GetKcalGoalUsecase {
+  @override
+  Future<double> getKcalGoal(
+          {UserEntity? userEntity,
+          double? totalKcalActivitiesParam,
+          double? kcalUserAdjustment}) async =>
+      2000;
+}
+
+class _FixedMacroGoals extends Fake implements GetMacroGoalUsecase {
+  @override
+  Future<double> getCarbsGoal(double kcal) async => 250;
+  @override
+  Future<double> getFatsGoal(double kcal) async => 65;
+  @override
+  Future<double> getProteinsGoal(double kcal) async => 100;
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -28,11 +55,16 @@ void main() {
   late AppDatabase db;
   late LogEntryDao logEntryDao;
   late IntakeRepository repo;
+  late AddTrackedDayUsecase trackedDays;
+  late GetTrackedDayUsecase readTrackedDay;
 
   setUp(() {
     db = AppDatabase.createInMemory();
     logEntryDao = LogEntryDao(db);
     repo = IntakeRepository(logEntryDao, FoodItemDao(db));
+    final trackedDayRepo = TrackedDayRepository(DailyStatsDao(db));
+    trackedDays = AddTrackedDayUsecase(trackedDayRepo);
+    readTrackedDay = GetTrackedDayUsecase(trackedDayRepo);
   });
 
   tearDown(() async {
@@ -103,11 +135,13 @@ void main() {
   }
 
   MantelSyncService service(MantelDataSource ds) =>
-      MantelSyncService(repo, SecureAppStorageProvider(), dataSource: ds);
+      MantelSyncService(repo, SecureAppStorageProvider(), trackedDays,
+          _FixedKcalGoal(), _FixedMacroGoals(), dataSource: ds);
 
   test('not configured returns a no-op result', () async {
     // No injected data source + no stored config -> notConfigured.
-    final svc = MantelSyncService(repo, SecureAppStorageProvider());
+    final svc = MantelSyncService(repo, SecureAppStorageProvider(),
+        trackedDays, _FixedKcalGoal(), _FixedMacroGoals());
     final result = await svc.syncPending();
     expect(result.configured, isFalse);
     expect(result.synced, 0);
@@ -182,5 +216,40 @@ void main() {
     expect(all.length, 60);
     // Server pool drained (all acked + removed).
     expect(pool, isEmpty);
+  });
+
+  test('a synced meal counts towards the day, not just onto its list', () async {
+    // The defect this covers: on 20 August a spoken meal moved the ring on Home
+    // and appeared under Snack, while the Diary's summary for the same day read
+    // "Nothing added" and the week's table read zero — because Home sums the
+    // meals themselves and those two read the day's stored totals, which
+    // nothing was writing.
+    final ds = dataSource([
+      intake('i1', 'breakfast', label: 'Porridge', kcal: 250),
+      intake('i2', 'dinner', label: 'Salmon', kcal: 400),
+    ]);
+
+    await service(ds).syncPending();
+
+    final day = DateTime.parse('2026-06-25T18:00:00Z').toLocal();
+    final tracked = await readTrackedDay.getTrackedDay(day);
+    expect(tracked, isNotNull, reason: 'the day itself was never created');
+    expect(tracked!.caloriesTracked, 650);
+    expect(tracked.carbsTracked, 20);
+    expect(tracked.fatTracked, 4);
+    expect(tracked.proteinTracked, 10);
+  });
+
+  test('a second sync of the same meal does not count it twice', () async {
+    final ds = dataSource(
+        [intake('i1', 'breakfast', label: 'Porridge', kcal: 250)],
+        honourAcks: false);
+
+    final svc = service(ds);
+    await svc.syncPending();
+    await svc.syncPending();
+
+    final day = DateTime.parse('2026-06-25T18:00:00Z').toLocal();
+    expect((await readTrackedDay.getTrackedDay(day))!.caloriesTracked, 250);
   });
 }

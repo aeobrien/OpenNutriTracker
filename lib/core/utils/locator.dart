@@ -360,8 +360,12 @@ Future<void> initLocator() async {
       () => RecipeRepository(recipeDao));
 
   // Mantel meal sync (one-way pull of voice/chat-logged meals into the diary).
-  locator.registerLazySingleton<MantelSyncService>(() =>
-      MantelSyncService(locator<IntakeRepository>(), secureAppStorageProvider));
+  locator.registerLazySingleton<MantelSyncService>(() => MantelSyncService(
+      locator<IntakeRepository>(),
+      secureAppStorageProvider,
+      locator<AddTrackedDayUsecase>(),
+      locator<GetKcalGoalUsecase>(),
+      locator<GetMacroGoalUsecase>()));
   // Mantel push (Phase B) — registers the device + syncs on a push.
   locator.registerLazySingleton<MantelPushService>(() => MantelPushService(
       locator<MantelSyncService>(),
