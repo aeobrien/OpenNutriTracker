@@ -75,7 +75,12 @@ class AddItemBottomSheet extends StatelessWidget {
                     ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
               ),
               subtitle: Text(
-                'Front, nutrition panel, ingredients — three shots',
+                // Says what the screen actually asks for. The third shot was
+                // changed from the ingredients to the barcode (see LabelShot,
+                // which explains why) and this line was left behind promising
+                // the old one — so somebody following it looks for a step that
+                // is not there.
+                'Front, nutrition panel, barcode — three shots',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Theme.of(context)
                         .colorScheme
