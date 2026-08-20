@@ -1,0 +1,7 @@
+[
+  {"action": "systemalert", "button": "Allow", "timeout": 8, "optional": true},
+  {"action": "sleep", "seconds": 10},
+  {"action": "screenshot", "name": "01-ten-seconds"},
+  {"action": "sleep", "seconds": 25},
+  {"action": "screenshot", "name": "02-thirty-five-seconds"}
+]

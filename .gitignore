@@ -64,3 +64,5 @@ walkthrough-runs/
 
 # Understudy diff-judge run artefacts — local, regenerated per run.
 understudy-runs/
+pubspec_overrides.yaml
+tool/harness/out/

@@ -1,0 +1,23 @@
+# A stand-in for the barcode scanner, used only when building the app for the
+# iOS Simulator so a test harness can drive it.
+#
+# The real plugin is built on Google's ML Kit, whose Apple library has no arm64
+# simulator slice — and on an Apple Silicon Mac the simulator is arm64. So the
+# app could not be built for the simulator at all, which meant no automated
+# harness could ever open a screen and watch it work. That is exactly how the
+# 20 August walkthrough went out with a home screen nobody had seen.
+#
+# This package answers the same small handful of names the scanner screen uses
+# and does nothing. A simulator has no camera, so nothing real is lost. It is
+# never part of a build that goes on a phone — see tool/harness/sim-build.sh.
+name: mobile_scanner
+description: A do-nothing stand-in for the barcode scanner, for simulator builds.
+version: 6.0.2
+publish_to: none
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter

@@ -1,0 +1,16 @@
+[
+  { "action": "systemalert", "button": "Allow", "timeout": 5, "optional": true },
+  { "action": "waitfor", "label": "Profile", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Profile", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "01-before" },
+  { "action": "press", "id": "profile-weight" },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "screenshot", "name": "02-the-dialog" },
+  { "action": "settext", "id": "weight-typed", "text": "114.8" },
+  { "action": "sleep", "seconds": 1 },
+  { "action": "screenshot", "name": "03-typed" },
+  { "action": "press", "label": "OK", "type": "button" },
+  { "action": "sleep", "seconds": 4 },
+  { "action": "screenshot", "name": "04-after" }
+]

@@ -1,0 +1,7 @@
+[
+  { "action": "systemalert", "button": "Allow", "timeout": 5, "optional": true },
+  { "action": "waitfor", "label": "Profile", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Profile", "match": "contains" },
+  { "action": "sleep", "seconds": 4 },
+  { "action": "screenshot", "name": "01-the-weight-row" }
+]

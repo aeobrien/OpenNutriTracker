@@ -1,0 +1,7 @@
+[
+  {"action": "systemalert", "button": "Allow", "timeout": 8, "optional": true},
+  {"action": "waitfor", "label": "Aidan", "type": "button", "timeout": 25},
+  {"action": "press", "label": "Aidan", "type": "button"},
+  {"action": "sleep", "seconds": 8},
+  {"action": "screenshot", "name": "01-straight-in"}
+]

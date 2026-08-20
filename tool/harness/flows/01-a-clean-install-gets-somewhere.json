@@ -1,0 +1,6 @@
+[
+  {"action": "systemalert", "button": "Allow", "timeout": 8, "optional": true},
+  {"action": "waitfor", "label": "Try again", "type": "button", "timeout": 25},
+  {"action": "screenshot", "name": "01-it-said-why"},
+  {"action": "assert", "label": "Try again", "type": "button", "present": true}
+]

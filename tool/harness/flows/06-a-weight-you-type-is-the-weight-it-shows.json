@@ -1,0 +1,88 @@
+[
+  {
+    "action": "systemalert",
+    "button": "Allow",
+    "timeout": 8,
+    "optional": true
+  },
+  {
+    "action": "waitfor",
+    "label": "Aidan",
+    "type": "button",
+    "timeout": 25
+  },
+  {
+    "action": "press",
+    "label": "Aidan",
+    "type": "button"
+  },
+  {
+    "action": "waitfor",
+    "label": "OK",
+    "type": "button",
+    "timeout": 20
+  },
+  {
+    "action": "press",
+    "label": "OK",
+    "type": "button"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "press",
+    "label": "Profile",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "01-profile-before"
+  },
+  {
+    "action": "press",
+    "label": "Weight",
+    "match": "contains",
+    "type": "button"
+  },
+  {
+    "action": "waitfor",
+    "id": "weight-typed",
+    "timeout": 10
+  },
+  {
+    "action": "screenshot",
+    "name": "02-the-dialog"
+  },
+  {
+    "action": "type",
+    "id": "weight-typed",
+    "text": "114.8"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "screenshot",
+    "name": "03-typed"
+  },
+  {
+    "action": "press",
+    "label": "OK",
+    "type": "button"
+  },
+  {
+    "action": "sleep",
+    "seconds": 3
+  },
+  {
+    "action": "screenshot",
+    "name": "04-profile-after"
+  }
+]
