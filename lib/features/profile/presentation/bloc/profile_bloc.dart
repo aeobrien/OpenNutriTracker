@@ -80,11 +80,20 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   }
 
   /// Returns the user's weight in kg or lbs based on the user's config
+  /// The weight as it appears on Profile — to one decimal place.
+  ///
+  /// It used to round to the whole unit, and that made a change of less than
+  /// half a kilogram invisible: on 20 August 2026 Aidan set his weight to
+  /// 114.8, saw "115" where "115" had been before, and reasonably concluded the
+  /// app had not saved it. A weight is read off a scale to a tenth. Showing it
+  /// to a tenth is what makes saving one visible, which is the only way a
+  /// person can tell the difference between a change that worked and a control
+  /// that quietly did nothing.
   String getDisplayWeight(UserEntity user, bool usesImperialUnits) {
     if (usesImperialUnits) {
-      return UnitCalc.kgToLbs(user.weightKG).toStringAsFixed(0);
+      return UnitCalc.kgToLbs(user.weightKG).toStringAsFixed(1);
     } else {
-      return user.weightKG.roundToDouble().toStringAsFixed(0);
+      return user.weightKG.toStringAsFixed(1);
     }
   }
 }

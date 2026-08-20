@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/data/outbox_sender.dart';
+import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/household/presentation/whose_phone_page.dart';
 
@@ -33,11 +34,16 @@ class HouseholdScope extends StatefulWidget {
 
   final Widget child;
 
+  /// Passed down to the "whose phone is this" question, which is the one moment
+  /// the household can be asked whether it already knows this person.
+  final ProfileHandover? handover;
+
   const HouseholdScope({
     super.key,
     required this.repository,
     required this.child,
     this.sender,
+    this.handover,
   });
 
   /// Reload the household settings — after the phone changes hands, or after
@@ -99,6 +105,7 @@ class _HouseholdScopeState extends State<HouseholdScope> {
         trackingOn: _weightTrackingOn,
         child: HouseholdGate(
           repository: widget.repository,
+          handover: widget.handover,
           onAnswered: _load,
           child: widget.child,
         ),

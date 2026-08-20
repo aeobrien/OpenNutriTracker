@@ -28,6 +28,7 @@ import 'package:opennutritracker/features/label_scan/data/guided_capture.dart';
 import 'package:opennutritracker/features/label_scan/data/household_label_reader.dart';
 import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/guided_capture_screen.dart';
+import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/label_scan_screen.dart';
@@ -130,6 +131,10 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
         // unreachable is sent when the app opens and again when it comes back
         // to the front, whatever the person is looking at.
         sender: locator<OutboxSender>(),
+        // Asked once, at the "whose phone is this" question: does the household
+        // already know this person? If it does, the app's own six setup
+        // questions never appear — they were answered before the last reinstall.
+        handover: locator<ProfileHandover>(),
         child: child ?? const SizedBox.shrink(),
       ),
       initialRoute: widget.userInitialized

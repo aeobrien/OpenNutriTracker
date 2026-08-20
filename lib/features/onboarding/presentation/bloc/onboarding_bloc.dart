@@ -6,6 +6,9 @@ import 'package:opennutritracker/core/domain/usecase/add_config_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/add_user_usecase.dart';
 import 'package:opennutritracker/core/utils/calc/calorie_goal_calc.dart';
 import 'package:opennutritracker/core/utils/calc/macro_calc.dart';
+import 'package:opennutritracker/core/domain/usecase/get_user_usecase.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/onboarding/domain/entity/user_data_mask_entity.dart';
 
 part 'onboarding_event.dart';
@@ -17,10 +20,28 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
   final AddUserUsecase _addUserUsecase;
   final AddConfigUsecase _addConfigUsecase;
 
-  OnboardingBloc(this._addUserUsecase, this._addConfigUsecase)
+  /// The three below are what makes setting the app up a once-ever thing
+  /// rather than a once-per-reinstall thing. All optional, so a test can build
+  /// this bloc with nothing but the two above and get the old behaviour.
+  final GetUserUsecase? _existing;
+  final ProfileHandover? _handover;
+  final HouseholdRepository? _household;
+
+  OnboardingBloc(this._addUserUsecase, this._addConfigUsecase,
+      [this._existing, this._handover, this._household])
       : super(OnboardingInitialState()) {
     on<LoadOnboardingEvent>((event, emit) async {
       emit(OnboardingLoadingState());
+
+      // Somebody may have said whose phone this is a moment ago, and the
+      // household may have handed back everything this screen was going to
+      // ask. Checked here rather than before the app starts because on a fresh
+      // install nobody knows whose phone it is yet, and without that there is
+      // nobody to ask about.
+      if (_existing != null && await _existing.hasUserData()) {
+        emit(OnboardingNotNeededState());
+        return;
+      }
 
       emit(OnboardingLoadedState());
     });
@@ -32,6 +53,20 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     _addConfigUsecase
         .setConfigHasAcceptedAnonymousData(hasAcceptedDataCollection);
     _addConfigUsecase.setConfigUsesImperialUnits(usesImperialUnits);
+    _tellTheHousehold(userEntity);
+  }
+
+  /// Hand the answers to the kitchen computer so the next reinstall does not
+  /// ask for them. Deliberately not awaited by the caller: setup is finished on
+  /// this phone either way, and a slow or sleeping Mini must not hold somebody
+  /// on the last page of a form they have completed.
+  Future<void> _tellTheHousehold(UserEntity user) async {
+    final handover = _handover;
+    final household = _household;
+    if (handover == null || household == null) return;
+    final owner = await household.storedOwner();
+    if (owner == null) return;
+    await handover.remember(owner, user);
   }
 
   double? getOverviewCalorieGoal() {

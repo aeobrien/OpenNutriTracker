@@ -57,6 +57,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               return _getLoadingContent();
             } else if (state is OnboardingLoadingState) {
               return _getLoadingContent();
+            } else if (state is OnboardingNotNeededState) {
+              // The household already knew this person. Leave without drawing
+              // anything — a form that flashes up and vanishes reads as a fault.
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                Navigator.of(context)
+                    .pushReplacementNamed(NavigationOptions.mainRoute);
+              });
+              return _getLoadingContent();
             } else if (state is OnboardingLoadedState) {
               return _getLoadedContent(context);
             }

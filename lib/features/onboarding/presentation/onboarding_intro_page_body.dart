@@ -64,13 +64,19 @@ class _OnboardingIntroPageBodyState extends State<OnboardingIntroPageBody> {
                                   _launchUrl();
                                 }),
                         ])),
-                leading: Checkbox(
-                  value: _acceptedPolicy,
-                  onChanged: (value) {
-                    if (value != null) {
-                      _togglePolicy();
-                    }
-                  },
+                // Named so a test harness can tick it. Nothing behind this box
+                // can be reached until it is ticked, so a harness that cannot
+                // find it cannot open the app at all.
+                leading: Semantics(
+                  identifier: 'accept-privacy-policy',
+                  child: Checkbox(
+                    value: _acceptedPolicy,
+                    onChanged: (value) {
+                      if (value != null) {
+                        _togglePolicy();
+                      }
+                    },
+                  ),
                 ),
               ),
               ListTile(
