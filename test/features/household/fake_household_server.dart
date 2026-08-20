@@ -126,6 +126,29 @@ class FakeHouseholdServer {
   int get aidan => 1;
   int get emily => 2;
 
+  /// The house's own meals, the list the phone's planner picks from. Kept
+  /// separate from [foods]: a food is a packet with numbers per 100g, a meal
+  /// is something you plan an evening around.
+  final List<Map<String, dynamic>> meals = [];
+
+  /// Put a meal in the house's list. [kcal] is one standard portion; null
+  /// means nobody has worked its numbers out yet, which the picker has to show
+  /// as unknown rather than as nothing.
+  Map<String, dynamic> addMeal({required String name, num? kcal,
+      String? kcalTrust}) {
+    final row = <String, dynamic>{
+      'id': meals.length + 1,
+      'name': name,
+      'kind': 'ready',
+      'kcal': kcal,
+      'kcal_trust': kcalTrust,
+      'last_eaten': null,
+      'favourite': false,
+    };
+    meals.add(row);
+    return row;
+  }
+
   /// Put a meal on a day. [mealKcal] is one standard portion of it; null means
   /// the meal's own numbers are not known yet.
   int planMeal({
@@ -219,6 +242,43 @@ class FakeHouseholdServer {
       'awaiting_count': awaiting.length,
     };
   }
+
+  /// Who the house was told planned each meal, in the order they were added.
+  /// Recorded so a test can show the phone named the person the app says it
+  /// belongs to rather than the handset.
+  final List<String?> plannedBy = [];
+
+  /// One day of the *household's* plan — everybody's shares and everybody's
+  /// answers on every row, including meals already answered. That last part is
+  /// what makes this different from [dayLine]: the day drops a meal once you
+  /// have answered it, the planner must not, or the other person could not
+  /// edit it.
+  Map<String, dynamic> planDayLine(String day) => {
+        'day': day,
+        'past': day.compareTo(today) < 0,
+        'planned': [
+          for (final p in plan.where((p) => p['day'] == day))
+            {
+              'plan_id': p['plan_id'],
+              'date': day,
+              'title': p['title'],
+              'kind': 'meal',
+              'meal_id': null,
+              'meal_kcal': p['meal_kcal'],
+              'meal_kcal_trust': null,
+              'portions': {
+                for (final person in people)
+                  '${person['id']}':
+                      portions[p['plan_id'] as int]?[person['id'] as int],
+              },
+              'decided': {
+                for (final person in people)
+                  '${person['id']}':
+                      decisions[p['plan_id'] as int]?[person['id'] as int],
+              },
+            }
+        ],
+      };
 
   Map<String, dynamic> settingsFor(int personId) => settings.putIfAbsent(
       personId,
@@ -432,6 +492,83 @@ class FakeHouseholdServer {
             ...line,
             'planned_unknown': line['awaiting_count'],
           };
+        } else if (path == '/household/meals') {
+          final needle =
+              (request.url.queryParameters['q'] ?? '').trim().toLowerCase();
+          result = {
+            'ok': true,
+            'meals': needle.isEmpty
+                ? meals
+                : meals
+                    .where((m) =>
+                        (m['name'] as String).toLowerCase().contains(needle))
+                    .toList(),
+          };
+        } else if (path == '/household/plan' && request.method == 'GET') {
+          final start = request.url.queryParameters['start'] ?? mondayOf(today);
+          result = {
+            'ok': true,
+            'start': start,
+            'end': DateTime.parse(start)
+                .add(const Duration(days: 6))
+                .toIso8601String()
+                .substring(0, 10),
+            'today': today,
+            'days': [
+              for (var i = 0; i < 7; i++) planDayLine(DateTime.parse(start)
+                  .add(Duration(days: i))
+                  .toIso8601String()
+                  .substring(0, 10)),
+            ],
+          };
+        } else if (path == '/household/plan/add') {
+          final day = (body['date'] as String?) ?? '';
+          final mealId = body['meal_id'] as int?;
+          String? title = (body['title'] as String?)?.trim();
+          num? kcal;
+          if (mealId != null) {
+            final meal = meals.firstWhere((m) => m['id'] == mealId,
+                orElse: () => <String, dynamic>{});
+            if (meal.isEmpty) {
+              return http.Response(
+                  jsonEncode({'ok': false, 'error': 'no meal $mealId'}), 404,
+                  headers: {'content-type': 'application/json'});
+            }
+            title = (title == null || title.isEmpty)
+                ? meal['name'] as String
+                : title;
+            kcal = meal['kcal'] as num?;
+          }
+          if (title == null || title.isEmpty) {
+            return http.Response(
+                jsonEncode({
+                  'ok': false,
+                  'error': 'a planned meal needs either a meal or a name'
+                }),
+                400,
+                headers: {'content-type': 'application/json'});
+          }
+          final planId =
+              planMeal(day: day, title: title, mealKcal: kcal);
+          plannedBy.add(body['actor'] as String?);
+          result = {'ok': true, 'plan_id': planId};
+        } else if (path.startsWith('/household/plan/') &&
+            path.endsWith('/remove')) {
+          final planId = int.parse(path.split('/')[3]);
+          final before = plan.length;
+          plan.removeWhere((p) => p['plan_id'] == planId);
+          // The shares and the answers go with it. Nothing on a ledger does —
+          // a dinner somebody already ate happened, and un-planning it does
+          // not un-eat it.
+          portions.remove(planId);
+          decisions.remove(planId);
+          if (plan.length == before) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'no planned meal $planId'}),
+                404,
+                headers: {'content-type': 'application/json'});
+          }
+          result = {'ok': true};
         } else if (path.startsWith('/household/week/')) {
           final personId = int.parse(path.split('/')[3]);
           final asked = request.url.queryParameters['start'];

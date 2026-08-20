@@ -20,6 +20,7 @@ import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
+import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/week/presentation/week_ahead_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -187,10 +188,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // the ring above has to be redrawn — not just the list it came from.
           onDecided: () => _homeBloc.add(const LoadItemsEvent()),
         ),
-        // The week, on the same screen. A view and not a second planner: it
-        // shows what is planned and what has been eaten and changes nothing,
-        // because the planning itself stays on the kitchen panel.
-        WeekAheadSection(key: _week, repository: locator<WeekRepository>()),
+        // The week, on the same screen — and the way into the plan. Tapping a
+        // day opens that day's planning, which writes into the same plan the
+        // kitchen panel keeps rather than a second one held on the phone.
+        WeekAheadSection(
+          key: _week,
+          repository: locator<WeekRepository>(),
+          planner: locator<PlanRepository>(),
+          onPlanned: _reload,
+        ),
         ActivityVerticalList(
           day: DateTime.now(),
           title: S.of(context).activityLabel,

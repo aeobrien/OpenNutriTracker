@@ -241,4 +241,57 @@ class HouseholdApi {
     final query = start == null ? '' : '?start=$start';
     return get('/household/week/$personId$query');
   }
+
+  /// The household's planned week — everybody's, not one person's. [start]
+  /// names the Monday; leaving it off lets the kitchen computer decide.
+  ///
+  /// Separate from [week] on purpose. A person's week answers "what am I
+  /// eating and what does it come to"; this answers "what is the house
+  /// planning" — the same rows, but with everyone's share and everyone's
+  /// answer attached, which is what you need in front of you to change the
+  /// plan rather than to read it.
+  Future<Map<String, dynamic>> plan({String? start}) async {
+    final query = start == null ? '' : '?start=$start';
+    return get('/household/plan$query');
+  }
+
+  /// The meals the house already has, for the planner to choose from.
+  ///
+  /// [q] narrows by name. The list is deliberately the kitchen panel's own —
+  /// a planned meal that is only a typed name has no recipe behind it, so no
+  /// calories for the week and no ingredients for the shopping list.
+  Future<List<Map<String, dynamic>>> meals({String? q}) async {
+    final trimmed = (q ?? '').trim();
+    final path = trimmed.isEmpty
+        ? '/household/meals'
+        : '/household/meals?${Uri(queryParameters: {'q': trimmed}).query}';
+    final body = await get(path);
+    return [
+      for (final m in (body['meals'] as List? ?? const []))
+        m as Map<String, dynamic>,
+    ];
+  }
+
+  /// Put one meal on one day. One call per meal, matching the server, so an
+  /// interrupted session leaves exactly the meals that landed.
+  Future<int> planAdd({
+    required String date,
+    int? mealId,
+    String? title,
+    String? actor,
+  }) async {
+    final body = await post('/household/plan/add', {
+      'date': date,
+      if (mealId != null) 'meal_id': mealId,
+      if (title != null && title.trim().isNotEmpty) 'title': title.trim(),
+      if (actor != null) 'actor': actor,
+    });
+    return body['plan_id'] as int;
+  }
+
+  /// Take one meal off the plan. Anything already logged against it stays
+  /// logged — the plan is what is intended, the ledger is what happened.
+  Future<void> planRemove(int planId) async {
+    await post('/household/plan/$planId/remove', const {});
+  }
 }

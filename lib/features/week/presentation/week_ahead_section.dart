@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
+import 'package:opennutritracker/features/plan/data/plan_repository.dart';
+import 'package:opennutritracker/features/plan/presentation/plan_day_sheet.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:opennutritracker/features/week/domain/week_view.dart';
 
@@ -16,15 +18,34 @@ import 'package:opennutritracker/features/week/domain/week_view.dart';
 /// don't have numbers for"* — never as 1,400, and never as a number quietly
 /// containing a zero where the dinner should be. That is the whole reason the
 /// server carries the count of what it could not count.
+///
+/// It is now also the way into planning: tapping a day opens that day's plan.
+/// Not a second planner — the same plan the kitchen panel keeps, opened from
+/// the day you are already looking at rather than from a tab of its own.
 class WeekAheadSection extends StatefulWidget {
   final WeekRepository repository;
+
+  /// Changing the plan, when this phone is allowed to. Optional only so a test
+  /// can mount the week read-only; Home always passes it, and without it a day
+  /// simply does not open rather than opening onto controls that do nothing.
+  final PlanRepository? planner;
+
+  /// Called after the plan changes, so the screen around this can redraw —
+  /// putting tonight's dinner on the plan changes what today looks like.
+  final VoidCallback? onPlanned;
 
   /// The Monday, as 'YYYY-MM-DD', or null for the week today is in. Passed in
   /// rather than read from the clock so a test is not at the mercy of what day
   /// it runs.
   final String? start;
 
-  const WeekAheadSection({super.key, required this.repository, this.start});
+  const WeekAheadSection({
+    super.key,
+    required this.repository,
+    this.start,
+    this.planner,
+    this.onPlanned,
+  });
 
   static const heading = 'This week';
   static const nothingYet = 'Nothing on the week yet.';
@@ -82,6 +103,22 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
     }
   }
 
+  /// Open one day's plan. The week only asks the kitchen computer again if
+  /// something actually changed — closing a sheet you only looked at should
+  /// not cost a round trip.
+  Future<void> _plan(String day) async {
+    final planner = widget.planner;
+    if (planner == null) return;
+    final changed = await PlanDaySheet.show(
+      context,
+      repository: planner,
+      day: day,
+    );
+    if (!changed || !mounted) return;
+    await reload();
+    widget.onPlanned?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -95,7 +132,13 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
       );
     }
     final week = _week;
-    if (week == null || week.isEmpty) return const SizedBox.shrink();
+    if (week == null) return const SizedBox.shrink();
+    // A week with nothing on it shows nothing — Home should look exactly as it
+    // did before this existed. Except when this phone can plan: the week is
+    // now the way in, and a week with nothing on it is precisely when somebody
+    // wants to put something on it. Hiding the days then would leave nothing
+    // to tap and no way to start.
+    if (week.isEmpty && widget.planner == null) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -104,7 +147,12 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
           child: Text(WeekAheadSection.heading,
               style: theme.textTheme.titleSmall),
         ),
-        for (final day in week.days) _DayRow(day: day, today: week.today),
+        for (final day in week.days)
+          _DayRow(
+            day: day,
+            today: week.today,
+            onTap: widget.planner == null ? null : () => _plan(day.day),
+          ),
         _WeekFooter(week: week),
       ],
     );
@@ -114,8 +162,9 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
 class _DayRow extends StatelessWidget {
   final WeekDay day;
   final String today;
+  final VoidCallback? onTap;
 
-  const _DayRow({required this.day, required this.today});
+  const _DayRow({required this.day, required this.today, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +175,9 @@ class _DayRow extends StatelessWidget {
       for (final item in day.logged) item.label,
       for (final item in day.planned) item.title,
     ];
-    return Padding(
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
       padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,6 +217,7 @@ class _DayRow extends StatelessWidget {
               child: Text(counted, style: theme.textTheme.bodyMedium),
             ),
         ],
+      ),
       ),
     );
   }

@@ -399,4 +399,41 @@ void main() {
           reason: 'Home asks for something nothing ever registered');
     });
   });
+
+  group('planning the week', () {
+    test('the week is given something to plan with', () {
+      // The section takes a planner only if Home passes one. Without it every
+      // day on the week is inert and the phone can read the plan but never
+      // change it — which is the half-built state this release exists to end.
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('planner: locator<PlanRepository>()'), isTrue,
+          reason: 'the week is mounted read-only, so no day opens');
+    });
+
+    test('the repository it needs is built', () {
+      expect(_read('lib/core/utils/locator.dart')
+          .contains('PlanRepository(householdApi, householdRepository)'), isTrue,
+          reason: 'Home asks for something nothing ever registered');
+    });
+
+    test('planning is not queued behind the outbox', () {
+      // Deliberate, and the one thing about this path most likely to be
+      // "fixed" later by somebody making it consistent with the ledger writes.
+      // It must not be: a meal planned against a week you cannot see is
+      // planned blind, and the other phone may have put something on that day
+      // a minute ago.
+      final repository =
+          _read('lib/features/plan/data/plan_repository.dart');
+      expect(repository.contains('Outbox'), isFalse,
+          reason: 'planning has been put on the queue, so somebody can plan '
+              'on top of a meal they were never shown');
+    });
+
+    test('the day that was changed is redrawn behind the sheet', () {
+      final home = _read('lib/features/home/home_page.dart');
+      expect(home.contains('onPlanned: _reload'), isTrue,
+          reason: "putting tonight's dinner on the plan leaves today showing "
+              'the day as it was before');
+    });
+  });
 }

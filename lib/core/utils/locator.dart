@@ -90,6 +90,7 @@ import 'package:opennutritracker/features/household/data/household_repository.da
 import 'package:opennutritracker/features/household/data/outbox.dart';
 import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
+import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:logging/logging.dart';
 
@@ -156,6 +157,11 @@ Future<void> initLocator() async {
       () => DayRepository(householdApi, householdRepository));
   locator.registerLazySingleton<WeekRepository>(
       () => WeekRepository(householdApi, householdRepository));
+  // Changing the plan. Not registered behind the outbox like the ledger
+  // writes: planning is a decision made against a week you can currently see,
+  // so it goes straight to the kitchen computer or not at all.
+  locator.registerLazySingleton<PlanRepository>(
+      () => PlanRepository(householdApi, householdRepository));
 
   // Emptying the queue. Registered here and started by HouseholdScope, because
   // work held while the Mini was unreachable has to be sent whatever screen the
