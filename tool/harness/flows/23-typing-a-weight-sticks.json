@@ -1,0 +1,19 @@
+[
+  {"action": "systemalert", "button": "Allow", "timeout": 8, "optional": true},
+  {"action": "waitfor", "label": "Aidan", "type": "button", "timeout": 25},
+  {"action": "press", "label": "Aidan", "type": "button"},
+  {"action": "sleep", "seconds": 8},
+  {"action": "press", "label": "OK", "type": "button", "optional": true},
+  {"action": "sleep", "seconds": 2},
+  {"action": "press", "label": "Profile", "match": "contains"},
+  {"action": "sleep", "seconds": 3},
+  {"action": "screenshot", "name": "01-weight-before"},
+  {"action": "press", "label": "115.0 kg", "match": "contains"},
+  {"action": "waitfor", "id": "weight-typed", "timeout": 15},
+  {"action": "settext", "id": "weight-typed", "text": "114.8"},
+  {"action": "sleep", "seconds": 1},
+  {"action": "screenshot", "name": "02-typed"},
+  {"action": "press", "label": "OK", "type": "button"},
+  {"action": "sleep", "seconds": 4},
+  {"action": "screenshot", "name": "03-weight-after"}
+]

@@ -55,6 +55,19 @@ class Outbox {
 
   bool _draining = false;
 
+  /// Told the moment something joins the queue, so it can be sent straight
+  /// away rather than waiting for the app to be opened again.
+  ///
+  /// This exists because it did not. Sending was tried on start, on coming
+  /// back to the front, and on a two-minute timer that was only ever set when
+  /// a previous attempt had left something behind — so a queue that was empty
+  /// when the app opened had nothing scheduled at all, and the first thing
+  /// added after that sat there. On 20 August a weight typed into Profile
+  /// showed on the phone at once and did not reach the kitchen computer until
+  /// the app was backgrounded and brought back. The phone and the panel
+  /// disagreed for as long as somebody kept looking at the phone.
+  void Function()? onQueued;
+
   Outbox(this._dao, this._api);
 
   factory Outbox.of(AppDatabase db, HouseholdApi api) =>
@@ -84,6 +97,7 @@ class Outbox {
       queuedAt: Value(DateTime.now().millisecondsSinceEpoch),
     ));
     _log.info('[OUTBOX] queued $path as $id for person $ownerId');
+    onQueued?.call();
     return id;
   }
 

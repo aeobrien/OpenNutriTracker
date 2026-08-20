@@ -37,11 +37,13 @@ class OutboxSender with WidgetsBindingObserver {
 
   OutboxSender(this._outbox);
 
-  /// Begin watching. Sends once immediately for whatever last time left behind.
+  /// Begin watching. Sends once immediately for whatever last time left
+  /// behind, and again the moment anything new joins the queue.
   void start() {
     if (_started) return;
     _started = true;
     WidgetsBinding.instance.addObserver(this);
+    _outbox.onQueued = () => unawaited(sendNow());
     unawaited(sendNow());
   }
 
@@ -49,6 +51,7 @@ class OutboxSender with WidgetsBindingObserver {
     if (!_started) return;
     _started = false;
     WidgetsBinding.instance.removeObserver(this);
+    _outbox.onQueued = null;
     _retry?.cancel();
     _retry = null;
   }
