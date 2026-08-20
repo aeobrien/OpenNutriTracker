@@ -1,0 +1,12 @@
+[
+  {"action": "systemalert", "button": "Allow", "timeout": 10, "optional": true},
+  {"action": "sleep", "seconds": 12},
+  {"action": "press", "label": "Aidan", "type": "button", "optional": true},
+  {"action": "sleep", "seconds": 15},
+  {"action": "press", "label": "OK", "type": "button", "optional": true},
+  {"action": "sleep", "seconds": 12},
+  {"action": "screenshot", "name": "01-home-before"},
+  {"action": "swipe", "label": "Tea", "match": "contains", "direction": "left"},
+  {"action": "sleep", "seconds": 5},
+  {"action": "screenshot", "name": "02-after-swiping-it-away"}
+]

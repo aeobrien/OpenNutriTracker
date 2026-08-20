@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -214,6 +214,14 @@ class AppDatabase extends _$AppDatabase {
                 PRIMARY KEY (capture_id, shot)
               )
             ''');
+          }
+          if (from < 9) {
+            // What was actually said, for rows that came from a spoken
+            // capture. Additive: every existing row carries NULL, which is
+            // exactly what "nobody spoke this one" means.
+            await customStatement(
+              'ALTER TABLE log_entries ADD COLUMN said TEXT',
+            );
           }
         },
       );

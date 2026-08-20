@@ -218,38 +218,42 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _addConfigUsecase.setConfigDisclaimer(acceptedDisclaimer);
   }
 
+  /// Put a correction through, and move the day's totals by exactly what
+  /// changed.
+  ///
+  /// The difference is measured in the figures themselves and not in the
+  /// amount. A row with a food behind it changes both together, but a spoken
+  /// row corrected from 350 calories to 250 never changes its amount at all —
+  /// counting on the amount to notice meant those corrections left the day's
+  /// ring showing the old number.
+  ///
+  /// A row moved to the other person comes off this day entirely: it is
+  /// somebody else's now, so all of it goes rather than a difference.
   Future<void> updateIntakeItem(
       String intakeId, Map<String, dynamic> fields, {int? moveTo}) async {
     final dateTime = DateTime.now();
-    // Get old intake values
-    final oldIntakeObject = await _getIntakeUsecase.getIntakeById(intakeId);
-    assert(oldIntakeObject != null);
-    final newIntakeObject =
-        await _updateIntakeUsecase.updateIntake(intakeId, fields,
-            moveTo: moveTo);
-    assert(newIntakeObject != null);
-    if (oldIntakeObject!.amount > newIntakeObject!.amount) {
-      // Amounts shrunk
-      await _addTrackedDayUseCase.removeDayCaloriesTracked(
-          dateTime, oldIntakeObject.totalKcal - newIntakeObject.totalKcal);
-      await _addTrackedDayUseCase.removeDayMacrosTracked(dateTime,
-          carbsTracked:
-              oldIntakeObject.totalCarbsGram - newIntakeObject.totalCarbsGram,
-          fatTracked:
-              oldIntakeObject.totalFatsGram - newIntakeObject.totalFatsGram,
-          proteinTracked: oldIntakeObject.totalProteinsGram -
-              newIntakeObject.totalProteinsGram);
-    } else if (newIntakeObject.amount > oldIntakeObject.amount) {
-      // Amounts gained
+    final before = await _getIntakeUsecase.getIntakeById(intakeId);
+    if (before == null) return;
+    final after = await _updateIntakeUsecase.updateIntake(intakeId, fields,
+        moveTo: moveTo);
+
+    // Take the whole of what it was off the day, then put the whole of what it
+    // now is back on. Two steps rather than a signed difference so that a
+    // correction which moves the calories one way and a macro the other cannot
+    // land half-applied.
+    await _addTrackedDayUseCase.removeDayCaloriesTracked(
+        dateTime, before.totalKcal);
+    await _addTrackedDayUseCase.removeDayMacrosTracked(dateTime,
+        carbsTracked: before.totalCarbsGram,
+        fatTracked: before.totalFatsGram,
+        proteinTracked: before.totalProteinsGram);
+    if (after != null) {
       await _addTrackedDayUseCase.addDayCaloriesTracked(
-          dateTime, newIntakeObject.totalKcal - oldIntakeObject.totalKcal);
+          dateTime, after.totalKcal);
       await _addTrackedDayUseCase.addDayMacrosTracked(dateTime,
-          carbsTracked:
-              newIntakeObject.totalCarbsGram - oldIntakeObject.totalCarbsGram,
-          fatTracked:
-              newIntakeObject.totalFatsGram - oldIntakeObject.totalFatsGram,
-          proteinTracked: newIntakeObject.totalProteinsGram -
-              oldIntakeObject.totalProteinsGram);
+          carbsTracked: after.totalCarbsGram,
+          fatTracked: after.totalFatsGram,
+          proteinTracked: after.totalProteinsGram);
     }
     _updateDiaryPage(dateTime);
   }

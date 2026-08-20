@@ -15,6 +15,16 @@ class IntakeEntity extends Equatable {
   final String? quickAddLabel;
   final String? recipeId;
 
+  /// The name the household's own row for this is known by, when this row came
+  /// from the house rather than from this phone. A correction has to reach the
+  /// house by the name the house knows, not the name this phone minted for its
+  /// own copy — see [householdName].
+  final String? externalId;
+
+  /// What was actually said, when this row came from a spoken capture. Null
+  /// for anything nobody spoke.
+  final String? said;
+
   /// Snapshot values from the log entry row. For quick-add entries (amount=1),
   /// these are the user-provided totals. For food entries, these are computed
   /// from the food item nutriments at log time.
@@ -35,12 +45,24 @@ class IntakeEntity extends Equatable {
       this.entryType = 'food',
       this.quickAddLabel,
       this.recipeId,
+      this.externalId,
+      this.said,
       this.snapshotKcal = 0,
       this.snapshotProtein = 0,
       this.snapshotCarbs = 0,
       this.snapshotFat = 0});
 
   bool get isQuickAdd => entryType == 'quickAdd';
+
+  /// The name to correct or retire this row by at the household end.
+  ///
+  /// A row this phone logged carries the id the phone minted, because that is
+  /// the name it gave the house at the time. A row that arrived *from* the
+  /// house was given a fresh local id on the way in, so its own id means
+  /// nothing there — the house knows it by [externalId]. Getting this wrong is
+  /// silent: the house answers "no row called that has reached here yet" and
+  /// the correction never lands.
+  String get householdName => externalId ?? id;
   bool get isRecipe => entryType == 'recipe';
 
   factory IntakeEntity.fromLogEntry(LogEntryWithFoodItem row) {
@@ -61,6 +83,8 @@ class IntakeEntity extends Equatable {
         entryType: entry.entryType,
         quickAddLabel: entry.quickAddLabel,
         recipeId: entry.recipeId,
+        externalId: entry.externalId,
+        said: entry.said,
         snapshotKcal: entry.snapshotKcal,
         snapshotProtein: entry.snapshotProtein,
         snapshotCarbs: entry.snapshotCarbs,

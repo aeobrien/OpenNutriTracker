@@ -26,6 +26,13 @@ class LogEntries extends Table {
   /// index permits the many NULLs that local entries carry.
   TextColumn get externalId => text().nullable()();
 
+  /// What the person actually said, when the row came from a spoken capture.
+  /// The label is the tidied-up name; this is the sentence behind it. Kept so
+  /// that somebody looking at a row the house guessed at can see what it was
+  /// guessing from before deciding whether the guess was right. Null for rows
+  /// nobody spoke.
+  TextColumn get said => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }

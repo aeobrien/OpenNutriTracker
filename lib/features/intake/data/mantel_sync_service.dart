@@ -127,6 +127,7 @@ class MantelSyncService {
             label: dto.label,
             mealSlot: dto.foodTrackerMealSlot,
             dateTime: dto.eatenAtLocal,
+            said: dto.description,
           );
           await _countTowardsTheDay(dto);
           synced++;

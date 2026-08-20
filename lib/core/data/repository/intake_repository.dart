@@ -103,6 +103,7 @@ class IntakeRepository {
     required String mealSlot,
     required DateTime dateTime,
     String? externalId,
+    String? said,
   }) async {
     _log.fine('Adding quick-add intake: $id, kcal=$kcal, label=$label');
 
@@ -120,6 +121,7 @@ class IntakeRepository {
       entryType: const Value('quickAdd'),
       quickAddLabel: Value(label),
       externalId: Value(externalId),
+      said: Value(said),
     ));
 
     return IntakeEntity(
@@ -133,6 +135,8 @@ class IntakeRepository {
       dateTime: dateTime,
       entryType: 'quickAdd',
       quickAddLabel: label,
+      externalId: externalId,
+      said: said,
       snapshotKcal: kcal,
       snapshotProtein: protein,
       snapshotCarbs: carbs,
@@ -207,14 +211,57 @@ class IntakeRepository {
     await _logEntryDao.deleteById(intakeEntity.id);
   }
 
+  /// Correct a row already on the diary.
+  ///
+  /// Two shapes, because two kinds of row are being corrected. A row with a
+  /// food behind it is corrected by *how much* — change the amount and all
+  /// four figures follow from the food's own per-100g numbers. A row with no
+  /// food behind it (anything spoken, and anything quick-added) has no
+  /// per-100g numbers to follow, so it is corrected by what it was called and
+  /// what it came to: [label] and [kcal]. Its protein, fat and carbs move in
+  /// proportion with the calories, because somebody correcting "350" to "250"
+  /// is disputing the size of the estimate and not its composition.
   Future<IntakeEntity?> updateIntake(
       String intakeId, Map<String, dynamic> fields) async {
     _log.fine('Updating intake: $intakeId');
+    if (fields.containsKey('label') || fields.containsKey('kcal')) {
+      final row = await _logEntryDao.getById(intakeId);
+      if (row == null) return null;
+
+      final entry = row.logEntry;
+      final companion = LogEntriesCompanion(
+        quickAddLabel: fields.containsKey('label')
+            ? Value(fields['label'] as String?)
+            : const Value.absent(),
+      );
+      if (fields.containsKey('kcal')) {
+        final newKcal = (fields['kcal'] as num).toDouble();
+        final was = entry.snapshotKcal;
+        // No calories before means nothing to scale from; leave the other
+        // three where they are rather than multiplying by infinity.
+        final scale = was > 0 ? newKcal / was : 1.0;
+        await _logEntryDao.updateEntry(
+            intakeId,
+            companion.copyWith(
+              snapshotKcal: Value(newKcal),
+              snapshotProtein: Value(entry.snapshotProtein * scale),
+              snapshotCarbs: Value(entry.snapshotCarbs * scale),
+              snapshotFat: Value(entry.snapshotFat * scale),
+            ));
+      } else {
+        await _logEntryDao.updateEntry(intakeId, companion);
+      }
+
+      final updated = await _logEntryDao.getById(intakeId);
+      return updated != null ? IntakeEntity.fromLogEntry(updated) : null;
+    }
     if (fields.containsKey('amount')) {
       final row = await _logEntryDao.getById(intakeId);
       if (row == null) return null;
 
-      // Quick-add entries cannot be updated via amount change
+      // A row with no food behind it has no per-unit figures to recompute
+      // from, so an amount on its own says nothing. Correcting one of those
+      // goes through the label/kcal path above.
       if (row.logEntry.entryType == 'quickAdd') return null;
 
       final newAmount = fields['amount'] as double;

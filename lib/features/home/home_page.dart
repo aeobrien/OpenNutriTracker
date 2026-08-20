@@ -297,9 +297,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   void onIntakeItemTapped(BuildContext context, IntakeEntity intakeEntity,
       bool usesImperialUnits) async {
-    // Quick-add entries cannot be edited via amount dialog
-    if (intakeEntity.isQuickAdd) return;
-
     final messenger = ScaffoldMessenger.of(context);
     final updatedText = S.of(context).itemUpdatedSnackbar;
 
@@ -307,14 +304,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         context: context,
         builder: (context) => EditDialog(
             intakeEntity: intakeEntity, usesImperialUnits: usesImperialUnits));
-    if (edit != null) {
-      _homeBloc.updateIntakeItem(intakeEntity.id, {'amount': edit.amount},
+    // A tap that changed nothing is not a correction, and must not travel to
+    // the household as one — an amend with an empty body still bumps the row's
+    // version there and discards anything still on the wire for it.
+    if (edit != null && (edit.fields.isNotEmpty || edit.moveTo != null)) {
+      _homeBloc.updateIntakeItem(intakeEntity.id, edit.fields,
           moveTo: edit.moveTo);
       _reload();
       messenger.showSnackBar(
           SnackBar(
             duration: const Duration(days: 1),
-            content: Text(updatedText),
+            content: Text(edit.moveTo != null
+                ? 'Moved off your day.'
+                : updatedText),
           ));
       Future.delayed(const Duration(seconds: 4), () {
         messenger.hideCurrentSnackBar();

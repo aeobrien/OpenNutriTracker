@@ -23,6 +23,6 @@ class DeleteIntakeUsecase {
   /// an answer rather than disappearing from the day in both directions.
   Future<void> deleteIntake(IntakeEntity intakeEntity) async {
     await _intakeRepository.deleteIntake(intakeEntity);
-    await _household?.retire(intakeEntity.id);
+    await _household?.retire(intakeEntity.householdName);
   }
 }

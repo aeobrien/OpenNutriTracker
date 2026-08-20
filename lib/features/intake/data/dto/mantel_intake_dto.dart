@@ -9,7 +9,9 @@ class MantelIntakeDto {
   /// Tidy meal name shown in the diary, e.g. "Salmon & broccoli".
   final String label;
 
-  /// The raw spoken/typed text (kept for reference; not displayed).
+  /// The raw spoken/typed text. Kept, and shown to somebody correcting the
+  /// row by hand: the label is the house's tidied-up name for it, and the only
+  /// way to judge whether the house heard right is to see what was said.
   final String? description;
 
   final double kcal;

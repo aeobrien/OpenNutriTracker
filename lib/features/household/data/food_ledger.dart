@@ -47,13 +47,14 @@ class FoodLedger {
     }
   }
 
-  /// Correct a logged food at the household end — its amount, its figures, and
-  /// whose day it counts against.
+  /// Correct a logged food at the household end — what it is called, its
+  /// amount, its figures, and whose day it counts against.
   ///
   /// One call. See HouseholdLogger.amendFood for why moving is not separate.
   Future<void> amend(
     String intakeId, {
     int? moveTo,
+    String? label,
     double? quantity,
     num? kcal,
     num? protein,
@@ -64,6 +65,7 @@ class FoodLedger {
       await _logger.amendFood(
         nameFor(intakeId),
         owner: moveTo,
+        label: label,
         qty: quantity,
         kcal: kcal,
         protein: protein,

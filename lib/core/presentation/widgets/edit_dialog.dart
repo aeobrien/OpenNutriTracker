@@ -8,18 +8,40 @@ import 'package:opennutritracker/generated/l10n.dart';
 
 /// What the edit dialog was asked to change.
 ///
-/// The amount and whose day it is come back together rather than one at a time.
-/// They are noticed at the same moment and they save at the same moment: a move
-/// that landed without its corrected figure would leave two people's totals
-/// wrong with nothing to say so.
+/// The correction and whose day it is come back together rather than one at a
+/// time. They are noticed at the same moment and they save at the same moment:
+/// a move that landed without its corrected figure would leave two people's
+/// totals wrong with nothing to say so.
+///
+/// Which fields are filled in depends on what kind of row was tapped. A row
+/// with a food behind it comes back as an [amount], because everything else
+/// follows from the food's own figures. A row with no food behind it — anything
+/// spoken, anything quick-added — has no figures to follow, so it comes back as
+/// what it should be called and what it came to.
 class IntakeEdit {
-  /// In metric, as the rest of the app holds it.
-  final double amount;
+  /// In metric, as the rest of the app holds it. Null for a row with no food
+  /// behind it, where an amount on its own would mean nothing.
+  final double? amount;
+
+  /// What the row should be called, when that is what was corrected.
+  final String? label;
+
+  /// What the row came to, when that is what was corrected.
+  final double? kcal;
 
   /// Who to move it to, or null to leave it where it is.
   final int? moveTo;
 
-  const IntakeEdit(this.amount, {this.moveTo});
+  const IntakeEdit(this.amount, {this.label, this.kcal, this.moveTo});
+
+  /// The correction as the diary takes it. Only the fields actually corrected
+  /// are present, so a row is never quietly rewritten in a way nobody asked
+  /// for.
+  Map<String, dynamic> get fields => {
+        if (amount != null) 'amount': amount,
+        if (label != null) 'label': label,
+        if (kcal != null) 'kcal': kcal,
+      };
 }
 
 class EditDialog extends StatefulWidget {
@@ -35,8 +57,21 @@ class EditDialog extends StatefulWidget {
 
 class _EditDialogState extends State<EditDialog> {
   late TextEditingController amountEditingController;
+
+  /// Only for a row with no food behind it — see [_hasNoFoodBehindIt].
+  late TextEditingController nameEditingController;
+  late TextEditingController kcalEditingController;
+
   late double _currentKcalEstimate;
   HouseholdPerson? _moveTo;
+
+  /// Whether this is a row the amount cannot speak for.
+  ///
+  /// A spoken row and a quick-added row both arrive as a name and a set of
+  /// figures with nothing underneath them: there is no food, so there is no
+  /// per-100g number, so "300g" of it is not a fact about anything. Those get
+  /// asked what they should be called and what they came to instead.
+  bool get _hasNoFoodBehindIt => widget.intakeEntity.isQuickAdd;
 
   @override
   void initState() {
@@ -45,21 +80,38 @@ class _EditDialogState extends State<EditDialog> {
         widget.intakeEntity.amount, widget.intakeEntity.meal.mealUnit);
     amountEditingController =
         TextEditingController(text: initialAmount.toStringAsFixed(2));
-    _currentKcalEstimate = _calculateKcal(widget.intakeEntity.amount);
+    nameEditingController = TextEditingController(
+        text: widget.intakeEntity.quickAddLabel ?? '');
+    kcalEditingController = TextEditingController(
+        text: widget.intakeEntity.totalKcal.round().toString());
+    _currentKcalEstimate = _hasNoFoodBehindIt
+        ? widget.intakeEntity.totalKcal
+        : _calculateKcal(widget.intakeEntity.amount);
 
     // Pre-select text for easy replacement
     amountEditingController.selection = TextSelection(
         baseOffset: 0,
         extentOffset: amountEditingController.text.length);
+    kcalEditingController.selection = TextSelection(
+        baseOffset: 0, extentOffset: kcalEditingController.text.length);
 
     amountEditingController.addListener(_onAmountChanged);
+    kcalEditingController.addListener(_onKcalChanged);
   }
 
   @override
   void dispose() {
     amountEditingController.removeListener(_onAmountChanged);
     amountEditingController.dispose();
+    kcalEditingController.removeListener(_onKcalChanged);
+    kcalEditingController.dispose();
+    nameEditingController.dispose();
     super.dispose();
+  }
+
+  void _onKcalChanged() {
+    final parsed = double.tryParse(kcalEditingController.text);
+    if (parsed != null) setState(() => _currentKcalEstimate = parsed);
   }
 
   void _onAmountChanged() {
@@ -104,7 +156,99 @@ class _EditDialogState extends State<EditDialog> {
 
     return AlertDialog(
       title: Text(S.of(context).editItemDialogTitle),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
+      content: SingleChildScrollView(
+        child: _hasNoFoodBehindIt
+            ? _foodlessRow(context)
+            : _rowWithAFoodBehindIt(context, unitStr, unitLabel, hasServing),
+      ),
+      actions: [
+        TextButton(
+            onPressed: _save,
+            child: Text(S.of(context).dialogOKLabel)),
+        TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(S.of(context).dialogCancelLabel))
+      ],
+    );
+  }
+
+  /// The correction, as one thing, once. See [IntakeEdit].
+  void _save() {
+    if (_hasNoFoodBehindIt) {
+      final name = nameEditingController.text.trim();
+      Navigator.of(context).pop(IntakeEdit(
+        null,
+        label: name.isEmpty ? null : name,
+        kcal: double.tryParse(kcalEditingController.text.trim()),
+        moveTo: _moveTo?.id,
+      ));
+      return;
+    }
+    final newAmount = double.tryParse(amountEditingController.text);
+    if (newAmount == null) return;
+    Navigator.of(context).pop(IntakeEdit(
+        _convertBackToMetricValue(
+            newAmount, widget.intakeEntity.meal.mealUnit),
+        moveTo: _moveTo?.id));
+  }
+
+  /// A row with nothing underneath it: what it is called, what it came to, and
+  /// whose day it is. Plus, when somebody spoke it, the sentence the house was
+  /// working from — which is the only way to tell a wrong guess from a wrong
+  /// hearing.
+  Widget _foodlessRow(BuildContext context) {
+    final said = widget.intakeEntity.said;
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      if (said != null && said.trim().isNotEmpty) ...[
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'You said: "${said.trim()}"',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.7)),
+          ),
+        ),
+        const SizedBox(height: 12.0),
+      ],
+      TextFormField(
+        controller: nameEditingController,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(labelText: 'What it was'),
+      ),
+      const SizedBox(height: 8.0),
+      TextFormField(
+        controller: kcalEditingController,
+        keyboardType: TextInputType.number,
+        autofocus: true,
+        decoration: const InputDecoration(
+            labelText: 'Calories', suffixText: 'kcal'),
+      ),
+      const SizedBox(height: 4.0),
+      Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          'The protein, fat and carbs move with the calories.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context)
+                  .colorScheme
+                  .onSurface
+                  .withValues(alpha: 0.6)),
+        ),
+      ),
+      const SizedBox(height: 8.0),
+      WhoseDayIsIt(onChanged: (person) => _moveTo = person),
+    ]);
+  }
+
+  Widget _rowWithAFoodBehindIt(BuildContext context, String unitStr,
+      String unitLabel, bool hasServing) {
+    return Column(mainAxisSize: MainAxisSize.min, children: [
         TextFormField(
           controller: amountEditingController,
           keyboardType: TextInputType.number,
@@ -152,24 +296,7 @@ class _EditDialogState extends State<EditDialog> {
                   .onSurface
                   .withValues(alpha: 0.7)),
         ),
-      ]),
-      actions: [
-        TextButton(
-            onPressed: () {
-              double newAmount = double.parse(amountEditingController.text);
-              Navigator.of(context).pop(IntakeEdit(
-                  _convertBackToMetricValue(
-                      newAmount, widget.intakeEntity.meal.mealUnit),
-                  moveTo: _moveTo?.id));
-            },
-            child: Text(S.of(context).dialogOKLabel)),
-        TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(S.of(context).dialogCancelLabel))
-      ],
-    );
+      ]);
   }
 
   double _convertValue(double value, String? unit) {
