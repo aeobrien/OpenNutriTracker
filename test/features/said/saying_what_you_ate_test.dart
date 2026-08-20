@@ -2,16 +2,23 @@
 ///
 /// Behaviour under test (Release G, TM-0027 + TM-0028 — the phone half):
 ///
-///  * the row goes on the day the moment you let go, before anything has
-///    understood it. Not after. The kitchen computer being asleep must cost you
-///    a rough number, never the thing you said;
-///  * while it is rough it says so, next to the figure and not in a caption
-///    somewhere else, and it says how long it has been sitting there;
+///  * the row goes on the household's ledger the moment you let go, before
+///    anything has understood it. Not after. The kitchen computer being asleep
+///    must cost you a rough number, never the thing you said;
 ///  * a correction made while the answer is on the wire wins, permanently;
-///  * both exits are on the row the whole time — say it again, or take it off;
 ///  * typing a sentence and speaking one are the same thing to everything
 ///    downstream, so the phone offers both and neither is a lesser path;
 ///  * and at most one question ever comes back, whatever the sentence was.
+///
+/// **Rewritten 20 August 2026.** This widget used to keep a list of spoken food
+/// under the button, and a third of this file tested it: the rough figure, the
+/// two exits on each row, how long a row had been waiting. That list is gone.
+/// Aidan looked at a phone showing his spoken breakfast in one place and four
+/// empty meal slots in another and said, correctly, that a second food system
+/// had been built inside the first one. Spoken food now lands in the diary this
+/// app already had, so what a row looks like is the diary's business and not
+/// this widget's. What is left here is the sentence: saying it, sending it,
+/// waiting for it visibly, and answering the one question.
 library;
 
 import 'dart:io';
@@ -118,17 +125,15 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget screen({bool figuresOff = false, bool canRetire = true}) => MaterialApp(
-        home: FiguresScope(
-          figuresOff: figuresOff,
-          child: Scaffold(
-            body: SayWhatYouAteSection(
-              repository: days,
-              said: said,
-              microphone: microphone,
-              logger: canRetire ? logger : null,
-              day: today,
-            ),
+  var told = 0;
+
+  Widget screen() => MaterialApp(
+        home: Scaffold(
+          body: SayWhatYouAteSection(
+            said: said,
+            microphone: microphone,
+            day: today,
+            onChanged: () => told += 1,
           ),
         ),
       );
@@ -139,7 +144,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  group('the row goes on the day first', () {
+  group('the sentence goes to the household first', () {
     testWidgets('a sentence lands before anything has understood it',
         (tester) async {
       // The kitchen computer is not going to understand this one.
@@ -151,25 +156,21 @@ void main() {
 
       expect(mini.entries.values.single['said'],
           'two eggs and a slice of toast');
-      // ignore: avoid_print
-      print('PROBE requests=${mini.requests} asked=${mini.saidAsked}');
       expect(mini.entries.values.single['state'], 'provisional');
-      expect(find.text('two eggs and a slice of toast'), findsOneWidget);
     });
 
-    testWidgets('and it stays there when nothing could be made of it',
+    testWidgets('and it stays on the ledger when nothing could be made of it',
         (tester) async {
       mini.saidLines = const [];
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
       await type(tester, 'whatever it was Emily made');
 
-      expect(find.text('whatever it was Emily made'), findsOneWidget);
-      expect(find.textContaining(SayWhatYouAteSection.workingOut),
-          findsOneWidget);
+      expect(mini.entries.values.single['state'], 'provisional');
+      expect(find.text(SayWhatYouAteSection.notUnderstood), findsOneWidget);
     });
 
-    testWidgets('a sentence understood at once leaves nothing rough behind',
+    testWidgets('a sentence that was understood says nothing went wrong',
         (tester) async {
       mini.saidLines = const [
         {'label': 'Free range eggs', 'kcal': 143},
@@ -179,8 +180,24 @@ void main() {
       await tester.pumpAndSettle();
       await type(tester, 'two eggs and a slice of toast');
 
-      expect(find.textContaining(SayWhatYouAteSection.workingOut), findsNothing);
-      expect(find.text(SayWhatYouAteSection.heading), findsNothing);
+      expect(find.text(SayWhatYouAteSection.notUnderstood), findsNothing);
+      expect(find.text(SayWhatYouAteSection.couldNotReach), findsNothing);
+    });
+
+    testWidgets('and the screen around it is told to go and fetch it',
+        (tester) async {
+      // The meal is on the ledger by now and not yet in this phone's diary.
+      // Without this the food appears the *next* time the app is opened, which
+      // from where a person is standing is indistinguishable from it not
+      // having worked.
+      mini.saidLines = const [
+        {'label': 'Banana', 'kcal': 95}
+      ];
+      told = 0;
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      await type(tester, 'a banana');
+      expect(told, greaterThan(0));
     });
 
     testWidgets('the queue delivers the row before anything asks about it',
@@ -201,7 +218,11 @@ void main() {
     });
   });
 
-  group('while it is still rough', () {
+  group('there is no second list of food here', () {
+    // The fault of 20 August 2026, kept as a test so it cannot come back
+    // quietly. Whatever is on the household's ledger, this widget does not draw
+    // it: the diary underneath is where food is listed, and two lists of the
+    // same day on one screen is the thing Aidan stopped.
     setUp(() {
       mini.spoke(
           clientId: 'spoken-1',
@@ -211,134 +232,99 @@ void main() {
       mini.saidLines = const [];
     });
 
-    testWidgets('the words are shown, not a made-up label', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-      expect(find.text('two eggs and a slice of toast'), findsOneWidget);
-    });
-
-    testWidgets('the figure says it is a guess', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-      expect(find.text('about 300 kcal'), findsOneWidget);
-    });
-
-    testWidgets('with figures off there is no number and still a row',
+    testWidgets('a row waiting on the ledger is not drawn here',
         (tester) async {
-      await tester.pumpWidget(screen(figuresOff: true));
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      expect(find.text('two eggs and a slice of toast'), findsNothing);
+    });
+
+    testWidgets('and neither is a calorie figure', (tester) async {
+      await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
       expect(find.textContaining('kcal'), findsNothing);
-      expect(find.text('two eggs and a slice of toast'), findsOneWidget);
     });
 
-    testWidgets('both exits are on the row', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-      expect(find.text(SayWhatYouAteSection.tryAgain), findsOneWidget);
-      expect(find.text(SayWhatYouAteSection.takeItOff), findsOneWidget);
-    });
-
-    testWidgets('taking it off queues a retire and clears the row',
+    testWidgets('this widget never asks the household for the day at all',
         (tester) async {
+      // Stronger than checking the screen: if it does not fetch the day it
+      // cannot grow a list of it later by accident.
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
-      await tester.tap(find.text(SayWhatYouAteSection.takeItOff));
-      await tester.pumpAndSettle();
-
-      expect(find.text('two eggs and a slice of toast'), findsNothing);
-      expect(await outbox.pendingCount(), 1);
-    });
-
-    testWidgets('saying it again asks the kitchen computer once more',
-        (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-      final before = mini.saidAsked.length;
-      await tester.tap(find.text(SayWhatYouAteSection.tryAgain));
-      await tester.pumpAndSettle();
-      expect(mini.saidAsked.length, greaterThan(before));
+      expect(mini.requests.where((r) => r.contains('/household/day')), isEmpty);
     });
   });
 
-  group('how long it has been sitting there', () {
-    // A row from four hours ago and one from four seconds ago must not read the
-    // same. One of them is waiting and the other is stuck.
-    final at = DateTime(2026, 8, 19, 18, 0);
-
-    test('a moment ago', () {
-      expect(
-          SayWhatYouAteSection.waitingFor(at.subtract(const Duration(seconds: 20)),
-              now: at),
-          'just now');
-    });
-
-    test('minutes', () {
-      expect(
-          SayWhatYouAteSection.waitingFor(at.subtract(const Duration(minutes: 7)),
-              now: at),
-          '7 minutes ago');
-    });
-
-    test('hours', () {
-      expect(
-          SayWhatYouAteSection.waitingFor(at.subtract(const Duration(hours: 4)),
-              now: at),
-          '4 hours ago');
-    });
-
-    test('days', () {
-      expect(
-          SayWhatYouAteSection.waitingFor(at.subtract(const Duration(days: 2)),
-              now: at),
-          '2 days ago');
-    });
-
-    test('nothing at all when nobody wrote it down', () {
-      expect(SayWhatYouAteSection.waitingFor(null), '');
-    });
-
-    testWidgets('and it is on the row', (tester) async {
-      mini.spoke(
-          clientId: 'spoken-1',
-          words: 'a banana',
-          since: DateTime.now()
-              .subtract(const Duration(hours: 3))
-              .toIso8601String());
-      mini.saidLines = const [];
+  group('waiting is visible', () {
+    testWidgets('the button says what it is doing and cannot be used twice',
+        (tester) async {
+      // Aidan, 20 August 2026: "It didn't seem to advance so I tried again,
+      // saying the same thing. Then it updated twice in quick succession." A
+      // control that is working has to look like one.
+      mini.saidLines = const [
+        {'label': 'Banana', 'kcal': 95}
+      ];
+      mini.holdSaid = true;
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
-      expect(find.textContaining('3 hours ago'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextField).first, 'a banana');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pump();
+
+      expect(find.text(SayWhatYouAteSection.workingOut), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      // A second send while the first is in flight reaches nothing.
+      final before = mini.requests.length;
+      await tester.enterText(find.byType(TextField).first, 'a banana');
+      await tester.testTextInput.receiveAction(TextInputAction.send);
+      await tester.pump();
+      expect(mini.requests.length, before);
+
+      mini.releaseSaid();
+      await tester.pumpAndSettle();
+      expect(find.text(SayWhatYouAteSection.workingOut), findsNothing);
+    });
+
+    testWidgets('a kitchen computer that cannot be reached is said out loud',
+        (tester) async {
+      mini.reachable = false;
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      await type(tester, 'a banana');
+      expect(find.text(SayWhatYouAteSection.couldNotReach), findsOneWidget);
     });
   });
 
   group('their hand wins', () {
     testWidgets('an answer for a row they corrected first is not applied',
         (tester) async {
-      mini.spoke(clientId: 'spoken-1', words: 'two eggs', kcal: 300);
       mini.saidWhy = 'it was changed by hand since';
+
       mini.saidLines = const [
         {'label': 'Eggs', 'kcal': 220}
       ];
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
-      await tester.tap(find.text(SayWhatYouAteSection.tryAgain));
-      await tester.pumpAndSettle();
+      await type(tester, 'two eggs');
 
-      expect(mini.entries['spoken-1']!['kcal'], 300);
-      expect(mini.entries['spoken-1']!['label'], 'two eggs');
+      expect(mini.entries.values.single['label'], 'two eggs');
+      expect(mini.entries.values.single['state'], 'provisional');
     });
 
-    testWidgets('the version the row is at travels with the question',
+    testWidgets('and losing that race is not reported as a fault',
         (tester) async {
-      mini.spoke(clientId: 'spoken-1', words: 'two eggs');
-      mini.entries['spoken-1']!['version'] = 3;
+      // Their correction winning is the system working. Telling them something
+      // went wrong would have them undo the correction they just made.
+      mini.saidWhy = 'it was changed by hand since';
+
       mini.saidLines = const [];
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
-      await tester.tap(find.text(SayWhatYouAteSection.tryAgain));
-      await tester.pumpAndSettle();
+      await type(tester, 'two eggs');
 
-      expect(mini.saidAsked.last['version'], 3);
+      expect(find.text(SayWhatYouAteSection.notUnderstood), findsNothing);
     });
   });
 
@@ -450,7 +436,7 @@ void main() {
       mini.reachable = true;
       await outbox.drain();
       expect(mini.entries.values.single['label'],
-          SayWhatYouAteSection.notHeardYet,
+          SaidRepository.notHeardYet,
           reason: 'a recording nobody has listened to has no words to show');
       expect(mini.entries.values.single['state'], 'provisional');
     });

@@ -16,15 +16,9 @@ import 'package:opennutritracker/features/home/presentation/widgets/dashboard_wi
 import 'package:opennutritracker/features/home/presentation/widgets/intake_vertical_list.dart';
 import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
-import 'package:opennutritracker/features/today/data/day_repository.dart';
-import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/said/data/microphone.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
 import 'package:opennutritracker/features/said/presentation/say_what_you_ate_section.dart';
-import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
-import 'package:opennutritracker/features/week/data/week_repository.dart';
-import 'package:opennutritracker/features/plan/data/plan_repository.dart';
-import 'package:opennutritracker/features/week/presentation/week_ahead_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -39,23 +33,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   late HomeBloc _homeBloc;
 
-  /// The planned-meals section lives below Home in the tree, so Home cannot
-  /// find it by looking up. It is held by key instead, and told to reload
-  /// whenever Home reloads — see [_reload].
-  final _planned = GlobalKey<PlannedMealsSectionState>();
   final _said = GlobalKey<SayWhatYouAteSectionState>();
-
-  /// The week, held the same way and for the same reason. Logging a meal
-  /// changes today's figure on it, so it has to be told when Home reloads or
-  /// it would sit there showing the week as it was when the app opened.
-  final _week = GlobalKey<WeekAheadSectionState>();
 
   /// Reload the day. Everything on Home that can go stale goes through here so
   /// that no future call site can reload half of it.
   void _reload() {
     _homeBloc.add(const LoadItemsEvent());
-    _planned.currentState?.reload();
-    _week.currentState?.reload();
+  }
+
+  /// Somebody has just said what they ate, and the household has understood it.
+  ///
+  /// The meal is on the ledger by now but not yet in this phone's diary, so the
+  /// mirror is run before the screen is redrawn. Without this the food would
+  /// appear the *next* time the app was opened, which from where a person is
+  /// standing is indistinguishable from it not having worked.
+  void _afterSaying() {
+    _syncMantel();
   }
 
   @override
@@ -185,34 +178,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         // rather than behind a tab because the whole promise is that it takes
         // one motion — a screen you have to find first is a screen people go
         // back to typing instead of.
+        //
+        // What it no longer has under it is a list of its own. On 20 August
+        // 2026 this screen showed spoken food in one place and the four meal
+        // slots below in another, with nothing joining them and the ring at the
+        // top counting only the second. Aidan's words: "it seems like despite
+        // the issues we had yesterday you are still building a separate system
+        // inside the existing system." Spoken food now goes where all the other
+        // food goes — into the slots below, through the mirror the app has had
+        // all along — so there is one day on this screen and not two.
+        //
+        // The planned-meals list and the week that used to sit here went with
+        // it, at his instruction: planning is what the kitchen panel is for,
+        // and a second copy of it on the phone was a second thing to keep in
+        // step for no gain.
         SayWhatYouAteSection(
           key: _said,
-          repository: locator<DayRepository>(),
           said: locator<SaidRepository>(),
           microphone: locator<Microphone>(),
-          logger: locator<HouseholdLogger>(),
-          day: PlannedMealsSection.dayKey(DateTime.now()),
-          onChanged: _reload,
-        ),
-        // What the household has planned, on the day list that already
-        // exists. Nothing is drawn here on a day with no plan.
-        PlannedMealsSection(
-          key: _planned,
-          repository: locator<DayRepository>(),
-          day: PlannedMealsSection.dayKey(DateTime.now()),
-          logger: locator<HouseholdLogger>(),
-          // Confirming a planned dinner changes what is left of the day, so
-          // the ring above has to be redrawn — not just the list it came from.
-          onDecided: () => _homeBloc.add(const LoadItemsEvent()),
-        ),
-        // The week, on the same screen — and the way into the plan. Tapping a
-        // day opens that day's planning, which writes into the same plan the
-        // kitchen panel keeps rather than a second one held on the phone.
-        WeekAheadSection(
-          key: _week,
-          repository: locator<WeekRepository>(),
-          planner: locator<PlanRepository>(),
-          onPlanned: _reload,
+          day: SayWhatYouAteSection.dayKey(DateTime.now()),
+          // Understanding a sentence takes seconds, and the meal it turns into
+          // has to be fetched from the household before it is in the diary. So
+          // the pull runs here rather than only on open — otherwise you would
+          // say something, watch nothing happen, and put the phone down.
+          onChanged: _afterSaying,
         ),
         ActivityVerticalList(
           day: DateTime.now(),

@@ -27,35 +27,69 @@ import 'package:flutter_test/flutter_test.dart';
 
 String _read(String path) => File(path).readAsStringSync();
 
+/// The same source with every run of whitespace closed up.
+///
+/// These wiring checks look for a call in the source text, and a call is only
+/// text until the formatter decides the line is too long and breaks it at the
+/// dot. On 20 August `locator<WeightRepository>().typed(` went over the limit
+/// and split across two lines, and the check for it failed while the wiring it
+/// was checking had not moved at all. A test that reports a defect because a
+/// line got longer is worse than no test: it costs a hunt and teaches you to
+/// distrust it. Matching against the closed-up source asks the question the
+/// test means to ask — is this call here — rather than "is it laid out the way
+/// it was when I was written".
+String _calls(String path) => _read(path).replaceAll(RegExp(r'\s+'), '');
+
 void main() {
   group('there is one day, and it is Home', () {
-    test('the household\'s planned meals are mounted on Home', () {
+    test('there is one list of food on Home, and it is the diary', () {
+      // The fault of 20 August 2026 in one check. Home showed spoken food in a
+      // section of its own, above four meal slots that stayed empty, with the
+      // ring at the top counting only the slots. Aidan: "it seems like despite
+      // the issues we had yesterday you are still building a separate system
+      // inside the existing system." Any household list of eaten food mounted
+      // on this screen is that fault coming back.
       final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('PlannedMealsSection('), isTrue,
-          reason: 'what the household has planned is built nowhere a person '
-              'can see it');
-      expect(home.contains('DayRepository'), isTrue,
-          reason: 'the section is mounted but never given the household to '
-              'ask');
+      expect('IntakeVerticalList('.allMatches(home).length, 4,
+          reason: 'the diary\'s four meal slots are no longer all on Home');
+      for (final second in const [
+        'PlannedMealsSection(',
+        'WeekAheadSection(',
+      ]) {
+        expect(home.contains(second), isFalse,
+            reason: '$second is a second day on the screen that already has '
+                'one — planning belongs on the kitchen panel');
+      }
     });
 
-    test('the planned rows can actually be answered', () {
-      // The buttons only appear when the section is given something to put the
-      // answer on. A section mounted without it renders the plan perfectly and
-      // silently offers no way to confirm it — which looks like a design
-      // choice rather than a missing line.
+    test('saying what you ate reaches the diary and not a list of its own', () {
       final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('logger: locator<HouseholdLogger>()'), isTrue,
-          reason: 'the planned meals on Home have no way to be confirmed');
-      expect(home.contains('onDecided:'), isTrue,
-          reason: 'eating a planned meal would not redraw the day it changed');
+      expect(home.contains('SayWhatYouAteSection('), isTrue,
+          reason: 'there is no way to say what you ate on the screen you are '
+              'looking at');
+      expect(home.contains('onChanged: _afterSaying'), isTrue,
+          reason: 'a sentence is understood and then nothing fetches what it '
+              'became, so the food appears the next time the app opens — '
+              'which looks exactly like it not having worked');
+      final after = RegExp(r'void _afterSaying\(\) \{(.*?)\n  \}',
+              dotAll: true)
+          .firstMatch(home)
+          ?.group(1);
+      expect(after, isNotNull, reason: 'Home no longer does anything after a '
+          'sentence is understood');
+      expect(after!.contains('_syncMantel()'), isTrue,
+          reason: 'nothing pulls the meal into the diary');
     });
 
-    test('reloading Home reloads the planned meals with it', () {
+    test('the mirror into the diary is still wired to opening the app', () {
+      // The pull is at-least-once by design: if the one after a sentence is
+      // missed — killed app, no signal, a sleeping Mini — opening the app has
+      // to be enough to catch up. Losing this would make a dropped sync
+      // permanent.
       final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('_planned.currentState?.reload()'), isTrue,
-          reason: 'logging a meal would leave the planned row it matches '
-              'sitting there until the app was restarted');
+      expect(home.contains('MantelSyncService'), isTrue,
+          reason: 'nothing brings household meals into the diary at all');
+      expect(home.contains('_syncMantel()'), isTrue);
     });
 
     test('and the one reload does not call itself', () {
@@ -225,10 +259,11 @@ void main() {
       // repository that also holds the history rather than straight to the
       // queue. Either link missing and a weight typed on Profile never leaves
       // the phone, so neither is taken on trust.
-      final profile = _read('lib/features/profile/profile_page.dart');
+      final profile = _calls('lib/features/profile/profile_page.dart');
       expect(profile.contains('WeightRepository>().typed('), isTrue,
           reason: 'a weight typed on Profile is not handed to anything');
-      final weights = _read('lib/features/weight/data/weight_repository.dart');
+      final weights =
+          _calls('lib/features/weight/data/weight_repository.dart');
       expect(weights.contains('_logger.logWeight('), isTrue,
           reason: 'the weight is handed on and then goes nowhere');
     });
@@ -380,24 +415,15 @@ void main() {
   });
 
   group('the week', () {
-    test('is mounted on Home, and Home is where it stays', () {
-      // Its own tab is exactly what this project already got wrong once: a
-      // second Today beside a Home that was already the day. The week is a
-      // section on the screen that exists, or it is nothing.
+    test('is not on the phone at all', () {
+      // Aidan's call, 20 August 2026, after a run in which the week and the
+      // plan on the phone were both empty and both untestable: planning is what
+      // the kitchen panel is for, and a second copy of it here was a second
+      // thing to keep in step for no gain. The repository below stays — the
+      // phone still reads the household — but nothing draws a week on Home.
       final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('WeekAheadSection('), isTrue,
-          reason: 'the week is built nowhere a person can see it');
-      expect(home.contains('locator<WeekRepository>()'), isTrue,
-          reason: 'the section is mounted but never given the household to ask');
-    });
-
-    test('is redrawn when the day it sits under is', () {
-      // Logging a meal changes today's figure on the week. Without this the
-      // section sits showing the week as it was when the app opened, which
-      // reads as a wrong figure rather than a stale one.
-      final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('_week.currentState?.reload()'), isTrue,
-          reason: 'the week goes stale the moment anything is logged');
+      expect(home.contains('WeekAheadSection('), isFalse,
+          reason: 'the week is back on the phone');
     });
 
     test('the repository it needs is built', () {
@@ -408,15 +434,6 @@ void main() {
   });
 
   group('planning the week', () {
-    test('the week is given something to plan with', () {
-      // The section takes a planner only if Home passes one. Without it every
-      // day on the week is inert and the phone can read the plan but never
-      // change it — which is the half-built state this release exists to end.
-      final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('planner: locator<PlanRepository>()'), isTrue,
-          reason: 'the week is mounted read-only, so no day opens');
-    });
-
     test('the repository it needs is built', () {
       expect(_read('lib/core/utils/locator.dart')
           .contains('PlanRepository(householdApi, householdRepository)'), isTrue,
@@ -436,12 +453,6 @@ void main() {
               'on top of a meal they were never shown');
     });
 
-    test('the day that was changed is redrawn behind the sheet', () {
-      final home = _read('lib/features/home/home_page.dart');
-      expect(home.contains('onPlanned: _reload'), isTrue,
-          reason: "putting tonight's dinner on the plan leaves today showing "
-              'the day as it was before');
-    });
   });
 
   group('saying what you ate', () {

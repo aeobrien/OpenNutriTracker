@@ -39,6 +39,10 @@ class SaidRepository {
 
   SaidRepository(this._api, this._logger, this._outbox, this._clips);
 
+  /// What a row says while nothing has heard it yet. It is replaced by the real
+  /// sentence the moment the kitchen computer comes back with one.
+  static const notHeardYet = 'Something you said';
+
   /// Put what somebody just said on their day, and then try to understand it.
   ///
   /// Returns the name the row now has, which is how anything asks about it
@@ -61,7 +65,7 @@ class SaidRepository {
       // A recording nobody has listened to yet has no words to show, so the row
       // says what it honestly is. It is replaced by the real sentence the
       // moment anything hears it.
-      label: typed.isEmpty ? 'Something you said' : typed,
+      label: typed.isEmpty ? notHeardYet : typed,
       state: 'provisional',
       said: typed.isEmpty ? null : typed,
       at: at,

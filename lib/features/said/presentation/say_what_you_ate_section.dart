@@ -1,40 +1,46 @@
 import 'dart:io';
 
-import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:opennutritracker/features/household/data/household_logger.dart';
-import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/said/data/microphone.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
-import 'package:opennutritracker/features/today/data/day_repository.dart';
-import 'package:opennutritracker/features/today/domain/day_view.dart';
 
 /// Saying what you ate, on the screen you are already looking at.
 ///
-/// Two halves, and the second one is the reason the first is safe to use.
+/// Hold the button and talk, or type it. Both become one sentence going to the
+/// same place, so there is no second, worse way of doing this for the times you
+/// cannot speak out loud. At most one question comes back, and answering it is
+/// just another sentence through the same route.
 ///
-/// The top half is how you say it: hold the button and talk, or type it. Both
-/// end up as one sentence going to the same place, so there is no second, worse
-/// way of doing this for the times you cannot talk out loud.
+/// **What this does not have is a list of its own, and that is the point.**
+/// Until 20 August 2026 it did: a spoken meal appeared here, in its own
+/// section, while the app's four meal slots sat empty a scroll further down and
+/// the ring at the top counted only those. Aidan looked at that and said:
 ///
-/// The bottom half is everything that is still being worked out. A row appears
-/// there the instant you let go — in your own words, with a rough figure — and
-/// leaves it the moment the kitchen computer has understood it. While it is
-/// there it can be said again, or taken off. Nothing is ever waiting somewhere
-/// you cannot see it, which is the difference between a rough total you can
-/// trust and one you cannot.
+///     "It's not clear to me why I ALSO have a days of the week section which
+///     is where foods added using the 'hold to say what you ate' function
+///     appear, or why this section seems to be completely separate to the
+///     existing food tracking system - it seems like despite the issues we had
+///     yesterday you are still building a separate system inside the existing
+///     system."
+///
+/// Spoken food now lands in the diary this app already had, through the mirror
+/// this app already had — a page of settled meals pulled from the household and
+/// written in as ordinary entries. So a spoken breakfast and a scanned one end
+/// up in the same place, count the same, and are edited and deleted the same
+/// way. This widget's whole job is the sentence; what becomes of it belongs to
+/// the diary.
+///
+/// The one thing kept from the old shape is the honesty about waiting. While a
+/// sentence is being worked out this says so, because several seconds of a
+/// button that has visibly done nothing is how somebody says it twice — which
+/// is exactly what he did.
 class SayWhatYouAteSection extends StatefulWidget {
-  final DayRepository repository;
   final SaidRepository said;
   final Microphone microphone;
 
-  /// Taking a row back off the day. Optional only so a test can mount this
-  /// read-only; Home always passes it.
-  final HouseholdLogger? logger;
-
-  /// Called whenever the day changes underneath, so the screen around this
-  /// redraws — speaking a dinner onto the day changes what is left of it.
+  /// Called once a sentence has been understood, so the screen around this can
+  /// fetch what it became and redraw.
   final VoidCallback? onChanged;
 
   /// The day, as 'YYYY-MM-DD'. Passed in rather than read from the clock so a
@@ -43,11 +49,9 @@ class SayWhatYouAteSection extends StatefulWidget {
 
   const SayWhatYouAteSection({
     super.key,
-    required this.repository,
     required this.said,
     required this.microphone,
     required this.day,
-    this.logger,
     this.onChanged,
   });
 
@@ -56,84 +60,38 @@ class SayWhatYouAteSection extends StatefulWidget {
   static const noMicrophone =
       'This phone will not let the app listen. You can still type it.';
   static const typeItInstead = 'or type what you ate';
-  static const workingOut = 'Still working this out';
-  static const heading = 'Said, not settled yet';
-  static const tryAgain = 'Say it again';
-  static const takeItOff = 'Take it off';
-  static const notHeardYet = 'Something you said';
+  static const workingOut = 'Working out what that was…';
+  static const notUnderstood =
+      "That did not come back as anything. It is on the kitchen computer as you "
+      'said it — say it again, or add it below.';
+  static const couldNotReach =
+      "The kitchen computer did not answer, so that is not counted yet. It will "
+      'go over next time the app can reach it.';
 
-  /// How long a row has been sitting unfinished, in the words a person would
-  /// use. A row from four hours ago should not read the same as one from four
-  /// seconds ago — one of them is waiting and the other is stuck.
-  static String waitingFor(DateTime? since, {DateTime? now}) {
-    if (since == null) return '';
-    final gap = (now ?? DateTime.now()).difference(since);
-    if (gap.inMinutes < 1) return 'just now';
-    if (gap.inMinutes < 60) return '${gap.inMinutes} minutes ago';
-    if (gap.inHours < 24) {
-      return gap.inHours == 1 ? 'an hour ago' : '${gap.inHours} hours ago';
-    }
-    return gap.inDays == 1 ? 'yesterday' : '${gap.inDays} days ago';
-  }
+  static String dayKey(DateTime now) => '${now.year.toString().padLeft(4, '0')}-'
+      '${now.month.toString().padLeft(2, '0')}-'
+      '${now.day.toString().padLeft(2, '0')}';
 
   @override
   State<SayWhatYouAteSection> createState() => SayWhatYouAteSectionState();
 }
 
 class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
-  List<LoggedItem> _rough = const [];
   bool _listening = false;
   bool _busy = false;
   String? _problem;
   String? _question;
   String? _questionAbout;
+  String? _questionWords;
   final _typed = TextEditingController();
   final _answer = TextEditingController();
   final _log = Logger('SayWhatYouAte');
-
-  @override
-  void initState() {
-    super.initState();
-    reload();
-  }
 
   @override
   void dispose() {
     _typed.dispose();
     _answer.dispose();
     super.dispose();
-  }
-
-  /// Read the day again, and try once more on anything still unfinished.
-  ///
-  /// The retry happens here, when the day is read, because that is the moment
-  /// the phone is demonstrably talking to the kitchen computer anyway. Nothing
-  /// runs on a timer: a row that stays unfinished is visible with both exits on
-  /// it, so nobody is ever waiting on a retry they cannot see.
-  Future<void> reload({bool catchUp = true}) async {
-    try {
-      final day = await widget.repository.today(widget.day);
-      if (!mounted) return;
-      setState(() {
-        _rough = day.workingOut;
-        _problem = null;
-      });
-      if (catchUp && _rough.isNotEmpty) {
-        final settled = await widget.said.catchUp(_rough);
-        if (settled > 0 && mounted) {
-          await reload(catchUp: false);
-          widget.onChanged?.call();
-        }
-      }
-    } on StateError {
-      // Nobody has said whose phone this is yet. The app asks before it opens.
-      if (!mounted) return;
-      setState(() => _rough = const []);
-    } catch (e) {
-      _log.info('[SAID] could not read the day: $e');
-      if (!mounted) return;
-      setState(() => _rough = const []);
-    }
   }
 
   /// Getting the microphone going, while it is still going.
@@ -189,32 +147,58 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
 
   Future<void> _sendTyped() async {
     final words = _typed.text.trim();
-    if (words.isEmpty) return;
+    if (words.isEmpty || _busy) return;
     _typed.clear();
     await _send(words: words);
   }
 
-  /// The one order that matters: the row goes on the day, and only then does
-  /// anything try to understand it.
+  /// One sentence, all the way through: onto the household's ledger, understood
+  /// there, and then into this phone's diary.
+  ///
+  /// The button is locked for the whole of it. Before 20 August 2026 it was not,
+  /// and the wait had nothing to show, so Aidan said his breakfast, saw nothing
+  /// move, said it again, and got two of everything. A control that is working
+  /// has to look like one.
   Future<void> _send({String? words, File? recording}) async {
-    setState(() => _busy = true);
+    setState(() {
+      _busy = true;
+      _problem = null;
+      _question = null;
+      _questionAbout = null;
+    });
     try {
       final name = await widget.said.heard(
           day: widget.day, words: words, recording: recording);
-      widget.onChanged?.call();
-      await reload(catchUp: false);
       final answer =
           await widget.said.workOut(clientId: name, version: 0, words: words);
       if (!mounted) return;
       setState(() {
         _question = answer?.question;
         _questionAbout = answer?.question == null ? null : name;
+        _questionWords = answer?.said ?? words;
+        _problem = _whatWentWrong(answer);
       });
-      await reload(catchUp: false);
       widget.onChanged?.call();
+    } catch (e) {
+      _log.info('[SAID] that sentence did not get through: $e');
+      if (!mounted) return;
+      setState(() => _problem = SayWhatYouAteSection.couldNotReach);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// What to say when a sentence did not become anything, or null when it did.
+  ///
+  /// "Their hand won" is not a problem and is deliberately silent: it means the
+  /// person corrected the row themselves while this was in flight, which is the
+  /// system working.
+  String? _whatWentWrong(dynamic answer) {
+    if (answer == null) return SayWhatYouAteSection.couldNotReach;
+    if (answer.applied as bool) return null;
+    final why = answer.why as String?;
+    if (why == 'it was changed by hand since') return null;
+    return SayWhatYouAteSection.notUnderstood;
   }
 
   /// Answering the one question. It goes back as another sentence through the
@@ -224,8 +208,8 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
   Future<void> _answerQuestion() async {
     final about = _questionAbout;
     final reply = _answer.text.trim();
-    if (about == null || reply.isEmpty) return;
-    final row = _rough.where((r) => r.clientId == about).firstOrNull;
+    if (about == null || reply.isEmpty || _busy) return;
+    final original = _questionWords ?? '';
     _answer.clear();
     setState(() {
       _question = null;
@@ -234,37 +218,15 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
     });
     try {
       await widget.said.workOut(
-          clientId: about,
-          version: row?.version ?? 0,
-          words: '${row?.said ?? ''} — $reply'.trim());
-      await reload(catchUp: false);
+          clientId: about, version: 0, words: '$original — $reply'.trim());
       widget.onChanged?.call();
+    } catch (e) {
+      _log.info('[SAID] the answer did not get through: $e');
+      if (!mounted) return;
+      setState(() => _problem = SayWhatYouAteSection.couldNotReach);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
-  }
-
-  Future<void> _sayAgain(LoggedItem row) async {
-    final name = row.clientId;
-    if (name == null) return;
-    setState(() => _busy = true);
-    try {
-      await widget.said
-          .workOut(clientId: name, version: row.version, words: row.said);
-      await reload(catchUp: false);
-      widget.onChanged?.call();
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _takeOff(LoggedItem row) async {
-    final logger = widget.logger;
-    final name = row.clientId;
-    if (logger == null || name == null) return;
-    setState(() => _rough = _rough.where((r) => r.clientId != name).toList());
-    await logger.retireFood(name);
-    widget.onChanged?.call();
   }
 
   @override
@@ -285,10 +247,17 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
               // nobody meant to start is how a phone ends up listening in a
               // pocket.
               onPressed: () {},
-              icon: Icon(_listening ? Icons.mic : Icons.mic_none),
-              label: Text(_listening
-                  ? SayWhatYouAteSection.listening
-                  : SayWhatYouAteSection.holdToTalk),
+              icon: _busy
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : Icon(_listening ? Icons.mic : Icons.mic_none),
+              label: Text(_busy
+                  ? SayWhatYouAteSection.workingOut
+                  : _listening
+                      ? SayWhatYouAteSection.listening
+                      : SayWhatYouAteSection.holdToTalk),
             ),
           ),
         ),
@@ -296,6 +265,7 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
           child: TextField(
             controller: _typed,
+            enabled: !_busy,
             textInputAction: TextInputAction.send,
             onSubmitted: (_) => _sendTyped(),
             decoration: InputDecoration(
@@ -316,14 +286,6 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
                     ?.copyWith(color: theme.colorScheme.outline)),
           ),
         if (_question != null) _questionPanel(theme),
-        if (_rough.isNotEmpty) ...[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-            child: Text(SayWhatYouAteSection.heading,
-                style: theme.textTheme.titleSmall),
-          ),
-          for (final row in _rough) _roughRow(theme, row),
-        ],
       ],
     );
   }
@@ -336,6 +298,7 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
             Text(_question!, style: theme.textTheme.bodyMedium),
             TextField(
               controller: _answer,
+              enabled: !_busy,
               textInputAction: TextInputAction.send,
               onSubmitted: (_) => _answerQuestion(),
               decoration: InputDecoration(
@@ -350,56 +313,4 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
           ],
         ),
       );
-
-  Widget _roughRow(ThemeData theme, LoggedItem row) {
-    final waiting = SayWhatYouAteSection.waitingFor(row.provisionalSince);
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(row.said ?? row.label,
-                    style: theme.textTheme.bodyLarge),
-              ),
-              // Marked as rough right next to the number rather than in a
-              // caption somewhere else on the screen. A figure and the fact
-              // that it is a guess have to be read in one glance or the guess
-              // is not really being shown at all.
-              Figures.kcalText(context, row.kcal,
-                  prefix: 'about ',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.outline)),
-            ],
-          ),
-          Text(
-            waiting.isEmpty
-                ? SayWhatYouAteSection.workingOut
-                : '${SayWhatYouAteSection.workingOut} — $waiting',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.outline),
-          ),
-          if (row.assumed != null)
-            Text(row.assumed!,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
-          Row(
-            children: [
-              TextButton(
-                onPressed: _busy ? null : () => _sayAgain(row),
-                child: const Text(SayWhatYouAteSection.tryAgain),
-              ),
-              if (widget.logger != null)
-                TextButton(
-                  onPressed: () => _takeOff(row),
-                  child: const Text(SayWhatYouAteSection.takeItOff),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
 }

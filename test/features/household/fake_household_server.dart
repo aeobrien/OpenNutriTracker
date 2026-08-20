@@ -7,7 +7,9 @@
 /// quietly make them meaningless.
 library;
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -26,6 +28,16 @@ class FakeHouseholdServer {
   /// default, mirroring the server, so a test that expects one person's change
   /// to move the other's would have to make it happen on purpose.
   final Map<int, Map<String, dynamic>> settings = {};
+
+  /// What the household remembers about each person for the app's own setup.
+  /// Stored whole or not at all, the way the server stores it — a fake that
+  /// handed back half a profile would let a test pass that the real server
+  /// would fail, and the all-or-nothing rule is the point of the feature.
+  final Map<int, Map<String, dynamic>> profiles = {};
+
+  /// Every profile the phone has sent up, in order, so a test can assert that
+  /// finishing setup told the household rather than only writing locally.
+  final List<Map<String, dynamic>> profilesPosted = [];
 
   /// Weights, kept so a test can show the toggle hides them without deleting.
   final List<Map<String, dynamic>> weights = [];
@@ -74,6 +86,20 @@ class FakeHouseholdServer {
   final List<String> requests = [];
 
   bool reachable = true;
+
+  /// Holds the answer to a spoken sentence until a test lets it go. This is how
+  /// the 20 August fault is reproduced: the round trip is slow, he could not
+  /// tell anything was happening, so he said it again — and it went on twice.
+  /// A screen that is waiting has to look like it is waiting.
+  bool holdSaid = false;
+  Completer<void>? _saidGate;
+
+  /// Let a held answer through.
+  void releaseSaid() {
+    holdSaid = false;
+    _saidGate?.complete();
+    _saidGate = null;
+  }
 
   /// Whether this server is new enough to understand being asked for a *search*
   /// rather than the whole food list. False reproduces an older kitchen
@@ -332,6 +358,20 @@ class FakeHouseholdServer {
         ],
       };
 
+  static const _profileFields = [
+    'birthday', 'height_cm', 'weight_kg', 'gender', 'goal', 'activity',
+  ];
+
+  /// Everything or nothing, exactly as the server answers it.
+  Map<String, dynamic>? profileFor(int personId) {
+    final held = profiles[personId];
+    if (held == null) return null;
+    for (final f in _profileFields) {
+      if (held[f] == null || held[f] == '') return null;
+    }
+    return held;
+  }
+
   Map<String, dynamic> settingsFor(int personId) => settings.putIfAbsent(
       personId,
       () => {
@@ -425,6 +465,12 @@ class FakeHouseholdServer {
     return out;
   }
 
+  /// A kitchen computer that is not answering. Used where the behaviour under
+  /// test is what the phone does *without* it, which for anything to do with
+  /// setting the app up must be "carry on", never "refuse to start".
+  http.Client unreachable() =>
+      MockClient((request) async => throw const SocketException('no route'));
+
   http.Client get client => MockClient((request) async {
         if (!reachable) {
           throw http.ClientException('Connection refused', request.url);
@@ -473,9 +519,35 @@ class FakeHouseholdServer {
             if (body.containsKey('figures_off')) {
               current['figures_off'] = (body['figures_off'] as bool) ? 1 : 0;
             }
+            if (body.containsKey('profile')) {
+              final sent = Map<String, dynamic>.from(
+                  body['profile'] as Map<String, dynamic>);
+              profilesPosted.add(sent);
+              final missing = _profileFields
+                  .where((f) => sent[f] == null || sent[f] == '')
+                  .toList();
+              if (missing.isNotEmpty) {
+                return http.Response(
+                    jsonEncode({
+                      'ok': false,
+                      'error': 'a profile is all of it or none of it; this one '
+                          'is missing ${missing.join(', ')}'
+                    }),
+                    400,
+                    headers: {'content-type': 'application/json'});
+              }
+              profiles[personId] = sent;
+            }
           }
-          result = {'ok': true, 'settings': current};
+          result = {
+            'ok': true,
+            'settings': current,
+            'profile': profileFor(personId),
+          };
         } else if (path == '/household/said') {
+          if (holdSaid) {
+            await (_saidGate ??= Completer<void>()).future;
+          }
           final cid = body['client_id'] as String;
           final row = entries[cid];
           saidAsked.add({
