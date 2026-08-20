@@ -308,7 +308,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // the household as one — an amend with an empty body still bumps the row's
     // version there and discards anything still on the wire for it.
     if (edit != null && (edit.fields.isNotEmpty || edit.moveTo != null)) {
-      _homeBloc.updateIntakeItem(intakeEntity.id, edit.fields,
+      // Awaited, then redrawn. Redrawing without waiting reads the day back
+      // out of the database before the correction has been written to it, and
+      // the ring keeps showing the figure the person just changed.
+      await _homeBloc.updateIntakeItem(intakeEntity.id, edit.fields,
           moveTo: edit.moveTo);
       _reload();
       messenger.showSnackBar(
@@ -324,8 +327,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  void onDeleteIntake(IntakeEntity intake, TrackedDayEntity? trackedDayEntity) {
-    _homeBloc.deleteIntakeItem(intake);
+  void onDeleteIntake(
+      IntakeEntity intake, TrackedDayEntity? trackedDayEntity) async {
+    // Awaited before redrawing, for the same reason as a correction: the day
+    // is read back out of the database, so a redraw that overtakes the write
+    // puts the row's figures back on the ring it just came off.
+    await _homeBloc.deleteIntakeItem(intake);
     _reload();
   }
 
