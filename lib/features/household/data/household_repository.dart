@@ -6,6 +6,7 @@ import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/domain/weight_record.dart';
+import 'package:opennutritracker/features/weight/domain/weight_history.dart';
 
 /// Who this handset belongs to, and what that person's settings are.
 ///
@@ -195,6 +196,11 @@ class HouseholdRepository {
     final rows = await _api.weights(personId);
     return rows.map(WeightRecord.fromJson).toList();
   }
+
+  /// The same history with the trend through it. See [WeightHistory] for why
+  /// the trend and the readings are different answers to different questions.
+  Future<WeightHistory> weightHistory(int personId) async =>
+      WeightHistory.fromJson(await _api.weightHistory(personId));
 
   /// Change one person's settings. Keyed on the person throughout — there is no
   /// call here that could touch anybody else's.

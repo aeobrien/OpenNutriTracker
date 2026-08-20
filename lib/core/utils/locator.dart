@@ -91,6 +91,7 @@ import 'package:opennutritracker/features/household/data/outbox.dart';
 import 'package:opennutritracker/features/said/data/clip_store.dart';
 import 'package:opennutritracker/features/said/data/microphone.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
+import 'package:opennutritracker/features/weight/data/weight_repository.dart';
 import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
@@ -177,6 +178,14 @@ Future<void> initLocator() async {
       locator<HouseholdLogger>(),
       householdOutbox,
       locator<ClipStore>()));
+
+  // Weights: the history and the trend, and bringing readings in from Apple
+  // Health. It leans on the same queue as everything else — a backlog out of
+  // Apple Health is a lot of ordinary weigh-ins, not a special kind of write.
+  locator.registerLazySingleton<WeightRepository>(() => WeightRepository(
+      householdRepository,
+      locator<HouseholdLogger>(),
+      locator<HealthDataSource>()));
 
   // Emptying the queue. Registered here and started by HouseholdScope, because
   // work held while the Mini was unreachable has to be sent whatever screen the

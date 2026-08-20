@@ -151,17 +151,30 @@ class HouseholdLogger {
     );
   }
 
+  /// One weigh-in.
+  ///
+  /// [source] says where the number came from — `typed` if somebody stood on
+  /// the scales and put it in, `health` if it was brought in from Apple
+  /// Health. The server keeps both and decides which is the reading for the
+  /// day; a typed one always wins.
+  ///
+  /// [clientId] is worth passing. Named after the day, the same day sent twice
+  /// is a correction to that day rather than a second weigh-in on it, which is
+  /// what makes bringing in an overlapping stretch of history safe.
   Future<String> logWeight({
     required String day,
     required num kg,
+    String source = 'typed',
+    String? clientId,
     int? owner,
     int? author,
     DateTime? at,
   }) async {
     final holder = await _whoseDay();
     return _outbox.enqueue(
+      clientId: clientId,
       path: '/household/weight',
-      body: {'day': day, 'kg': kg},
+      body: {'day': day, 'kg': kg, if (source != 'typed') 'source': source},
       ownerId: owner ?? holder,
       authorId: author ?? holder,
       loggedAt: at,

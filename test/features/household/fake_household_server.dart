@@ -344,6 +344,73 @@ class FakeHouseholdServer {
   /// The named fields out of a multipart body. Enough to see what was asked;
   /// the file part is noticed rather than decoded — the sound is the
   /// transcriber's business and this fake is not one.
+  /// Somebody stood on the scales, or a reading came in from Apple Health.
+  void weighed(String day, num kg,
+      {int personId = 1, String source = 'typed', String? clientId}) {
+    weights.add({
+      'day': day,
+      'kg': kg,
+      'source': source,
+      'owner_id': personId,
+      'author_id': personId,
+      'client_id': clientId ?? '$source-$day',
+      'id': weights.length + 1,
+    });
+  }
+
+  /// The weight history the way the Mini works it out: one reading per day
+  /// with a typed one beating an imported one, and the trend running through
+  /// it.
+  ///
+  /// Modelled here rather than faked with fixed numbers on purpose. A fake
+  /// that hands back a trend the real server would never produce would let a
+  /// phone test pass on arithmetic that does not exist, which is worse than
+  /// having no fake at all.
+  Map<String, dynamic> _history(int personId) {
+    final byDay = <String, Map<String, dynamic>>{};
+    for (final w in weights) {
+      if (w['owner_id'] != personId) continue;
+      final day = w['day'] as String;
+      final source = (w['source'] as String?) ?? 'typed';
+      final held = byDay[day];
+      // A typed reading wins whatever order they arrived in; between two of
+      // the same kind, the later one is a correction and wins.
+      if (held != null && held['source'] == 'typed' && source != 'typed') {
+        continue;
+      }
+      byDay[day] = {'day': day, 'kg': w['kg'], 'source': source};
+    }
+    final days = byDay.keys.toList()..sort();
+    double? trend;
+    final readings = <Map<String, dynamic>>[];
+    for (final day in days) {
+      final one = byDay[day]!;
+      final kg = (one['kg'] as num).toDouble();
+      trend = trend == null ? kg : trend + 0.1 * (kg - trend);
+      readings.add({...one, 'trend': double.parse(trend.toStringAsFixed(2))});
+    }
+    num? aWeek;
+    if (readings.isNotEmpty) {
+      final last = readings.last;
+      final then = DateTime.parse(last['day'] as String)
+          .subtract(const Duration(days: 7));
+      final earlier = readings
+          .where((r) => !DateTime.parse(r['day'] as String).isAfter(then))
+          .toList();
+      if (earlier.isNotEmpty) {
+        aWeek = double.parse(
+            ((last['trend'] as num) - (earlier.last['trend'] as num))
+                .toStringAsFixed(2));
+      }
+    }
+    return {
+      'weights': readings,
+      'readings': readings,
+      'trend': readings.isEmpty ? null : readings.last['trend'],
+      'a_week': aWeek,
+    };
+  }
+
   static Map<String, dynamic> _fields(String body) {
     final out = <String, dynamic>{};
     final boundary = body.split('\r\n').first;
@@ -542,13 +609,7 @@ class FakeHouseholdServer {
         } else if (path.startsWith('/household/weights/')) {
           final personId =
               int.parse(path.substring('/household/weights/'.length));
-          result = {
-            'ok': true,
-            'weights': weights
-                .where((w) => w['owner_id'] == personId)
-                .map((w) => {'day': w['day'], 'kg': w['kg']})
-                .toList(),
-          };
+          result = {'ok': true, ..._history(personId)};
         } else if (path == '/household/label/read') {
           if (!labelReadable) {
             return http.Response(

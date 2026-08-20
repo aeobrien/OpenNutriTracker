@@ -13,9 +13,11 @@ import 'package:opennutritracker/features/profile/presentation/widgets/set_heigh
 import 'package:opennutritracker/features/profile/presentation/widgets/set_pal_category_dialog.dart';
 import 'package:opennutritracker/features/profile/presentation/widgets/set_weight_dialog.dart';
 import 'package:logging/logging.dart';
-import 'package:opennutritracker/features/household/data/exercise_sync.dart';
-import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
+import 'package:opennutritracker/features/weight/data/weight_repository.dart';
+import 'package:opennutritracker/features/weight/domain/weight_history.dart';
+import 'package:opennutritracker/features/weight/presentation/trend_line.dart';
+import 'package:opennutritracker/features/weight/presentation/weight_history_sheet.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -28,10 +30,29 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   late ProfileBloc _profileBloc;
 
+  /// The dated history behind the weight row. Held here rather than fetched
+  /// inside the row's builder, which runs on every rebuild of the page.
+  WeightHistory? _weights;
+
   @override
   void initState() {
     _profileBloc = locator<ProfileBloc>();
     super.initState();
+    _loadWeights();
+  }
+
+  /// Quiet on failure. The weight row must still work with the kitchen
+  /// computer switched off — it is where the app's own calorie calculation
+  /// gets a weight — so an unreachable Mini costs the trend line and nothing
+  /// else.
+  Future<void> _loadWeights() async {
+    try {
+      final history = await locator<WeightRepository>().history();
+      if (!mounted) return;
+      setState(() => _weights = history);
+    } catch (e) {
+      Logger('ProfilePage').info('[WEIGHT] no trend to show: $e');
+    }
   }
 
   @override
@@ -107,18 +128,40 @@ class _ProfilePageState extends State<ProfilePage> {
         // leave a stored number that can never be corrected — and the setting
         // is off by default, so a fresh install would lose the row before
         // anybody had chosen anything.
+        //
+        // The trend sits under the weight, on this row, and the dated history
+        // opens off the end of it. Neither gets a tab or a screen of its own:
+        // this is where a person already looks for what they weigh, and the
+        // question "which way is it going" belongs beside the answer to "what
+        // is it", not somewhere else in the app.
         ListTile(
           title: Text(
             S.of(context).weightLabel,
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          subtitle: Text(
-            '${_profileBloc.getDisplayWeight(user, usesImperialUnits)} ${usesImperialUnits ? S.of(context).lbsLabel : S.of(context).kgLabel}',
-            style: Theme.of(context).textTheme.titleMedium,
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${_profileBloc.getDisplayWeight(user, usesImperialUnits)} ${usesImperialUnits ? S.of(context).lbsLabel : S.of(context).kgLabel}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (_trendLine(usesImperialUnits) != null)
+                Text(
+                  _trendLine(usesImperialUnits)!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
           ),
           leading: const SizedBox(
             height: double.infinity,
             child: Icon(Icons.monitor_weight_outlined),
+          ),
+          trailing: IconButton(
+            icon: const Icon(Icons.show_chart_outlined),
+            tooltip: WeightHistorySheet.heading,
+            onPressed: () => _showWeightHistory(context),
           ),
           onTap: () {
             _showSetWeightDialog(context, user, usesImperialUnits);
@@ -278,14 +321,26 @@ class _ProfilePageState extends State<ProfilePage> {
           'sharing switched off');
       return;
     }
-    final now = DateTime.now();
-    locator<HouseholdLogger>()
-        .logWeight(day: ExerciseSync.dayKey(now), kg: kg)
-        .catchError((Object e) {
+    locator<WeightRepository>().typed(DateTime.now(), kg).then((_) {
+      _loadWeights();
+    }).catchError((Object e) {
       Logger('ProfilePage')
           .warning('Weight saved locally but not put to the household: $e');
-      return '';
     });
+  }
+
+  String? _trendLine(bool usesImperialUnits) {
+    final history = _weights;
+    if (history == null) return null;
+    return TrendLine.of(history, imperial: usesImperialUnits);
+  }
+
+  Future<void> _showWeightHistory(BuildContext context) async {
+    await WeightHistorySheet.show(context,
+        repository: locator<WeightRepository>());
+    // Readings may have been brought in while it was open, which moves the
+    // trend on the row behind it.
+    await _loadWeights();
   }
 
   Future<void> _showSetBirthdayDialog(

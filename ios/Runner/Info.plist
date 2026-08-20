@@ -40,7 +40,7 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>The microphone is used when you hold the button to say what you have eaten.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>FoodTracker reads Active Energy to adjust your daily calorie allowance.</string>
+	<string>FoodTracker reads Active Energy to adjust your daily calorie allowance, and your weight so it can show you the trend.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>FoodTracker does not write health data.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

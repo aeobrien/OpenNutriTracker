@@ -236,6 +236,13 @@ class HouseholdApi {
     return (body['weights'] as List).cast<Map<String, dynamic>>();
   }
 
+  /// The same history, with the trend running through it and how much it has
+  /// moved in a week. One call rather than two: it is the same row of the same
+  /// table and splitting it would let the readings and the line drawn through
+  /// them arrive from two different moments.
+  Future<Map<String, dynamic>> weightHistory(int personId) =>
+      get('/household/weights/$personId');
+
   /// The household's own food list.
   ///
   /// One call with three optional narrowings, matching the server: [q] is a

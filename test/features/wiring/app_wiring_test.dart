@@ -221,9 +221,16 @@ void main() {
     });
 
     test('the row that is left reaches the household', () {
+      // Two links, checked separately, because the weight now goes through the
+      // repository that also holds the history rather than straight to the
+      // queue. Either link missing and a weight typed on Profile never leaves
+      // the phone, so neither is taken on trust.
       final profile = _read('lib/features/profile/profile_page.dart');
-      expect(profile.contains('logWeight('), isTrue,
-          reason: 'a weight typed on Profile never leaves the phone');
+      expect(profile.contains('WeightRepository>().typed('), isTrue,
+          reason: 'a weight typed on Profile is not handed to anything');
+      final weights = _read('lib/features/weight/data/weight_repository.dart');
+      expect(weights.contains('_logger.logWeight('), isTrue,
+          reason: 'the weight is handed on and then goes nowhere');
     });
   });
 
@@ -488,6 +495,70 @@ void main() {
       final plist = _read('ios/Runner/Info.plist');
       expect(plist.contains('NSMicrophoneUsageDescription'), isTrue,
           reason: 'iOS kills an app that opens the microphone without one');
+    });
+  });
+
+  group('weight, and the trend', () {
+    test('the trend is on the row the weight is already on', () {
+      // Not a tab, not a screen. Aidan stopped an earlier build because a
+      // second Today tab sat beside the Home tab doing the same job; a weight
+      // screen beside the weight row would be that mistake again.
+      final profile = _read('lib/features/profile/profile_page.dart');
+      expect(profile.contains('TrendLine.of('), isTrue,
+          reason: 'the trend is worked out and shown nowhere');
+      expect(profile.contains('WeightHistorySheet'), isTrue,
+          reason: 'there is no way into the dated history from the weight');
+    });
+
+    test('nothing else in the app opens a weight surface of its own', () {
+      // If the history sheet is opened from two places, one of them is a
+      // second way in that nobody asked for and only one of them will be
+      // maintained.
+      final opens = Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.dart'))
+          .where((f) => !f.path.contains('/weight/'))
+          .where((f) => f.readAsStringSync().contains('WeightHistorySheet.show('))
+          .map((f) => f.path)
+          .toList();
+      expect(opens, ['lib/features/profile/profile_page.dart']);
+    });
+
+    test('everything it needs is built', () {
+      final locator = _read('lib/core/utils/locator.dart');
+      expect(locator.contains('WeightRepository('), isTrue,
+          reason: 'Profile asks for a weight repository nothing registered');
+    });
+
+    test('weights and calories are read from Apple Health apart', () {
+      // The two share one permission dialog and must not share one read: the
+      // combined list passed to the calorie query would fold every weigh-in
+      // into the day's active calories as if a kilogram were a kilocalorie.
+      final health = _read('lib/core/data/data_source/health_data_source.dart');
+      expect(health.contains('types: _energy'), isTrue,
+          reason: "the day's calories are read with the combined type list");
+      expect(health.contains('types: _weight'), isTrue,
+          reason: 'weights are read with something other than the weight type');
+    });
+
+    test('the phone says out loud that it reads weight, not just calories', () {
+      final plist = _read('ios/Runner/Info.plist');
+      final start = plist.indexOf('NSHealthShareUsageDescription');
+      final reason = plist.substring(start, start + 260);
+      expect(reason.toLowerCase().contains('weight'), isTrue,
+          reason: 'the app now reads body weight and does not say so');
+    });
+
+    test('a backlog goes through the queue, not through a route of its own', () {
+      // There is no batch import. A backlog is a lot of ordinary weigh-ins
+      // through the outbox that already retries and already refuses to store
+      // the same thing twice.
+      final repository = _read('lib/features/weight/data/weight_repository.dart');
+      expect(repository.contains('_logger.logWeight('), isTrue);
+      expect(repository.contains('/weights/import'), isFalse,
+          reason: 'a second way to write a weight, with its own retrying to '
+              'get wrong');
     });
   });
 }
