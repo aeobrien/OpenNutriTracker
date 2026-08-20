@@ -88,6 +88,33 @@ class HouseholdApi {
     return b;
   }
 
+  /// Where a call is going, or a refusal to make it.
+  ///
+  /// Every address in this file went through `Uri.parse` and straight into the
+  /// client. `Uri.parse` accepts almost anything — an empty string parses
+  /// happily into a relative address — and the *client* is then the one to
+  /// object, by throwing a programming error about a missing scheme rather than
+  /// anything a screen was watching for. On 20 August 2026 that left a fresh
+  /// install sitting on "Whose phone is this?" with a spinner that would never
+  /// stop, because no address had ever been typed in.
+  ///
+  /// So the check happens here, once, and comes out as the same "can't reach
+  /// it" every screen already knows how to show.
+  Uri _address(String path) {
+    final base = _base;
+    if (base.isEmpty) {
+      throw HouseholdUnreachable(
+          'no address has been set for it yet — put one in Settings');
+    }
+    final uri = Uri.tryParse('$base$path');
+    if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+      throw HouseholdUnreachable(
+          "its address doesn't look like one: '$base' (it needs the "
+          'http:// on the front)');
+    }
+    return uri;
+  }
+
   static const _headers = {
     'Accept': 'application/json',
     'Content-Type': 'application/json',
@@ -116,7 +143,7 @@ class HouseholdApi {
     final limit = timeout ?? ordinary;
     try {
       final r = await _client
-          .get(Uri.parse('$_base$path'), headers: _headers)
+          .get(_address(path), headers: _headers)
           .timeout(limit);
       return _decode(r);
     } on TimeoutException {
@@ -133,7 +160,7 @@ class HouseholdApi {
     final limit = timeout ?? ordinary;
     try {
       final r = await _client
-          .post(Uri.parse('$_base$path'), headers: _headers, body: jsonEncode(body))
+          .post(_address(path), headers: _headers, body: jsonEncode(body))
           .timeout(limit);
       return _decode(r);
     } on TimeoutException {
@@ -180,7 +207,7 @@ class HouseholdApi {
           timeout: workingOutWhatYouSaid);
     }
     final request = http.MultipartRequest(
-        'POST', Uri.parse('$_base/household/said'))
+        'POST', _address('/household/said'))
       ..fields['client_id'] = clientId
       ..fields['version'] = '$version'
       ..files.add(await http.MultipartFile.fromPath('audio', clip.path));
@@ -226,6 +253,26 @@ class HouseholdApi {
   Future<PersonSettings> updateSettings(int personId, Map<String, dynamic> changes) async {
     final body = await post('/household/settings/$personId', changes);
     return PersonSettings.fromJson(body['settings'] as Map<String, dynamic>);
+  }
+
+  /// What the household knows about this person for the app's own setup —
+  /// their age, height, weight and what they are trying to do — or null when
+  /// it has never been told.
+  ///
+  /// Null and "told only half of it" are the same answer here, and that is the
+  /// server's rule rather than this method's: a half-known person would let the
+  /// app skip its setup and then work a daily calorie target out of numbers it
+  /// never had.
+  Future<Map<String, dynamic>?> profileFor(int personId) async {
+    final body = await get('/household/settings/$personId');
+    final p = body['profile'];
+    return p == null ? null : (p as Map<String, dynamic>);
+  }
+
+  /// Hand the household what setup just asked the person. Sent on the settings
+  /// route because that is where it is read back from.
+  Future<void> rememberProfile(int personId, Map<String, dynamic> profile) async {
+    await post('/household/settings/$personId', {'profile': profile});
   }
 
   /// Everything this person has weighed in at. Asked for regardless of the

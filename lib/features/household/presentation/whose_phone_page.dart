@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 
 /// "Whose phone is this?" — asked once, on first run.
@@ -19,10 +20,16 @@ class WhosePhonePage extends StatefulWidget {
   /// Called once an owner has been chosen and the server has accepted it.
   final VoidCallback? onChosen;
 
+  /// Asks the household whether it already knows this person, so somebody who
+  /// has set the app up before is not made to do it again. Optional so a test
+  /// can mount the page without one; the running app always passes it.
+  final ProfileHandover? handover;
+
   const WhosePhonePage({
     super.key,
     required this.repository,
     this.onChosen,
+    this.handover,
   });
 
   @override
@@ -54,6 +61,16 @@ class _WhosePhonePageState extends State<WhosePhonePage> {
       setState(() => _problem =
           "${e.headline}, so I don't know who's in the "
           'house yet. (${e.message})');
+    } catch (e) {
+      // Anything else at all. This screen stands in front of the whole app, so
+      // a failure it does not recognise used to leave a spinner turning with no
+      // names, no reason and no way onward — which is what a clean install did
+      // on 20 August 2026. Whatever went wrong, it ends up on the screen with
+      // a way to try again, because being told something odd happened beats
+      // being shown a screen that never finishes loading.
+      if (!mounted) return;
+      setState(() => _problem = "Something went wrong asking who's in the "
+          'house. ($e)');
     }
   }
 
@@ -64,12 +81,23 @@ class _WhosePhonePageState extends State<WhosePhonePage> {
     });
     try {
       await widget.repository.setOwner(person.id);
+      // Before letting the app through, not after. Whatever is behind this
+      // page decides whether to run setup the moment it is built, so a profile
+      // that arrived a fraction later would arrive after that decision and the
+      // questions would be asked anyway.
+      await widget.handover?.bringBack(person.id);
       if (!mounted) return;
       widget.onChosen?.call();
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() => _problem = '${e.headline}, so nothing has been saved '
           'yet. Try again in a moment. (${e.message})');
+    } catch (e) {
+      // Same reasoning as above: whatever it was, say so rather than leaving
+      // the buttons disabled behind a spinner.
+      if (!mounted) return;
+      setState(() => _problem = 'That could not be saved, so nothing has '
+          'changed. ($e)');
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -136,11 +164,15 @@ class HouseholdGate extends StatefulWidget {
   /// up that person's own settings.
   final VoidCallback? onAnswered;
 
+  /// Handed straight to [WhosePhonePage]. See its own field for why.
+  final ProfileHandover? handover;
+
   const HouseholdGate({
     super.key,
     required this.repository,
     required this.child,
     this.onAnswered,
+    this.handover,
   });
 
   @override
@@ -170,6 +202,7 @@ class _HouseholdGateState extends State<HouseholdGate> {
     if (_needsPrompt!) {
       return WhosePhonePage(
         repository: widget.repository,
+        handover: widget.handover,
         onChosen: () {
           setState(() => _needsPrompt = false);
           widget.onAnswered?.call();

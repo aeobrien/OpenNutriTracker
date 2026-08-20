@@ -83,6 +83,7 @@ import 'package:opennutritracker/features/settings/presentation/bloc/export_impo
 import 'package:opennutritracker/features/settings/presentation/bloc/settings_bloc.dart';
 import 'package:opennutritracker/core/utils/notification_service.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
@@ -140,8 +141,24 @@ Future<void> initLocator() async {
   // already uses; when it has not been set yet the calls simply report the Mini
   // as unreachable, which every screen already says plainly rather than
   // failing.
-  final householdApi = HouseholdApi(
-      baseUrl: (await secureAppStorageProvider.getMantelBaseUrl()) ?? '');
+  //
+  // A build may also carry an address of its own, passed in at compile time as
+  // `--dart-define=MANTEL_BASE_URL=...`. It is only ever a fallback: anything
+  // stored on the phone wins. Its whole purpose is to let a test harness point
+  // a clean install at a throwaway server, because until 20 August 2026 nothing
+  // could open this app without a person typing an address into Settings first
+  // — which is why no screen in it had ever been opened by a machine.
+  const builtInAddress = String.fromEnvironment('MANTEL_BASE_URL');
+  var address = (await secureAppStorageProvider.getMantelBaseUrl()) ?? '';
+  if (address.isEmpty && builtInAddress.isNotEmpty) {
+    // Stored rather than merely used, so that everything else that reads the
+    // address — the meal mirror, the push registration, the Settings screen —
+    // sees the same one answer. A build with no address defined does nothing
+    // here at all.
+    await secureAppStorageProvider.setMantelBaseUrl(builtInAddress);
+    address = builtInAddress;
+  }
+  final householdApi = HouseholdApi(baseUrl: address);
   // One owner, one place it is written. Choosing who this phone belongs to also
   // writes the older name-based copy the meal sync reads, so the two can no
   // longer disagree — there is no longer anywhere to type the second one.
@@ -155,6 +172,11 @@ Future<void> initLocator() async {
       () => HouseholdLogger(householdRepository, householdOutbox));
   locator.registerLazySingleton<FoodFinder>(
       () => FoodFinder(locator<HouseholdApi>(), locator<HouseholdRepository>()));
+
+  // Carries the app's setup answers to the kitchen computer and back, so
+  // reinstalling the app stops meaning answering them again.
+  locator.registerLazySingleton<ProfileHandover>(
+      () => ProfileHandover(locator<HouseholdApi>(), locator<UserRepository>()));
   locator.registerLazySingleton<FoodLedger>(
       () => FoodLedger(locator<HouseholdLogger>()));
   locator.registerLazySingleton<DayRepository>(
@@ -215,8 +237,12 @@ Future<void> initLocator() async {
       .registerLazySingleton<CacheManager>(() => OntImageCacheManager.instance);
 
   // BLoCs
-  locator.registerLazySingleton<OnboardingBloc>(
-      () => OnboardingBloc(locator(), locator()));
+  locator.registerLazySingleton<OnboardingBloc>(() => OnboardingBloc(
+      locator(),
+      locator(),
+      locator<GetUserUsecase>(),
+      locator<ProfileHandover>(),
+      locator<HouseholdRepository>()));
   locator.registerLazySingleton<HomeBloc>(() => HomeBloc(
       locator(),
       locator(),
