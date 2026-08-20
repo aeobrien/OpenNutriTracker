@@ -51,8 +51,8 @@ class HouseholdLogger {
     /// Passed in rather than minted here so that the phone's own diary row and
     /// the household's row share one name. That shared name is the only way
     /// the phone can ever say *which* row it means afterwards — it has no idea
-    /// what number the kitchen computer gave it, and asking would mean a round
-    /// trip at the exact moment the kitchen computer may be asleep.
+    /// what number the Mac Mini gave it, and asking would mean a round
+    /// trip at the exact moment the Mac Mini may be asleep.
     String? clientId,
 
     /// 'provisional' when the row is going on the day before anything has

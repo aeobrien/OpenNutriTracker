@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 
-/// Recordings the kitchen computer has not heard yet.
+/// Recordings the Mac Mini has not heard yet.
 ///
 /// A recording is kept only for as long as it is still owed to somebody. The
 /// moment the sentence has been worked out the file goes, because it is the
@@ -11,7 +11,7 @@ import 'package:path_provider/path_provider.dart';
 /// served its purpose is not something anybody asked for.
 ///
 /// Filed under the name the phone gave the row, which is the same name the
-/// kitchen computer knows it by. That is what lets a recording made on a train
+/// Mac Mini knows it by. That is what lets a recording made on a train
 /// this morning find its own row this evening without anything having to
 /// remember the pairing.
 class ClipStore {

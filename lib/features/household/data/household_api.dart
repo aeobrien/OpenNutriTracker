@@ -17,11 +17,11 @@ class HouseholdUnreachable implements Exception {
   /// the same true thing about the same fault.
   ///
   /// This exists because they did not. Every screen wrote "can't reach the
-  /// kitchen computer" by hand, so a Mini that answered slowly was reported in
+  /// Mac Mini" by hand, so a Mini that answered slowly was reported in
   /// the same words as a Mini that was not there — and on 19 August that
   /// sentence was shown to Aidan when the server had in fact answered him
   /// perfectly well, just not within the time the phone was willing to wait.
-  String get headline => "Can't reach the kitchen computer";
+  String get headline => "Can't reach the Mac Mini";
 
   @override
   String toString() => 'HouseholdUnreachable: $message';
@@ -42,7 +42,7 @@ class HouseholdTooSlow extends HouseholdUnreachable {
       : super('it did not answer within ${waited.inSeconds} seconds');
 
   @override
-  String get headline => 'The kitchen computer is taking too long to answer';
+  String get headline => 'The Mac Mini is taking too long to answer';
 }
 
 /// The Mini was reached and said no. Trying the identical request again will
@@ -180,7 +180,7 @@ class HouseholdApi {
   /// try.
   static const workingOutWhatYouSaid = Duration(seconds: 90);
 
-  /// Ask the kitchen computer what a row somebody spoke actually was.
+  /// Ask the Mac Mini what a row somebody spoke actually was.
   ///
   /// [clip] is the recording, when there is one. Sending it as a file rather
   /// than as text is the whole point: the transcriber lives on the Mini, is the
@@ -320,14 +320,14 @@ class HouseholdApi {
         .toList();
   }
 
-  /// Ask the kitchen computer to go and look a packet up on the web.
+  /// Ask the Mac Mini to go and look a packet up on the web.
   ///
   /// Returns candidates, not foods: nothing is saved anywhere by this call, at
   /// either end. A person picks one, checks it, and only then does it become
   /// one of the household's foods — which is the same shape as reading a label
   /// off a photograph, and for the same reason.
   ///
-  /// An empty list is a normal answer. So is a kitchen computer too old to know
+  /// An empty list is a normal answer. So is a Mac Mini too old to know
   /// this route at all, which is why the caller treats a failure and a
   /// nothing-found the same way.
   Future<List<Map<String, dynamic>>> findFood(String name,
@@ -345,7 +345,7 @@ class HouseholdApi {
   }
 
   /// One person's week, assembled on the server. [start] names the Monday;
-  /// leaving it off lets the kitchen computer decide which week today is in,
+  /// leaving it off lets the Mac Mini decide which week today is in,
   /// so the two handsets and the panel cannot disagree about it.
   Future<Map<String, dynamic>> week(int personId, {String? start}) async {
     final query = start == null ? '' : '?start=$start';
@@ -353,7 +353,7 @@ class HouseholdApi {
   }
 
   /// The household's planned week — everybody's, not one person's. [start]
-  /// names the Monday; leaving it off lets the kitchen computer decide.
+  /// names the Monday; leaving it off lets the Mac Mini decide.
   ///
   /// Separate from [week] on purpose. A person's week answers "what am I
   /// eating and what does it come to"; this answers "what is the house

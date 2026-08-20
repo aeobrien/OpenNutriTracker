@@ -18,7 +18,7 @@ import 'package:opennutritracker/features/today/domain/day_view.dart';
 /// words, with a rough figure, marked as rough. Only then does anything try to
 /// work out what you meant. The obvious other order — understand it, then write
 /// it — reads better in code and is wrong in the one situation that matters: the
-/// kitchen computer is asleep, or slow, or the train went into a tunnel, and
+/// Mac Mini is asleep, or slow, or the train went into a tunnel, and
 /// what you said is simply gone. A day that is roughly right and says so is
 /// worth more than a day that is exactly right about the half of it that got
 /// through.
@@ -40,7 +40,7 @@ class SaidRepository {
   SaidRepository(this._api, this._logger, this._outbox, this._clips);
 
   /// What a row says while nothing has heard it yet. It is replaced by the real
-  /// sentence the moment the kitchen computer comes back with one.
+  /// sentence the moment the Mac Mini comes back with one.
   static const notHeardYet = 'Something you said';
 
   /// Put what somebody just said on their day, and then try to understand it.
@@ -77,7 +77,7 @@ class SaidRepository {
     return clientId;
   }
 
-  /// Ask the kitchen computer what a row actually was.
+  /// Ask the Mac Mini what a row actually was.
   ///
   /// [version] is what the row is at right now, and it travels with the
   /// question so that a correction made while the answer is on the wire wins.
@@ -123,7 +123,7 @@ class SaidRepository {
   /// Try again on everything still waiting to be understood.
   ///
   /// Called when the day is read, which is the moment the phone is demonstrably
-  /// talking to the kitchen computer anyway. Nothing is retried on a timer:
+  /// talking to the Mac Mini anyway. Nothing is retried on a timer:
   /// a row that stays unfinished is visible on the day with both exits on it,
   /// so the person is never waiting on a retry they cannot see.
   Future<int> catchUp(Iterable<LoggedItem> rows) async {

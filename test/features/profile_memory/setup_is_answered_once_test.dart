@@ -162,7 +162,7 @@ void main() {
       expect(phone.writes, 0);
     });
 
-    test('a kitchen computer that is asleep asks the questions rather than '
+    test('a Mac Mini that is asleep asks the questions rather than '
         'refusing to start', () async {
       final asleep = ProfileHandover(
           HouseholdApi(baseUrl: 'http://mini', client: mini.unreachable()),
@@ -197,7 +197,7 @@ void main() {
       expect(freshPhone.held!.pal, him.pal);
     });
 
-    test('and a sleeping kitchen computer does not fail the last page of a '
+    test('and a sleeping Mac Mini does not fail the last page of a '
         'form somebody has just filled in', () async {
       final asleep = ProfileHandover(
           HouseholdApi(baseUrl: 'http://mini', client: mini.unreachable()),

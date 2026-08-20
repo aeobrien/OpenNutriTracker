@@ -11,7 +11,7 @@ class DeleteIntakeUsecase {
 
   DeleteIntakeUsecase(this._intakeRepository, [this._household]);
 
-  /// Take something back off the day — here, and on the kitchen computer.
+  /// Take something back off the day — here, and on the Mac Mini.
   ///
   /// Both, in one place, because there are two screens that delete a row and
   /// there will be more. A row removed here but left counting there is the

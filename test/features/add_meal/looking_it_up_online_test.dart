@@ -17,7 +17,7 @@
 ///    through, and that screen stays the only place a food is written.
 ///
 /// The third thing, which is really the first: a hunt that finds nothing, a
-/// kitchen computer that is asleep, and a kitchen computer too old to know how
+/// Mac Mini that is asleep, and a Mac Mini too old to know how
 /// to look are all the same answer to the person holding the phone — no, and
 /// you can still type it in yourself.
 library;
@@ -160,13 +160,13 @@ void main() {
       expect(await finder.huntFor('something nobody sells'), isEmpty);
     });
 
-    test('a kitchen computer too old to look answers the same way', () async {
+    test('a Mac Mini too old to look answers the same way', () async {
       mini.canHuntTheWeb = false;
       mini.webCandidates = [candidate()];
       expect(await finder.huntFor('wrap'), isEmpty);
     });
 
-    test('a sleeping kitchen computer answers the same way', () async {
+    test('a sleeping Mac Mini answers the same way', () async {
       mini.reachable = false;
       expect(await finder.huntFor('wrap'), isEmpty);
     });

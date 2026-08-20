@@ -11,7 +11,7 @@ class UpdateIntakeUsecase {
 
   UpdateIntakeUsecase(this._intakeRepository, [this._household]);
 
-  /// Correct something already logged — here, and on the kitchen computer.
+  /// Correct something already logged — here, and on the Mac Mini.
   ///
   /// [moveTo] moves the row to the other person's day. It travels with the
   /// amount rather than in a call of its own: they are noticed at the same
@@ -19,7 +19,7 @@ class UpdateIntakeUsecase {
   /// both people's totals wrong with nothing to say so.
   ///
   /// The figures sent are worked out from the row as it is *after* the change,
-  /// so the kitchen computer is told what the number now is rather than being
+  /// so the Mac Mini is told what the number now is rather than being
   /// asked to redo the phone's arithmetic.
   Future<IntakeEntity?> updateIntake(
       String intakeId, Map<String, dynamic> intakeFields,

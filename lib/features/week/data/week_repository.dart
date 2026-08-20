@@ -14,7 +14,7 @@ class WeekRepository {
   WeekRepository(this._api, this._household);
 
   /// [start] names the Monday. Leaving it off means the week today is in,
-  /// decided by the kitchen computer rather than by this phone's clock — the
+  /// decided by the Mac Mini rather than by this phone's clock — the
   /// two handsets and the panel have to agree about where a week starts.
   Future<WeekView> mine({String? start}) async {
     final owner = await _household.storedOwner();

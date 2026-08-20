@@ -10,12 +10,12 @@
 ///    than a public database's guess at the same packet.
 ///
 /// The other half of the release is the promise underneath that ordering: a
-/// person's *own* foods come first, which the kitchen computer can only work
+/// person's *own* foods come first, which the Mac Mini can only work
 /// out if the app tells it which food each meal was. That is the food id, and
 /// it is checked here too.
 ///
 /// One test in here reproduces a specific real fault rather than an imagined
-/// one. On the evening of 19 August the kitchen computer was running code that
+/// one. On the evening of 19 August the Mac Mini was running code that
 /// did not understand being asked for a search, and answered every search with
 /// its entire list. Left alone that means typing "banana" and getting last
 /// week's curry back.
@@ -92,7 +92,7 @@ void main() {
     );
 
     test(
-      'a sleeping kitchen computer leaves the picker exactly as it was',
+      'a sleeping Mac Mini leaves the picker exactly as it was',
       () async {
         mini.addFood(name: 'Oat biscuits');
         mini.reachable = false;
@@ -132,7 +132,7 @@ void main() {
     });
 
     test(
-      'the public search still runs when the kitchen computer is asleep',
+      'the public search still runs when the Mac Mini is asleep',
       () async {
         mini.addFood(name: 'Oat biscuits');
         mini.reachable = false;
@@ -149,7 +149,7 @@ void main() {
     );
 
     test(
-      'an out-of-date kitchen computer cannot put the wrong food in front of '
+      'an out-of-date Mac Mini cannot put the wrong food in front of '
       'them',
       () async {
         mini.addFood(name: 'Butter chicken wrap');
@@ -196,7 +196,7 @@ void main() {
     });
 
     test(
-      'a sleeping kitchen computer falls through rather than failing',
+      'a sleeping Mac Mini falls through rather than failing',
       () async {
         mini.addFood(name: 'Oat biscuits', barcode: '5012345678900');
         mini.reachable = false;
@@ -275,7 +275,7 @@ void main() {
         mini.entries.values.single['food_id'],
         row['id'],
         reason:
-            'the kitchen computer counts entries against a food to work '
+            'the Mac Mini counts entries against a food to work '
             'out which foods this person actually eats',
       );
     });

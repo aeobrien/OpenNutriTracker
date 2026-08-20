@@ -16,7 +16,7 @@ import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 ///
 /// What it will not do:
 ///
-///  * **Plan into a queue.** If the kitchen computer cannot be reached, the
+///  * **Plan into a queue.** If the Mac Mini cannot be reached, the
 ///    sheet says so and offers nothing. Planning a meal against a week you
 ///    cannot see is planning blind, and the second phone might have put
 ///    something on that day a minute ago.
@@ -54,7 +54,7 @@ class PlanDaySheet extends StatefulWidget {
   }
 
   /// Show it, and answer whether anything changed — so the week behind it
-  /// knows whether it needs to ask the kitchen computer again.
+  /// knows whether it needs to ask the Mac Mini again.
   static Future<bool> show(
     BuildContext context, {
     required PlanRepository repository,
@@ -136,7 +136,7 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
           'plan. Nothing was saved.');
     } on HouseholdRefused catch (e) {
       if (!mounted) return;
-      setState(() => _problem = 'The kitchen computer would not take that: '
+      setState(() => _problem = 'The Mac Mini would not take that: '
           '${e.message}');
     } finally {
       if (mounted) setState(() => _busy = false);

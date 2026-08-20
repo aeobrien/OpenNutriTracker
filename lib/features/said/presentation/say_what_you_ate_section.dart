@@ -62,10 +62,10 @@ class SayWhatYouAteSection extends StatefulWidget {
   static const typeItInstead = 'or type what you ate';
   static const workingOut = 'Working out what that was…';
   static const notUnderstood =
-      "That did not come back as anything. It is on the kitchen computer as you "
+      "That did not come back as anything. It is on the Mac Mini as you "
       'said it — say it again, or add it below.';
   static const couldNotReach =
-      "The kitchen computer did not answer, so that is not counted yet. It will "
+      "The Mac Mini did not answer, so that is not counted yet. It will "
       'go over next time the app can reach it.';
 
   static String dayKey(DateTime now) => '${now.year.toString().padLeft(4, '0')}-'

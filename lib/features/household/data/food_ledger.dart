@@ -97,7 +97,7 @@ class FoodLedger {
     required double mine,
     List<FoodShare> alsoFor = const [],
     /// Which food in the household's own list this was, when it came from
-    /// there. This is what lets the kitchen computer put a person's own foods
+    /// there. This is what lets the Mac Mini put a person's own foods
     /// at the top of their list next time: it counts entries against a food,
     /// and an entry that never says which food it was cannot be counted.
     int? foodId,

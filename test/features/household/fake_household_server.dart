@@ -67,7 +67,7 @@ class FakeHouseholdServer {
     'kcal', 'protein', 'fat', 'carbs', 'slot',
   ];
 
-  /// What the kitchen computer will say a spoken sentence turned out to be.
+  /// What the Mac Mini will say a spoken sentence turned out to be.
   /// Set by a test; the real thing works it out with a model, which is tested
   /// on the server side where the deciding actually happens.
   List<Map<String, dynamic>> saidLines = const [];
@@ -118,7 +118,7 @@ class FakeHouseholdServer {
   List<Map<String, dynamic>> webCandidates = [];
 
   /// Whether this server can look things up on the web at all. False is an
-  /// older kitchen computer, which does not know the route — the phone has to
+  /// older Mac Mini, which does not know the route — the phone has to
   /// treat that exactly like finding nothing.
   bool canHuntTheWeb = true;
 
@@ -134,7 +134,7 @@ class FakeHouseholdServer {
   Map<String, dynamic> labelRead = const {'name': 'A packet', 'kcal_100': 400};
   List<String> labelUnreadable = const [];
 
-  /// Put a food in the household's own list, the way the kitchen computer
+  /// Put a food in the household's own list, the way the Mac Mini
   /// holds it.
   Map<String, dynamic> addFood({
     required String name,
@@ -465,7 +465,7 @@ class FakeHouseholdServer {
     return out;
   }
 
-  /// A kitchen computer that is not answering. Used where the behaviour under
+  /// A Mac Mini that is not answering. Used where the behaviour under
   /// test is what the phone does *without* it, which for anything to do with
   /// setting the app up must be "carry on", never "refuse to start".
   http.Client unreachable() =>

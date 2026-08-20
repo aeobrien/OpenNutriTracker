@@ -3,7 +3,7 @@ import 'package:opennutritracker/core/domain/entity/user_entity.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/domain/remembered_profile.dart';
 
-/// Moves the app's setup answers between this phone and the kitchen computer.
+/// Moves the app's setup answers between this phone and the Mac Mini.
 ///
 /// One direction each way, and they are not symmetrical:
 ///
@@ -11,7 +11,7 @@ import 'package:opennutritracker/features/household/domain/remembered_profile.da
 ///    household already knows them, setup never appears.
 ///  * [remember] runs when setup finishes, so the next reinstall does not ask.
 ///
-/// Everything here fails quietly by design. A kitchen computer that is asleep
+/// Everything here fails quietly by design. A Mac Mini that is asleep
 /// must mean "ask the questions" and never "refuse to start" — the app has to
 /// work away from the house, and the six questions are a mild annoyance where
 /// a phone that will not open is not.

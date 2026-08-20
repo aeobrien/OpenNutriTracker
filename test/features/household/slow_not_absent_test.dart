@@ -1,7 +1,7 @@
 /// A Mini that is being slow must not be described as a Mini that is not there.
 ///
 /// On 19 August Aidan photographed a packet, tapped "read the packet", and was
-/// told the phone could not reach the kitchen computer. The server had read the
+/// told the phone could not reach the Mac Mini. The server had read the
 /// packet and answered him; the phone had stopped waiting after fifteen
 /// seconds, because a three-photograph reading job was given the same allowance
 /// as fetching one number. He had seen the identical sentence earlier that
@@ -56,14 +56,14 @@ void main() {
             timeout: const Duration(milliseconds: 20));
         fail('should not have answered');
       } on HouseholdUnreachable catch (e) {
-        expect(e.headline, 'The kitchen computer is taking too long to answer');
+        expect(e.headline, 'The Mac Mini is taking too long to answer');
         expect(e.headline, isNot(contains("Can't reach")));
       }
     });
 
     test('a Mini that really is not there still says so', () {
       final absent = HouseholdUnreachable('no route to host');
-      expect(absent.headline, "Can't reach the kitchen computer");
+      expect(absent.headline, "Can't reach the Mac Mini");
     });
 
     test('slowness is still held and retried like any other failure to reach',

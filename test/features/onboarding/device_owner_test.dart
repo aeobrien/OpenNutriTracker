@@ -179,7 +179,7 @@ void main() {
       await tester.pumpWidget(gate(repository));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining("Can't reach the kitchen computer"),
+      expect(find.textContaining("Can't reach the Mac Mini"),
           findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
     });

@@ -36,9 +36,9 @@ class WeightHistorySheet extends StatefulWidget {
   static const foundNothing = 'Nothing new in Apple Health.';
   static const fromHealth = 'from Apple Health';
   static const unreachable =
-      "Can't reach the kitchen computer, so this may not be the whole story.";
+      "Can't reach the Mac Mini, so this may not be the whole story.";
   static const cannotBringIn =
-      "Can't reach the kitchen computer, so there's no telling which of these "
+      "Can't reach the Mac Mini, so there's no telling which of these "
       'it already has. Try again when it\'s back.';
 
   /// 'Brought in 12 readings.' — plural handled, because '1 readings' is the

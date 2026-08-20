@@ -1,4 +1,4 @@
-/// What came back from asking the kitchen computer to work out a sentence.
+/// What came back from asking the Mac Mini to work out a sentence.
 ///
 /// Deliberately not "success or failure". Three of the four things below can be
 /// true at once — the sentence was heard, it was not understood, and there is

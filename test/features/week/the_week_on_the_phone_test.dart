@@ -233,7 +233,7 @@ void main() {
     });
   });
 
-  group('when the kitchen computer cannot be reached', () {
+  group('when the Mac Mini cannot be reached', () {
     testWidgets('it says so rather than showing an empty week', (tester) async {
       // "Nothing is planned" and "I could not find out what is planned" are
       // different facts, and showing the first when the second is true is the

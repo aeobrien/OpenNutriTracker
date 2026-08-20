@@ -86,9 +86,9 @@ class HouseholdFood {
 
   /// Whether this food is one the person meant when they typed [text].
   ///
-  /// The kitchen computer does this match itself and is the authority on it.
+  /// The Mac Mini does this match itself and is the authority on it.
   /// This is a second, identical check made on the phone, and it exists for one
-  /// specific reason: an older kitchen computer does not understand being asked
+  /// specific reason: an older Mac Mini does not understand being asked
   /// for a *search* and answers with the entire list. Without this the person
   /// types "banana", gets last week's curry back, and reasonably concludes the
   /// search is broken. Filtering here means the worst an out-of-date kitchen

@@ -61,7 +61,7 @@ class _AddMealScreenState extends State<AddMealScreen>
     // screen telling somebody to start typing. Most of what anybody adds is
     // something they have eaten before, and a packet the household has already
     // read the label of carries better numbers than anything a search will
-    // find. If the kitchen computer is not there, nothing happens and the
+    // find. If the Mac Mini is not there, nothing happens and the
     // screen is exactly as it always was.
     _productsBloc.add(const LoadOurFoodsEvent());
     _tabController = TabController(length: 3, vsync: this);

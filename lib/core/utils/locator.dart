@@ -173,7 +173,7 @@ Future<void> initLocator() async {
   locator.registerLazySingleton<FoodFinder>(
       () => FoodFinder(locator<HouseholdApi>(), locator<HouseholdRepository>()));
 
-  // Carries the app's setup answers to the kitchen computer and back, so
+  // Carries the app's setup answers to the Mac Mini and back, so
   // reinstalling the app stops meaning answering them again.
   locator.registerLazySingleton<ProfileHandover>(
       () => ProfileHandover(locator<HouseholdApi>(), locator<UserRepository>()));
@@ -185,7 +185,7 @@ Future<void> initLocator() async {
       () => WeekRepository(householdApi, householdRepository));
   // Changing the plan. Not registered behind the outbox like the ledger
   // writes: planning is a decision made against a week you can currently see,
-  // so it goes straight to the kitchen computer or not at all.
+  // so it goes straight to the Mac Mini or not at all.
   locator.registerLazySingleton<PlanRepository>(
       () => PlanRepository(householdApi, householdRepository));
 

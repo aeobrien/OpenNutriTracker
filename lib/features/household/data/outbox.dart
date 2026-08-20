@@ -63,7 +63,7 @@ class Outbox {
   /// a previous attempt had left something behind — so a queue that was empty
   /// when the app opened had nothing scheduled at all, and the first thing
   /// added after that sat there. On 20 August a weight typed into Profile
-  /// showed on the phone at once and did not reach the kitchen computer until
+  /// showed on the phone at once and did not reach the Mac Mini until
   /// the app was backgrounded and brought back. The phone and the panel
   /// disagreed for as long as somebody kept looking at the phone.
   void Function()? onQueued;

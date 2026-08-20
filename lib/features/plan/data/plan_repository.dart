@@ -4,7 +4,7 @@ import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 
 /// Reading and changing the household's plan from the phone.
 ///
-/// There is one plan and it lives on the kitchen computer. This writes into
+/// There is one plan and it lives on the Mac Mini. This writes into
 /// the same table the panel already reads, through the same endpoint the panel
 /// itself would use — not a second plan the phone keeps and reconciles later.
 ///
@@ -15,7 +15,7 @@ import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 /// Putting a meal on next Tuesday is not that. It is a decision being made
 /// right now, in front of a screen showing what is already there, and a
 /// decision made against a week you cannot currently see is a decision made
-/// blind. So the planner is simply unavailable when the kitchen computer
+/// blind. So the planner is simply unavailable when the Mac Mini
 /// cannot be reached, and says so — rather than accepting taps into a queue
 /// and letting somebody plan a meal on top of one they did not know about.
 class PlanRepository {
@@ -25,7 +25,7 @@ class PlanRepository {
   PlanRepository(this._api, this._household);
 
   /// The household's planned week. [start] names the Monday; leaving it off
-  /// lets the kitchen computer decide which week today is in, so the two
+  /// lets the Mac Mini decide which week today is in, so the two
   /// handsets and the panel cannot disagree about where a week starts.
   Future<PlanWeek> week({String? start}) async =>
       PlanWeek.fromJson(await _api.plan(start: start));

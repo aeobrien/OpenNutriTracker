@@ -19,7 +19,7 @@ class SearchProductsUseCase {
   /// of a packet that may not even be the same one. So when the house already
   /// knows a food, that is the row the thumb lands on.
   ///
-  /// A sleeping kitchen computer costs nothing here: [FoodFinder] answers with
+  /// A sleeping Mac Mini costs nothing here: [FoodFinder] answers with
   /// an empty list rather than throwing, and the public search runs exactly as
   /// it always did. Searching for food away from home has to keep working.
   Future<List<MealEntity>> searchOFFProductsByString(
@@ -33,7 +33,7 @@ class SearchProductsUseCase {
   }
 
   /// The foods this household already has, most-used-by-this-person first.
-  /// Empty when the kitchen computer cannot be asked, which is what keeps the
+  /// Empty when the Mac Mini cannot be asked, which is what keeps the
   /// picker usable away from home.
   Future<List<MealEntity>> ourFoods() async =>
       await _ours?.theirs() ?? const <MealEntity>[];

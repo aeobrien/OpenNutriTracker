@@ -492,7 +492,7 @@ void main() {
     test('the row is written before anything tries to understand it', () {
       // The order is the design. Written down here as well as in the code
       // because reversing it reads better and is wrong in the one case that
-      // matters — the kitchen computer asleep, and what you said simply gone.
+      // matters — the Mac Mini asleep, and what you said simply gone.
       final repository = _read('lib/features/said/data/said_repository.dart');
       final heard = repository.indexOf('Future<String> heard(');
       final logFood = repository.indexOf('_logger.logFood(', heard);

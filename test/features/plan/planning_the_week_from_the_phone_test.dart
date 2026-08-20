@@ -12,7 +12,7 @@
 ///    for the shopping list;
 ///  * taking a meal off never touches a ledger, and when somebody has already
 ///    eaten it the person is told that before it goes;
-///  * and when the kitchen computer cannot be reached, the planner offers
+///  * and when the Mac Mini cannot be reached, the planner offers
 ///    nothing at all rather than queueing taps. Planning against a week you
 ///    cannot see is planning blind, and the other phone may have put something
 ///    on that day a minute ago.
@@ -282,7 +282,7 @@ void main() {
     });
   });
 
-  group('when the kitchen computer cannot be reached', () {
+  group('when the Mac Mini cannot be reached', () {
     testWidgets('the day says so rather than showing an empty plan',
         (tester) async {
       mini.planMeal(day: friday, title: 'Chilli', mealKcal: 640);
@@ -293,7 +293,7 @@ void main() {
       await tester.tap(find.text('Fri'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining("Can't reach the kitchen computer"),
+      expect(find.textContaining("Can't reach the Mac Mini"),
           findsOneWidget);
       expect(find.text(PlanDaySheet.nothingPlanned), findsNothing);
     });

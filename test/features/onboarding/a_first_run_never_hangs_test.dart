@@ -53,7 +53,7 @@ void main() {
       await expectLater(
         api.people(),
         throwsA(isA<HouseholdUnreachable>()),
-        reason: 'an address nobody has filled in is a kitchen computer that '
+        reason: 'an address nobody has filled in is a Mac Mini that '
             'cannot be reached, not a fault in the program',
       );
     });

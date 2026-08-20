@@ -12,7 +12,7 @@ class LoggedItem {
 
   /// The name the phone gave this row when it logged it. How anything on this
   /// phone says *which* row it means afterwards — it has no idea what number
-  /// the kitchen computer gave it.
+  /// the Mac Mini gave it.
   final String? clientId;
 
   /// 'provisional' while something is still working out what this row is,
@@ -33,7 +33,7 @@ class LoggedItem {
   final DateTime? provisionalSince;
 
   /// How many times the row has changed since it was written. Sent back with a
-  /// resolution request so a correction made while the kitchen computer was
+  /// resolution request so a correction made while the Mac Mini was
   /// thinking cannot be overwritten by the answer.
   final int version;
 

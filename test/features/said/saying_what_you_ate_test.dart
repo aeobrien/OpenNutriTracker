@@ -3,7 +3,7 @@
 /// Behaviour under test (Release G, TM-0027 + TM-0028 — the phone half):
 ///
 ///  * the row goes on the household's ledger the moment you let go, before
-///    anything has understood it. Not after. The kitchen computer being asleep
+///    anything has understood it. Not after. The Mac Mini being asleep
 ///    must cost you a rough number, never the thing you said;
 ///  * a correction made while the answer is on the wire wins, permanently;
 ///  * typing a sentence and speaking one are the same thing to everything
@@ -147,7 +147,7 @@ void main() {
   group('the sentence goes to the household first', () {
     testWidgets('a sentence lands before anything has understood it',
         (tester) async {
-      // The kitchen computer is not going to understand this one.
+      // The Mac Mini is not going to understand this one.
       mini.saidLines = const [];
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
@@ -287,7 +287,7 @@ void main() {
       expect(find.text(SayWhatYouAteSection.workingOut), findsNothing);
     });
 
-    testWidgets('a kitchen computer that cannot be reached is said out loud',
+    testWidgets('a Mac Mini that cannot be reached is said out loud',
         (tester) async {
       mini.reachable = false;
       await tester.pumpWidget(screen());
@@ -413,7 +413,7 @@ void main() {
       if (clip.existsSync()) clip.deleteSync();
     });
 
-    test('goes to the kitchen computer as itself, not as words this phone made up',
+    test('goes to the Mac Mini as itself, not as words this phone made up',
         () async {
       // The transcriber is on the Mac Mini and is the one the kitchen panel has
       // used since long before any of this. This phone captures the sound and

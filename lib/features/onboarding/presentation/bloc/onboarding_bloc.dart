@@ -56,7 +56,7 @@ class OnboardingBloc extends Bloc<OnboardingEvent, OnboardingState> {
     _tellTheHousehold(userEntity);
   }
 
-  /// Hand the answers to the kitchen computer so the next reinstall does not
+  /// Hand the answers to the Mac Mini so the next reinstall does not
   /// ask for them. Deliberately not awaited by the caller: setup is finished on
   /// this phone either way, and a slow or sleeping Mini must not hold somebody
   /// on the last page of a form they have completed.

@@ -36,7 +36,7 @@ class FoodFinder {
   /// The household's foods matching what was typed, still in this person's
   /// order.
   ///
-  /// The match is checked twice — once by the kitchen computer, which is the
+  /// The match is checked twice — once by the Mac Mini, which is the
   /// authority, and once here. See [HouseholdFood.matches] for why the second
   /// check is not redundant.
   Future<List<MealEntity>> matching(String text) {
@@ -73,7 +73,7 @@ class FoodFinder {
   /// goes through, and that screen is the only place a food is written.
   ///
   /// An empty list covers three different situations on purpose: nothing was
-  /// found, the kitchen computer could not be reached, and the kitchen computer
+  /// found, the Mac Mini could not be reached, and the Mac Mini
   /// is too old to know how to look. All three mean the same thing to the
   /// person holding the phone — no, and you can still type it in yourself.
   Future<List<FoodDraft>> huntFor(String text) async {

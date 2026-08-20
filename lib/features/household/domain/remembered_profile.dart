@@ -3,7 +3,7 @@ import 'package:opennutritracker/core/domain/entity/user_gender_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_pal_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_weight_goal_entity.dart';
 
-/// The six things setup asks, in a shape the kitchen computer can keep.
+/// The six things setup asks, in a shape the Mac Mini can keep.
 ///
 /// This exists because the phone forgets them. Reinstalling the app removes
 /// the app, and everything it had written is inside it — so the six questions

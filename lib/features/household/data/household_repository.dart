@@ -68,7 +68,7 @@ class HouseholdRepository {
   /// An unreachable house is only softened into the remembered answer when
   /// there *is* a remembered answer. With nothing to fall back on it still
   /// throws, and that matters: the screen that asks whose phone this is has to
-  /// be able to say "can't reach the kitchen computer" rather than show an
+  /// be able to say "can't reach the Mac Mini" rather than show an
   /// empty house, and "we cannot ask" and "nobody lives here" must never
   /// arrive looking the same.
   Future<List<HouseholdPerson>> people() async {

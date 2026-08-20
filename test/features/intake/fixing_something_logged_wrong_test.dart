@@ -4,7 +4,7 @@
 /// without, and could not do until now:
 ///
 ///  * a figure already on a day can be corrected, and the correction reaches
-///    the kitchen computer rather than only this phone;
+///    the Mac Mini rather than only this phone;
 ///  * a row can be moved to the other person's day, in the same save as any
 ///    change to its amount;
 ///  * removing a row here removes it there, softly.

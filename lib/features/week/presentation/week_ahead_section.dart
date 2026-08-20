@@ -103,7 +103,7 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
     }
   }
 
-  /// Open one day's plan. The week only asks the kitchen computer again if
+  /// Open one day's plan. The week only asks the Mac Mini again if
   /// something actually changed — closing a sheet you only looked at should
   /// not cost a round trip.
   Future<void> _plan(String day) async {

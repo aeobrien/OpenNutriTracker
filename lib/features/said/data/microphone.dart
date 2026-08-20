@@ -29,7 +29,7 @@ abstract class Microphone {
 
   /// Let go somewhere else, changed your mind. The sound is thrown away and no
   /// row is ever created — abandoning is a gesture on this phone and never
-  /// reaches the kitchen computer at all.
+  /// reaches the Mac Mini at all.
   Future<void> abandon();
 }
 
