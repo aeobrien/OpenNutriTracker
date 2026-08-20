@@ -129,12 +129,20 @@ void main() {
     });
 
     test('says which way it is going in words', () {
-      expect(TrendLine.of(made(82.3, -0.4)), contains('down 0.4 kg a week'));
-      expect(TrendLine.of(made(82.3, 0.4)), contains('up 0.4 kg a week'));
+      expect(TrendLine.of(made(82.3, -0.4)), contains('Down 0.4 kg a week'));
+      expect(TrendLine.of(made(82.3, 0.4)), contains('Up 0.4 kg a week'));
     });
 
-    test('says the trend itself, not the last thing the scales said', () {
-      expect(TrendLine.of(made(82.34, -0.4)), contains('82.3 kg'));
+    test('never puts a second weight figure next to the weight', () {
+      // The fault of 20 August 2026: this line opened with the smoothed trend
+      // — "Trending 82.4 kg" — and sat directly under a weight of 115 kg, so
+      // the row carried two numbers that disagreed and nothing said which one
+      // counted. A direction is the only thing this line is for.
+      for (final week in [-0.4, 0.4, 0.05, null]) {
+        final line = TrendLine.of(made(82.34, week));
+        expect(line, isNot(contains('82.3')), reason: 'week=$week');
+        expect(line, isNot(contains('Trending')), reason: 'week=$week');
+      }
     });
 
     test('calls a week that barely moved steady rather than a direction', () {
@@ -150,8 +158,7 @@ void main() {
       final line = TrendLine.of(made(80.0, -0.5), imperial: true)!;
       expect(line, contains('lbs'));
       expect(line, isNot(contains('kg')));
-      expect(line, contains('176.4'));
-      expect(line, contains('down 1.1 lbs a week'));
+      expect(line, contains('Down 1.1 lbs a week'));
     });
 
     test('a small weekly change survives being put into pounds', () {
@@ -159,7 +166,7 @@ void main() {
       // hundred grams a week into "down 0.0 lbs" — a person losing weight
       // steadily, told nothing is happening.
       final line = TrendLine.of(made(80.0, -0.2), imperial: true)!;
-      expect(line, contains('down 0.4 lbs a week'));
+      expect(line, contains('Down 0.4 lbs a week'));
     });
   });
 
@@ -217,11 +224,19 @@ void main() {
   });
 
   group('a typed weight', () {
-    test('is named after its day, so twice in a day is a correction', () async {
+    test('typed twice in a day is a correction, and the correction wins',
+        () async {
       await weights.typed(DateTime(2026, 8, 18), 82.0);
       await weights.typed(DateTime(2026, 8, 18), 81.5);
       await outbox.drain();
-      expect(mini.weights.length, 1);
+
+      // The day reads as the second number, which is the whole point of
+      // calling it a correction. This assertion is the one that was missing on
+      // 20 August: the test checked only that a day held a single reading, and
+      // a *discarded* correction satisfies that just as well as an applied one
+      // does. So it passed while Aidan typed 114.8 over 115.0 on his phone and
+      // the house went on believing 115.0.
+      expect((await weights.history()).latest!.kg, 81.5);
     });
 
     test('beats one imported for the same day, whichever arrived last',
