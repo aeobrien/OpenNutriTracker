@@ -1,0 +1,60 @@
+[
+  {
+    "action": "waitfor",
+    "id": "say-typed",
+    "timeout": 30
+  },
+  {
+    "action": "press",
+    "id": "say-typed",
+    "at": [
+      0.35,
+      0.75
+    ]
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "type",
+    "text": "chips, burger\n"
+  },
+  {
+    "action": "sleep",
+    "seconds": 18
+  },
+  {
+    "action": "waitfor",
+    "id": "say-answer",
+    "timeout": 25
+  },
+  {
+    "action": "screenshot",
+    "name": "01-it-asked"
+  },
+  {
+    "action": "press",
+    "id": "say-answer",
+    "at": [
+      0.35,
+      0.75
+    ]
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "type",
+    "text": "a chicken burger with lettuce\n"
+  },
+  {
+    "action": "sleep",
+    "seconds": 18
+  },
+  {
+    "action": "screenshot",
+    "name": "02-after-answering"
+  }
+]

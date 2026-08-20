@@ -1,0 +1,10 @@
+[
+  { "action": "waitfor", "id": "say-typed", "timeout": 30 },
+  { "action": "press", "id": "say-typed", "at": [0.35, 0.75] },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "type", "text": "chips, burger\n" },
+  { "action": "sleep", "seconds": 4 },
+  { "action": "screenshot", "name": "01-just-sent" },
+  { "action": "sleep", "seconds": 16 },
+  { "action": "screenshot", "name": "02-after-the-answer" }
+]

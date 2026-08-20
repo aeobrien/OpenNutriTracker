@@ -305,18 +305,27 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_question!, style: theme.textTheme.bodyMedium),
-            TextField(
-              controller: _answer,
-              enabled: !_busy,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _answerQuestion(),
-              decoration: InputDecoration(
-                isDense: true,
-                hintText: 'Answer',
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _busy ? null : _answerQuestion,
+            Semantics(
+              identifier: 'say-question',
+              child: Text(_question!, style: theme.textTheme.bodyMedium),
+            ),
+            Semantics(
+              identifier: 'say-answer',
+              child: TextField(
+                controller: _answer,
+                enabled: !_busy,
+                textInputAction: TextInputAction.send,
+                onSubmitted: (_) => _answerQuestion(),
+                decoration: InputDecoration(
+                  isDense: true,
+                  hintText: 'Answer',
+                  suffixIcon: Semantics(
+                    identifier: 'say-answer-send',
+                    child: IconButton(
+                      icon: const Icon(Icons.send),
+                      onPressed: _busy ? null : _answerQuestion,
+                    ),
+                  ),
                 ),
               ),
             ),

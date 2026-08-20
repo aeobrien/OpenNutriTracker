@@ -1,0 +1,11 @@
+[
+  { "action": "waitfor", "label": "Home", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Home", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "swipe", "label": "Activity", "match": "contains", "direction": "up" },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "screenshot", "name": "01-home-scrolled" },
+  { "action": "swipe", "label": "Activity", "match": "contains", "direction": "up" },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "screenshot", "name": "02-home-further" }
+]

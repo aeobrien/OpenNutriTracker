@@ -1,0 +1,54 @@
+[
+  {
+    "action": "waitfor",
+    "label": "Diary",
+    "match": "contains",
+    "timeout": 30
+  },
+  {
+    "action": "press",
+    "label": "Diary",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 3
+  },
+  {
+    "action": "swipe",
+    "label": "Activity",
+    "match": "contains",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "swipe",
+    "label": "Activity",
+    "match": "contains",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "01-the-rows"
+  },
+  {
+    "action": "press",
+    "label": "wholemeal toast",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 3
+  },
+  {
+    "action": "screenshot",
+    "name": "02-after-tapping"
+  }
+]
