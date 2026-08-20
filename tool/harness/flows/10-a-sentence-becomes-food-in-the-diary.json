@@ -1,0 +1,15 @@
+[
+  { "action": "systemalert", "button": "Allow", "timeout": 5, "optional": true },
+  { "action": "waitfor", "id": "say-typed", "timeout": 30 },
+  { "action": "screenshot", "name": "01-home-before" },
+  { "action": "press", "id": "say-typed", "at": [0.35, 0.75] },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "type", "text": "two slices of toast with butter and a cup of tea\n" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "02-just-sent" },
+  { "action": "sleep", "seconds": 15 },
+  { "action": "screenshot", "name": "03-home-after" },
+  { "action": "press", "label": "Diary", "match": "contains" },
+  { "action": "sleep", "seconds": 5 },
+  { "action": "screenshot", "name": "04-the-diary" }
+]

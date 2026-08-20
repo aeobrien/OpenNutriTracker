@@ -1,0 +1,14 @@
+[
+  { "action": "waitfor", "label": "Diary", "match": "contains", "timeout": 30 },
+  { "action": "press", "label": "Diary", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "press", "label": "Week", "match": "contains" },
+  { "action": "sleep", "seconds": 3 },
+  { "action": "screenshot", "name": "01-week-view" },
+  { "action": "swipe", "direction": "up" },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "screenshot", "name": "02-scrolled" },
+  { "action": "swipe", "direction": "up" },
+  { "action": "sleep", "seconds": 2 },
+  { "action": "screenshot", "name": "03-further" }
+]

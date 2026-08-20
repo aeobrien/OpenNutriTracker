@@ -263,17 +263,27 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-          child: TextField(
-            controller: _typed,
-            enabled: !_busy,
-            textInputAction: TextInputAction.send,
-            onSubmitted: (_) => _sendTyped(),
-            decoration: InputDecoration(
-              isDense: true,
-              hintText: SayWhatYouAteSection.typeItInstead,
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: _busy ? null : _sendTyped,
+          // Named so the harness can type a sentence here. The microphone
+          // cannot be driven on a simulator, so this box is the only way a
+          // machine can walk the path Aidan actually complained about — a
+          // sentence going in and food coming out the other end in the diary.
+          child: Semantics(
+            identifier: 'say-typed',
+            child: TextField(
+              controller: _typed,
+              enabled: !_busy,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendTyped(),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: SayWhatYouAteSection.typeItInstead,
+                suffixIcon: Semantics(
+                  identifier: 'say-send',
+                  child: IconButton(
+                    icon: const Icon(Icons.send),
+                    onPressed: _busy ? null : _sendTyped,
+                  ),
+                ),
               ),
             ),
           ),
