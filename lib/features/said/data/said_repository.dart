@@ -131,8 +131,21 @@ class SaidRepository {
     for (final row in rows.where((r) => r.stillBeingWorkedOut)) {
       final name = row.clientId;
       if (name == null) continue;
-      final answer =
-          await workOut(clientId: name, version: row.version, words: row.said);
+      final Understood? answer;
+      try {
+        answer =
+            await workOut(clientId: name, version: row.version, words: row.said);
+      } on HouseholdRefused catch (e) {
+        // One row the Mini will not settle is not a reason to abandon the ones
+        // after it. A recording whose clip has since been cleared off the phone
+        // has no words left to send, and the Mini rightly says so — but that is
+        // a fact about that row, not about the queue. Left as it was, the first
+        // such row ended the whole catch-up, which on 21 August 2026 would have
+        // meant two dead rows from days earlier hiding a third from that same
+        // evening that would have settled perfectly well.
+        _log.info('[SAID] $name stays unfinished: ${e.message}');
+        continue;
+      }
       if (answer == null) break; // unreachable — no point trying the rest
       if (answer.applied) settled += 1;
     }
