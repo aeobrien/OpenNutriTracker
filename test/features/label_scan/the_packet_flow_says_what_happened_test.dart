@@ -26,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/label_capture_dao.dart';
+import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
@@ -215,6 +216,28 @@ void main() {
     // The photographs are still there to try again with, which is what the
     // message promises.
     expect(find.text('Retake'), findsNWidgets(LabelShot.values.length));
+  });
+
+  testWidgets('and the sentence is true — the food can then be found',
+      (tester) async {
+    // The confirmation tells somebody to search for the food when they want it
+    // on a day. That is a promise the screen makes on the rest of the app's
+    // behalf, so it is worth being a check rather than a hope: a sentence that
+    // sends a person looking for something that is not there is worse than the
+    // silence it replaced.
+    giveTheScreenRoom(tester);
+    await tester.pumpWidget(theApp());
+    await openTheCamera(tester);
+    await takeAllThree(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Read the packet'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Save to the household list'));
+    await tester.pumpAndSettle();
+    await outbox.drain();
+
+    final found = await FoodFinder(api, household).matching('peanut');
+    expect(found.map((m) => m.name), contains('Peanut butter'),
+        reason: 'the confirmation sends people to a search that cannot find it');
   });
 
   testWidgets('a food typed in by hand says so too', (tester) async {
