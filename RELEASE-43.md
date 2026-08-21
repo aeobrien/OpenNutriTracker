@@ -68,7 +68,11 @@ this and nothing about it needs testing.
   it; what changed is that I can now say it works rather than that it reads
   correctly. You confirmed both on your phone already, so there is nothing here
   for you to test.
-- **The limit from this morning still applies to the app work.** Everything I
-  drove today ran against a throwaway Mantel on my own Mac, not the Mini. The
-  one exception is the two cleared rows, which were done on the Mini itself and
-  read back from it.
+- **The limit from this morning is narrower now, and I should say exactly how
+  narrow.** Most of today's work ran against a throwaway Mantel on my own Mac.
+  The Undo fix no longer has that limit: I ran the same end-to-end check against
+  Mantel *on the Mini* — the same code your phone talks to, reporting the same
+  version — on a copy of its database, so nothing of yours was written to. It
+  passed there too, and your own day was read back before and after and is
+  unchanged. What has still not happened is build 43 itself going down the real
+  wire from your phone to the Mini, and that only happens when you use it.
