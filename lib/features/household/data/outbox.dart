@@ -59,7 +59,9 @@ class Outbox {
   final HouseholdApi _api;
   final _log = Logger('Outbox');
 
-  bool _draining = false;
+  /// The drain currently running, if one is. Held so a second caller can wait
+  /// for it instead of being handed a result about a queue nobody looked at.
+  Future<OutboxDrainResult>? _inFlight;
 
   /// Told the moment something joins the queue, so it can be sent straight
   /// away rather than waiting for the app to be opened again.
@@ -122,39 +124,50 @@ class Outbox {
   /// Stops at the first sign the Mini is unreachable — there is no point
   /// working through fifty items to collect fifty identical timeouts, and the
   /// order they were logged in is worth keeping.
-  Future<OutboxDrainResult> drain() async {
-    if (_draining) {
-      return OutboxDrainResult(remaining: await _dao.count());
-    }
-    _draining = true;
+  Future<OutboxDrainResult> drain() {
+    // A second caller waits for the drain already running rather than being
+    // told everything is fine.
+    //
+    // It used to return straight away with a result that said nothing was
+    // unreachable and nothing had been sent — which is indistinguishable, to
+    // the caller, from a queue that emptied successfully. Saying what you ate
+    // asks for a drain and then asks the Mini about the row, and its whole
+    // reason for draining first is that a question about a row the Mini has
+    // never heard of comes back as a plain 404. On 21 August 2026 that is
+    // exactly what happened: the drain was already running, the all-clear was
+    // untrue, and the question went out about a row still sitting in the queue.
+    final running = _inFlight;
+    if (running != null) return running;
+    final started = _drainOnce();
+    _inFlight = started;
+    return started.whenComplete(() => _inFlight = null);
+  }
+
+  Future<OutboxDrainResult> _drainOnce() async {
     var sent = 0;
     var unreachable = false;
-    try {
-      for (final item in await _dao.pending()) {
-        if (item.attempts >= _maxAttempts) continue;
-        final body = jsonDecode(item.body) as Map<String, dynamic>;
-        body['client_id'] = item.clientId;
-        body['owner_id'] = item.ownerId;
-        body['author_id'] = item.authorId;
-        body['logged_at'] = item.loggedAt;
-        try {
-          await _api.post(item.path, body);
-          await _dao.remove(item.clientId);
-          sent += 1;
-        } on HouseholdUnreachable catch (e) {
-          _log.info('[OUTBOX] holding ${item.clientId}: ${e.message}');
-          unreachable = true;
-          break;
-        } on HouseholdRefused catch (e) {
-          // Kept, not dropped. A refusal usually means something we can fix and
-          // resend; throwing the person's dinner away because the server
-          // disagreed with the request is not an option.
-          _log.warning('[OUTBOX] ${item.clientId} refused: ${e.message}');
-          await _dao.recordFailure(item.clientId, e.message);
-        }
+    for (final item in await _dao.pending()) {
+      if (item.attempts >= _maxAttempts) continue;
+      final body = jsonDecode(item.body) as Map<String, dynamic>;
+      body['client_id'] = item.clientId;
+      body['owner_id'] = item.ownerId;
+      body['author_id'] = item.authorId;
+      body['logged_at'] = item.loggedAt;
+      try {
+        await _api.post(item.path, body);
+        await _dao.remove(item.clientId);
+        sent += 1;
+      } on HouseholdUnreachable catch (e) {
+        _log.info('[OUTBOX] holding ${item.clientId}: ${e.message}');
+        unreachable = true;
+        break;
+      } on HouseholdRefused catch (e) {
+        // Kept, not dropped. A refusal usually means something we can fix and
+        // resend; throwing the person's dinner away because the server
+        // disagreed with the request is not an option.
+        _log.warning('[OUTBOX] ${item.clientId} refused: ${e.message}');
+        await _dao.recordFailure(item.clientId, e.message);
       }
-    } finally {
-      _draining = false;
     }
     return OutboxDrainResult(
       sent: sent,

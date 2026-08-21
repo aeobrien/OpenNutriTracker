@@ -120,21 +120,48 @@ class HouseholdApi {
     'Content-Type': 'application/json',
   };
 
+  /// What came back, or the right kind of complaint about it.
+  ///
+  /// **The code is read before the body, and that order is the whole point.**
+  /// This used to parse first and ask questions afterwards, so a refusal that
+  /// arrived as anything other than JSON came out as "could not reach the Mac
+  /// Mini" — because failing to parse was the only thing that sentence was for.
+  ///
+  /// That is not a cosmetic difference. [Outbox.drain] stops at the first sign
+  /// of unreachable, deliberately, so that fifty queued items do not collect
+  /// fifty identical timeouts. A refusal mislabelled as unreachable therefore
+  /// stops the queue rather than being recorded and stepped over — and on
+  /// 21 August 2026 one queued item posting to a URL a since-replaced build had
+  /// minted did exactly that. It was answered 405 as an HTML page, every
+  /// attempt, for hours. Everything behind it — including a sentence somebody
+  /// had just spoken onto their day — never left the phone, while the app said
+  /// it could not reach a machine it was talking to perfectly well.
+  ///
+  /// So: a 4xx is a refusal whatever it is written in. Only a 5xx, or an answer
+  /// that is somehow neither, is the Mini being unwell.
   Future<Map<String, dynamic>> _decode(http.Response response) async {
-    Map<String, dynamic> body;
+    final code = response.statusCode;
+    Map<String, dynamic>? body;
     try {
-      body = jsonDecode(response.body) as Map<String, dynamic>;
+      final parsed = jsonDecode(response.body);
+      if (parsed is Map<String, dynamic>) body = parsed;
     } on FormatException {
+      body = null;
+    }
+    if (code >= 500) {
+      throw HouseholdUnreachable('the server is having trouble ($code)');
+    }
+    if (code >= 400) {
+      // Its own words if it gave any, and the number if it did not. The number
+      // matters: it is what tells whoever reads the queue later that this item
+      // is asking for something the server will never agree to.
+      throw HouseholdRefused(
+          code, (body?['error'] ?? 'it refused, and did not say why ($code)')
+              .toString());
+    }
+    if (body == null) {
       throw HouseholdUnreachable(
           'the server answered with something that was not JSON');
-    }
-    if (response.statusCode >= 500) {
-      throw HouseholdUnreachable('the server is having trouble '
-          '(${response.statusCode})');
-    }
-    if (response.statusCode >= 400) {
-      throw HouseholdRefused(
-          response.statusCode, (body['error'] ?? 'refused').toString());
     }
     return body;
   }
