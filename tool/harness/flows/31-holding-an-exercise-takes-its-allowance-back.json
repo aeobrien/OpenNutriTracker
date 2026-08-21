@@ -1,0 +1,276 @@
+[
+  {
+    "action": "systemalert",
+    "button": "Allow",
+    "timeout": 10,
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 20
+  },
+  {
+    "action": "press",
+    "label": "OK",
+    "type": "button",
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 4
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "01-no-exercise-on-the-day-yet"
+  },
+  {
+    "action": "assert",
+    "label": "+0",
+    "match": "contains"
+  },
+  {
+    "action": "press",
+    "label": "Add",
+    "type": "button"
+  },
+  {
+    "action": "sleep",
+    "seconds": 3
+  },
+  {
+    "action": "screenshot",
+    "name": "02-the-ways-in"
+  },
+  {
+    "action": "press",
+    "label": "running, biking",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 4
+  },
+  {
+    "action": "screenshot",
+    "name": "03-the-activity-search"
+  },
+  {
+    "action": "settext",
+    "label": "Search",
+    "type": "textField",
+    "text": "Walking"
+  },
+  {
+    "action": "sleep",
+    "seconds": 4
+  },
+  {
+    "action": "screenshot",
+    "name": "04-what-walking-finds"
+  },
+  {
+    "action": "press",
+    "label": "walking the dog",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 5
+  },
+  {
+    "action": "screenshot",
+    "name": "05-the-walk-screen"
+  },
+  {
+    "action": "settext",
+    "label": "Quantity",
+    "type": "textField",
+    "text": "60"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "press",
+    "label": "done",
+    "type": "button",
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "06-sixty-minutes-of-it"
+  },
+  {
+    "action": "press",
+    "label": "Add",
+    "type": "button"
+  },
+  {
+    "action": "sleep",
+    "seconds": 6
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "07-the-walk-earned-him-something"
+  },
+  {
+    "action": "assert",
+    "label": "+0",
+    "match": "contains",
+    "present": false
+  },
+  {
+    "action": "swipe",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "drag",
+    "label": "Breakfast",
+    "match": "contains",
+    "dx": 0,
+    "dy": 200,
+    "seconds": 0.1
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "08-the-walk-is-on-the-day"
+  },
+  {
+    "action": "longpress",
+    "label": "\ud83d\udd25",
+    "match": "contains",
+    "seconds": 1.0
+  },
+  {
+    "action": "sleep",
+    "seconds": 3
+  },
+  {
+    "action": "screenshot",
+    "name": "09-holding-it-asks-whether-to-delete"
+  },
+  {
+    "action": "assert",
+    "label": "Delete Item?",
+    "match": "contains"
+  },
+  {
+    "action": "press",
+    "label": "OK",
+    "type": "button"
+  },
+  {
+    "action": "sleep",
+    "seconds": 5
+  },
+  {
+    "action": "waitgone",
+    "label": "\ud83d\udd25",
+    "match": "contains",
+    "timeout": 15
+  },
+  {
+    "action": "screenshot",
+    "name": "10-the-walk-is-gone"
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "screenshot",
+    "name": "11-the-allowance-went-back"
+  },
+  {
+    "action": "assert",
+    "label": "+0",
+    "match": "contains",
+    "present": true
+  },
+  {
+    "action": "assert",
+    "label": "350",
+    "match": "contains"
+  }
+]
