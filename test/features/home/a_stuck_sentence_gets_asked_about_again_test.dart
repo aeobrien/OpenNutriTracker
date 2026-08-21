@@ -26,6 +26,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
+import 'package:opennutritracker/features/said/data/said_repository.dart';
 import 'package:opennutritracker/features/today/domain/day_view.dart';
 
 import 'a_home_that_can_be_driven.dart';
@@ -83,6 +84,30 @@ void main() {
     // settled, which is the thing that has not happened.
     final home = await openHome(tester, onTheHouseholdsDay: [stuck]);
     expect(home.dayAtTheHouse.asked, greaterThan(0));
+  });
+
+  testWidgets('a question left unanswered is asked again when the app opens',
+      (tester) async {
+    // Since 21 August a sentence that never named a meal is asked about rather
+    // than filed by the clock, and nothing goes on the day until somebody says
+    // which meal. That makes an unanswered question food that never arrives —
+    // so if the app is closed on one, it has to come back.
+    final home = ADrivableHome(onTheHouseholdsDay: const [stuck]);
+    home.said.waiting = const AQuestionStillWaiting(
+      about: 'row-nobody-finished',
+      words: 'two eggs and a slice of toast',
+      question: 'Which meal was that — breakfast, lunch, dinner or a snack?',
+    );
+    home.register();
+    await tester.pumpWidget(home.widget);
+    await tester.pumpAndSettle();
+
+    expect(
+        find.text(
+            'Which meal was that — breakfast, lunch, dinner or a snack?'),
+        findsOneWidget,
+        reason: 'the question is on the Mac Mini and nowhere the person can '
+            'see it, so the food never lands');
   });
 
   testWidgets('a house that cannot be reached is not an error on the day',

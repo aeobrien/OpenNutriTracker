@@ -126,8 +126,18 @@ class SaidRepository {
   /// talking to the Mac Mini anyway. Nothing is retried on a timer:
   /// a row that stays unfinished is visible on the day with both exits on it,
   /// so the person is never waiting on a retry they cannot see.
-  Future<int> catchUp(Iterable<LoggedItem> rows) async {
+  ///
+  /// A row can also be unfinished because it is waiting on an answer — since
+  /// 21 August a sentence that never named a meal is asked about rather than
+  /// filed by the clock, and nothing goes on the day until somebody says which
+  /// meal. That makes an unanswered question the ordinary case rather than a
+  /// rare one, so the question comes back out of here to be put in front of the
+  /// person again. Without that, closing the app on an unanswered question
+  /// would leave the food on the Mac Mini and out of the diary with nothing
+  /// anywhere saying so.
+  Future<CaughtUp> catchUp(Iterable<LoggedItem> rows) async {
     var settled = 0;
+    AQuestionStillWaiting? stillAsking;
     for (final row in rows.where((r) => r.stillBeingWorkedOut)) {
       final name = row.clientId;
       if (name == null) continue;
@@ -148,7 +158,47 @@ class SaidRepository {
       }
       if (answer == null) break; // unreachable — no point trying the rest
       if (answer.applied) settled += 1;
+      // The oldest unanswered question, not the newest: the rows are walked in
+      // the order they were said, and being asked about this morning's toast
+      // before this evening's dinner is the order they happened in.
+      final question = answer.question;
+      if (!answer.applied && question != null && stillAsking == null) {
+        stillAsking = AQuestionStillWaiting(
+          about: name,
+          words: answer.said.isEmpty ? (row.said ?? '') : answer.said,
+          question: question,
+        );
+      }
     }
-    return settled;
+    return CaughtUp(settled: settled, waiting: stillAsking);
   }
+}
+
+/// What a catch-up came to: how many rows finally landed, and the one question
+/// still waiting for an answer, if there is one.
+class CaughtUp {
+  final int settled;
+  final AQuestionStillWaiting? waiting;
+
+  const CaughtUp({this.settled = 0, this.waiting});
+}
+
+/// A question asked once and never answered, on its way back to being asked
+/// again.
+///
+/// It carries the words as well as the question because answering is another
+/// sentence through the same route, with the answer said alongside the
+/// original words — the same shape as answering it the first time, and not a
+/// second kind of message for the server to understand.
+class AQuestionStillWaiting {
+  /// The row it is about, by the name this phone gave it.
+  final String about;
+  final String words;
+  final String question;
+
+  const AQuestionStillWaiting({
+    required this.about,
+    required this.words,
+    required this.question,
+  });
 }

@@ -341,6 +341,29 @@ void main() {
       expect(find.text('Were the chips oven or fried?'), findsOneWidget);
     });
 
+    testWidgets('a sentence that named no meal asks which, and calls it no fault',
+        (tester) async {
+      // Aidan asked to be asked: "if 'breakfast', 'lunch', 'dinner' or 'snack'
+      // isn't found in what i've said, ask before adding." So the Mini answers
+      // this one unapplied on purpose, with the question. Unapplied normally
+      // means the sentence was not understood — and saying that underneath a
+      // question somebody is being asked would report a fault at the exact
+      // moment the thing is working.
+      mini.saidLines = const [];
+      mini.saidWhy = 'waiting to be told which meal';
+      mini.saidQuestion =
+          'Which meal was that — breakfast, lunch, dinner or a snack?';
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      await type(tester, 'two eggs and a slice of toast');
+
+      expect(
+          find.text(
+              'Which meal was that — breakfast, lunch, dinner or a snack?'),
+          findsOneWidget);
+      expect(find.text(SayWhatYouAteSection.notUnderstood), findsNothing);
+    });
+
     testWidgets('the answer goes back as another sentence, not a new kind of message',
         (tester) async {
       mini.saidLines = const [

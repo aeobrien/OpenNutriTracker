@@ -37,6 +37,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   final _said = GlobalKey<SayWhatYouAteSectionState>();
 
+  /// A question asked on an earlier opening that nobody answered. Held here
+  /// because the section that asks it has not been built yet when the day's
+  /// catch-up finds it.
+  AQuestionStillWaiting? _stillWaiting;
+
   /// Reload the day. Everything on Home that can go stale goes through here so
   /// that no future call site can reload half of it.
   void _reload() {
@@ -202,6 +207,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               said: locator<SaidRepository>(),
               microphone: locator<Microphone>(),
               day: SayWhatYouAteSection.dayKey(DateTime.now()),
+              waiting: _stillWaiting,
               // Understanding a sentence takes seconds, and the meal it turns into
               // has to be fetched from the household before it is in the diary. So
               // the pull runs here rather than only on open — otherwise you would
@@ -451,12 +457,19 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       final day = await locator<DayRepository>().today(
         SayWhatYouAteSection.dayKey(DateTime.now()),
       );
-      final settled = await locator<SaidRepository>().catchUp(day.logged);
-      if (settled > 0) {
+      final caught = await locator<SaidRepository>().catchUp(day.logged);
+      if (caught.settled > 0) {
         log.info(
-          '[SAID] $settled row(s) that had been left unfinished '
+          '[SAID] ${caught.settled} row(s) that had been left unfinished '
           'were worked out on opening',
         );
+      }
+      // A row can be unfinished because it is waiting on an answer, not because
+      // anything failed. Nothing goes on a day until somebody says which meal
+      // it was, so an unanswered question is food that never arrives — it gets
+      // asked again here rather than being left on the Mac Mini in silence.
+      if (caught.waiting != null && mounted) {
+        setState(() => _stillWaiting = caught.waiting);
       }
     } catch (e) {
       log.info('[SAID] nothing could be caught up this time: $e');

@@ -47,11 +47,16 @@ class SayWhatYouAteSection extends StatefulWidget {
   /// test is not at the mercy of what time it runs.
   final String day;
 
+  /// A question asked on some earlier opening and never answered. Handed in
+  /// rather than fetched: see _takeUpAnyQuestionWaiting.
+  final AQuestionStillWaiting? waiting;
+
   const SayWhatYouAteSection({
     super.key,
     required this.said,
     required this.microphone,
     required this.day,
+    this.waiting,
     this.onChanged,
   });
 
@@ -92,6 +97,38 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
     _typed.dispose();
     _answer.dispose();
     super.dispose();
+  }
+
+  /// Take up a question that came back with the day rather than with a
+  /// sentence, and ask it exactly as it was asked the first time.
+  ///
+  /// A question used to be askable only in the moment a sentence came back.
+  /// Now that nothing goes on a day until somebody has said which meal it was,
+  /// an unanswered question is food that never arrives — so the day's catch-up
+  /// carries the outstanding one, and it is handed in here.
+  ///
+  /// It arrives as something the screen is given rather than something called
+  /// on it, because the catch-up finishes before this section has been built
+  /// for the first time: a call would land on nothing and the question would be
+  /// lost exactly as silently as the one it came back to rescue.
+  void _takeUpAnyQuestionWaiting() {
+    final waiting = widget.waiting;
+    if (waiting == null || _busy || _question != null) return;
+    _question = waiting.question;
+    _questionAbout = waiting.about;
+    _questionWords = waiting.words;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _takeUpAnyQuestionWaiting();
+  }
+
+  @override
+  void didUpdateWidget(SayWhatYouAteSection old) {
+    super.didUpdateWidget(old);
+    _takeUpAnyQuestionWaiting();
   }
 
   /// Getting the microphone going, while it is still going.
@@ -193,9 +230,16 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
   /// "Their hand won" is not a problem and is deliberately silent: it means the
   /// person corrected the row themselves while this was in flight, which is the
   /// system working.
+  ///
+  /// Nor is a question. A sentence that named no meal comes back unapplied on
+  /// purpose — nothing is put on a meal until somebody says which one — and it
+  /// comes back with the question to ask. Saying "that was not understood"
+  /// underneath a question the person is being asked would be telling them
+  /// something went wrong at the exact moment the thing is working.
   String? _whatWentWrong(dynamic answer) {
     if (answer == null) return SayWhatYouAteSection.couldNotReach;
     if (answer.applied as bool) return null;
+    if (answer.question != null) return null;
     final why = answer.why as String?;
     if (why == 'it was changed by hand since') return null;
     return SayWhatYouAteSection.notUnderstood;

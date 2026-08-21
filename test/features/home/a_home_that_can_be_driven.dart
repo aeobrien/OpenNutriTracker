@@ -221,10 +221,14 @@ class QuietSaid extends Fake implements SaidRepository {
   int settles = 0;
 
   @override
-  Future<int> catchUp(Iterable<LoggedItem> rows) async {
+  Future<CaughtUp> catchUp(Iterable<LoggedItem> rows) async {
     askedToCatchUp.add(rows.toList());
-    return settles;
+    return CaughtUp(settled: settles, waiting: waiting);
   }
+
+  /// A question the catch-up should hand back, as it does when a row is still
+  /// waiting to be told which meal it was.
+  AQuestionStillWaiting? waiting;
 }
 
 /// A day with whatever rows a test wants on it.

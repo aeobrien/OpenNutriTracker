@@ -97,12 +97,12 @@ void main() {
     final said = SaidRepository(
         api, HouseholdLogger(repo, outbox), outbox, ClipStore());
 
-    final settled = await said.catchUp(unfinished);
+    final caught = await said.catchUp(unfinished);
 
     expect(asked, hasLength(3),
         reason: 'every unfinished row was asked about, not just the ones '
             'before the first refusal');
     expect(asked.last, 'the-one-he-typed-tonight');
-    expect(settled, 1);
+    expect(caught.settled, 1);
   });
 }
