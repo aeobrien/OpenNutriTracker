@@ -131,7 +131,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(S.of(context).exportImportLabel),
                   onTap: () => _showExportImportDialog(context),
                 ),
-                _ApiKeyTile(
+                ApiKeyTile(
                   icon: Icons.image_search_outlined,
                   label: S.of(context).openAiApiKeyLabel,
                   configuredText: S.of(context).openAiApiKeyConfigured,
@@ -142,7 +142,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   deleteKey: () => SecureAppStorageProvider().deleteOpenAiApiKey(),
                   hasKey: () => SecureAppStorageProvider().hasOpenAiApiKey(),
                 ),
-                _ApiKeyTile(
+                ApiKeyTile(
                   icon: Icons.smart_toy_outlined,
                   label: S.of(context).claudeApiKeyLabel,
                   configuredText: S.of(context).claudeApiKeyConfigured,
@@ -155,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 // Mealie is the recipe source of truth; FoodTracker mirrors it
                 // one-way. Sync the pulled recipes from the Recipes tab.
-                _ApiKeyTile(
+                ApiKeyTile(
                   icon: Icons.dns_outlined,
                   label: 'Mealie server URL',
                   configuredText: 'Configured',
@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       .getMealieBaseUrl()
                       .then((v) => (v ?? '').isNotEmpty),
                 ),
-                _ApiKeyTile(
+                ApiKeyTile(
                   icon: Icons.key_outlined,
                   label: 'Mealie API token',
                   configuredText: 'Configured',
@@ -185,12 +185,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // Mantel logs meals by voice/chat; FoodTracker pulls them into
                 // the diary. Base URL + actor are required; the token is only
                 // needed if Mantel has one set for this actor (blank on tailnet).
-                _ApiKeyTile(
+                ApiKeyTile(
                   icon: Icons.sync_alt_outlined,
                   label: 'Mantel server URL',
                   configuredText: 'Configured',
                   notSetText: 'Not set',
-                  hintText: 'http://100.71.40.51:8770',
+                  // An example of the shape, not an address to type. The
+                  // one that used to be here was a real old address, which is
+                  // how an empty box came to read as "it has reverted".
+                  hintText: 'http://<machine>:8770',
                   obscure: false,
                   getKey: () => SecureAppStorageProvider().getMantelBaseUrl(),
                   setKey: (k) => SecureAppStorageProvider().setMantelBaseUrl(k),
@@ -206,7 +209,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 // phone this is is asked once on first run and changed in the
                 // household section above; the name this field held is now
                 // written from that one choice.
-                _ApiKeyTile(
+                ApiKeyTile(
                   icon: Icons.key_outlined,
                   label: 'Mantel intake token (optional)',
                   configuredText: 'Configured',
@@ -756,7 +759,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-class _ApiKeyTile extends StatefulWidget {
+/// One stored setting, on a row that shows what it is set to.
+///
+/// Public so a test can build one. What it is for is in [ApiKeyTileState._value]
+/// — an address that will not show you its value is how somebody comes to
+/// believe it has changed when it has not.
+class ApiKeyTile extends StatefulWidget {
   final IconData icon;
   final String label;
   final String configuredText;
@@ -768,7 +776,8 @@ class _ApiKeyTile extends StatefulWidget {
   final Future<bool> Function() hasKey;
   final bool obscure;
 
-  const _ApiKeyTile({
+  const ApiKeyTile({
+    super.key,
     required this.icon,
     required this.label,
     required this.configuredText,
@@ -782,11 +791,27 @@ class _ApiKeyTile extends StatefulWidget {
   });
 
   @override
-  State<_ApiKeyTile> createState() => _ApiKeyTileState();
+  State<ApiKeyTile> createState() => ApiKeyTileState();
 }
 
-class _ApiKeyTileState extends State<_ApiKeyTile> {
+class ApiKeyTileState extends State<ApiKeyTile> {
   bool _hasKey = false;
+
+  /// What is actually stored, for a setting that is not a secret.
+  ///
+  /// This is the whole point of the tile for an address. On 21 August Aidan
+  /// reported that the Mac Mini's address "has reverted to the old one" — it
+  /// had not, and his phone had been talking to the right machine all evening.
+  /// What he was looking at was a tile that said only "Configured", and a
+  /// dialog that opened empty with the *old* address as its greyed-out
+  /// placeholder. A setting that will not show you its value invites you to
+  /// read the example as the answer, and then to change something that was
+  /// never wrong.
+  ///
+  /// Kept null for a secret. A token is not something to print on a screen
+  /// somebody might be holding up, and "Configured" is the only thing anybody
+  /// needs to know about one.
+  String? _value;
 
   @override
   void initState() {
@@ -796,7 +821,13 @@ class _ApiKeyTileState extends State<_ApiKeyTile> {
 
   Future<void> _checkKey() async {
     final has = await widget.hasKey();
-    if (mounted) setState(() => _hasKey = has);
+    final value = widget.obscure ? null : await widget.getKey();
+    if (mounted) {
+      setState(() {
+        _hasKey = has;
+        _value = (value ?? '').trim().isEmpty ? null : value!.trim();
+      });
+    }
   }
 
   @override
@@ -804,13 +835,16 @@ class _ApiKeyTileState extends State<_ApiKeyTile> {
     return ListTile(
       leading: Icon(widget.icon),
       title: Text(widget.label),
-      subtitle: Text(_hasKey ? widget.configuredText : widget.notSetText),
+      subtitle: Text(_hasKey
+          ? (_value ?? widget.configuredText)
+          : widget.notSetText),
       onTap: () => _showApiKeyDialog(context),
     );
   }
 
   void _showApiKeyDialog(BuildContext context) async {
-    final controller = TextEditingController();
+    // Opened on what is stored, not on nothing. See _value.
+    final controller = TextEditingController(text: _value ?? '');
     final result = await showDialog<String?>(
       context: context,
       builder: (context) {
