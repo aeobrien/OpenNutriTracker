@@ -51,12 +51,15 @@ this and nothing about it needs testing.
   answer to "was this mine?" for an old row is "I don't know" — which withholds
   the offer rather than making it over somebody else's row. So to check this,
   log something new. An old row behaving as before is not a fault.
-- **There is one more "Something you said" row, on 20 August.** You said to
-  clear the two on today, so that is what I cleared. Say the word and it goes
-  the same way.
-- **Photographing a packet still has no finish.** Your words: *"there was no
-  success message… Everything went grey and I had to hit back."* Recorded, not
-  chased — nobody has looked at it yet.
+- ~~**There is one more "Something you said" row, on 20 August.**~~ You said
+  clear it, and it is gone, the same way as the other two and checked the same
+  way. There are none left on any day.
+- **Photographing a packet still has no finish — in this build.** Your words:
+  *"there was no success message… Everything went grey and I had to hit back."*
+  It has been looked at now, and it turned out to be three separate silences
+  rather than one; all three are fixed, but the fixes are in the **next** build,
+  not this one. This one behaves exactly as 42 did on that screen. See
+  RELEASE-44.
 - Everything else in build 42's "What is not fixed" list still stands: batch
   cooking, the shopping list and meal components are untouched; the question
   about backfilling old days is unanswered; the kitchen-tablet steps are
