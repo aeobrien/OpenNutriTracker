@@ -25,17 +25,29 @@ class Understood {
   /// questions about a sandwich is how a fast thing becomes a slow one.
   final String? question;
 
+  /// Every answer the question can have, when they are known and few — the four
+  /// meals, so far. Empty when the answer is open-ended and has to be typed.
+  ///
+  /// The list comes from the server rather than being worked out from the
+  /// wording here, so the four meals are named in exactly one place, next to
+  /// the check that decides to ask about them.
+  final List<String> answers;
+
   const Understood({
     required this.applied,
     required this.said,
     this.why,
     this.question,
+    this.answers = const [],
   });
 
   factory Understood.fromJson(Map<String, dynamic> json) => Understood(
-        applied: (json['applied'] as bool?) ?? false,
-        why: json['why'] as String?,
-        said: (json['said'] as String?) ?? '',
-        question: json['question'] as String?,
-      );
+    applied: (json['applied'] as bool?) ?? false,
+    why: json['why'] as String?,
+    said: (json['said'] as String?) ?? '',
+    question: json['question'] as String?,
+    answers: ((json['answers'] as List?) ?? const [])
+        .map((a) => a.toString())
+        .toList(),
+  );
 }

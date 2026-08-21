@@ -127,12 +127,13 @@ void main() {
 
   var told = 0;
 
-  Widget screen() => MaterialApp(
+  Widget screen({AQuestionStillWaiting? waiting}) => MaterialApp(
         home: Scaffold(
           body: SayWhatYouAteSection(
             said: said,
             microphone: microphone,
             day: today,
+            waiting: waiting,
             onChanged: () => told += 1,
           ),
         ),
@@ -362,6 +363,95 @@ void main() {
               'Which meal was that — breakfast, lunch, dinner or a snack?'),
           findsOneWidget);
       expect(find.text(SayWhatYouAteSection.notUnderstood), findsNothing);
+    });
+
+    testWidgets('four possible answers are offered as four buttons, not a box',
+        (tester) async {
+      // Aidan, 21 August: "there are only four options, let's make it a modal
+      // with four buttons." A box you have to type "breakfast" into is a worse
+      // way of choosing between four things than four things to choose from.
+      mini.saidLines = const [];
+      mini.saidWhy = 'waiting to be told which meal';
+      mini.saidQuestion =
+          'Which meal was that — breakfast, lunch, dinner or a snack?';
+      mini.saidAnswers = const ['breakfast', 'lunch', 'dinner', 'snack'];
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      await type(tester, 'a handful of peanuts');
+
+      for (final meal in ['Breakfast', 'Lunch', 'Dinner', 'Snack']) {
+        expect(find.text(meal), findsWidgets, reason: '$meal should be offered');
+      }
+      // The box under the button is the one you say things in. There must not
+      // be a second one asking you to type an answer that is on screen twice
+      // over as a button.
+      expect(find.byType(TextField), findsOneWidget);
+    });
+
+    testWidgets('and it is put in front of the person, not left to be noticed',
+        (tester) async {
+      // Nothing goes on a day until this is answered, so a question that gets
+      // scrolled past is food that never arrives.
+      mini.saidLines = const [];
+      mini.saidWhy = 'waiting to be told which meal';
+      mini.saidQuestion = 'Which meal was that?';
+      mini.saidAnswers = const ['breakfast', 'lunch', 'dinner', 'snack'];
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      await type(tester, 'a handful of peanuts');
+
+      expect(find.byType(BottomSheet), findsOneWidget);
+      // On the page as well as in the sheet, so dismissing it without
+      // answering does not lose the question.
+      expect(find.text('Which meal was that?'), findsNWidgets(2));
+    });
+
+    testWidgets('tapping one of them answers it', (tester) async {
+      mini.saidLines = const [];
+      mini.saidWhy = 'waiting to be told which meal';
+      mini.saidQuestion = 'Which meal was that?';
+      mini.saidAnswers = const ['breakfast', 'lunch', 'dinner', 'snack'];
+      await tester.pumpWidget(screen());
+      await tester.pumpAndSettle();
+      await type(tester, 'a handful of peanuts');
+
+      await tester.tap(find.text('Lunch').last);
+      await tester.pumpAndSettle();
+
+      expect(mini.saidAsked.last['text'], contains('lunch'));
+      expect(mini.saidAsked.last['text'], contains('a handful of peanuts'),
+          reason: 'the answer goes back alongside what was originally said');
+      expect(find.byType(BottomSheet), findsNothing);
+    });
+
+    testWidgets('a question that has been answered does not come back',
+        (tester) async {
+      // Aidan, 21 August: "The 'which meal was that' field disappears after I
+      // submit, but then reappears after that, even though I haven't submitted
+      // anything new." The day's catch-up hands the oldest unanswered question
+      // down every time the day is read, and the day is read again the moment
+      // an answer lands — so the same question was handed back and taken up a
+      // second time, about a row that had just been dealt with.
+      const waiting = AQuestionStillWaiting(
+        about: 'a-row-said-earlier',
+        words: 'a handful of peanuts',
+        question: 'Which meal was that?',
+        answers: ['breakfast', 'lunch', 'dinner', 'snack'],
+      );
+      await tester.pumpWidget(screen(waiting: waiting));
+      await tester.pumpAndSettle();
+      expect(find.text('Which meal was that?'), findsWidgets);
+
+      await tester.tap(find.text('Snack').last);
+      await tester.pumpAndSettle();
+
+      // The screen is rebuilt with the very same thing still handed in, which
+      // is exactly what happens while the day is being re-read.
+      await tester.pumpWidget(screen(waiting: waiting));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Which meal was that?'), findsNothing);
+      expect(find.byType(BottomSheet), findsNothing);
     });
 
     testWidgets('the answer goes back as another sentence, not a new kind of message',

@@ -99,20 +99,24 @@ class SaidRepository {
     }
     final clip = await _clips.forRow(clientId);
     try {
-      final answer = Understood.fromJson(await _api.said(
-        clientId: clientId,
-        version: version,
-        text: words,
-        clip: clip,
-      ));
+      final answer = Understood.fromJson(
+        await _api.said(
+          clientId: clientId,
+          version: version,
+          text: words,
+          clip: clip,
+        ),
+      );
       if (answer.applied || answer.why == 'it was changed by hand since') {
         // Heard, one way or the other. Either it settled, or the person got
         // there first and their answer stands — in both cases nothing is owed
         // and the recording has no reason to exist any more.
         await _clips.forget(clientId);
       }
-      _log.info('[SAID] $clientId -> applied=${answer.applied} '
-          'why=${answer.why} question=${answer.question}');
+      _log.info(
+        '[SAID] $clientId -> applied=${answer.applied} '
+        'why=${answer.why} question=${answer.question}',
+      );
       return answer;
     } on HouseholdUnreachable catch (e) {
       _log.info('[SAID] $clientId stays as it is: ${e.message}');
@@ -143,8 +147,11 @@ class SaidRepository {
       if (name == null) continue;
       final Understood? answer;
       try {
-        answer =
-            await workOut(clientId: name, version: row.version, words: row.said);
+        answer = await workOut(
+          clientId: name,
+          version: row.version,
+          words: row.said,
+        );
       } on HouseholdRefused catch (e) {
         // One row the Mini will not settle is not a reason to abandon the ones
         // after it. A recording whose clip has since been cleared off the phone
@@ -167,6 +174,7 @@ class SaidRepository {
           about: name,
           words: answer.said.isEmpty ? (row.said ?? '') : answer.said,
           question: question,
+          answers: answer.answers,
         );
       }
     }
@@ -196,9 +204,15 @@ class AQuestionStillWaiting {
   final String words;
   final String question;
 
+  /// Every answer it can have, when they are known and few. Carried across so
+  /// a question asked again days later is offered the same way as one asked in
+  /// the moment — four buttons, not an empty box.
+  final List<String> answers;
+
   const AQuestionStillWaiting({
     required this.about,
     required this.words,
     required this.question,
+    this.answers = const [],
   });
 }

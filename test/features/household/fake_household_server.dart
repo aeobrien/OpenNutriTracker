@@ -75,6 +75,10 @@ class FakeHouseholdServer {
   /// The one question that comes back, when there is one.
   String? saidQuestion;
 
+  /// Every answer that question can have, when the set is known and short —
+  /// the four meals. Empty means it has to be typed into.
+  List<String> saidAnswers = const [];
+
   /// Why the answer was not applied, when it was not. 'it was changed by hand
   /// since' is the one that matters — the person got there first.
   String? saidWhy;
@@ -570,6 +574,7 @@ class FakeHouseholdServer {
               'why': why ?? 'nothing in it was recognised',
               'said': heard,
               'question': saidQuestion,
+              'answers': saidAnswers,
               'entries': [row],
               'day': dayLine(row['owner_id'] as int, row['day'] as String),
             };
@@ -598,6 +603,7 @@ class FakeHouseholdServer {
               'why': null,
               'said': heard,
               'question': saidQuestion,
+              'answers': saidAnswers,
               'entries': made,
               'day': dayLine(row['owner_id'] as int, row['day'] as String),
             };

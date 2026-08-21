@@ -468,7 +468,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       // anything failed. Nothing goes on a day until somebody says which meal
       // it was, so an unanswered question is food that never arrives — it gets
       // asked again here rather than being left on the Mac Mini in silence.
-      if (caught.waiting != null && mounted) {
+      //
+      // Set even when there is nothing waiting, so a question that has since
+      // been answered stops being handed down. The screen below has its own
+      // guard against asking twice; this is the same fact kept true in the one
+      // place that knows it, rather than only where it is noticed.
+      if (mounted && caught.waiting != _stillWaiting) {
         setState(() => _stillWaiting = caught.waiting);
       }
     } catch (e) {

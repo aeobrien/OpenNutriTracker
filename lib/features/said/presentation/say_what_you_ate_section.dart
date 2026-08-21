@@ -73,7 +73,8 @@ class SayWhatYouAteSection extends StatefulWidget {
       "The Mac Mini did not answer, so that is not counted yet. It will "
       'go over next time the app can reach it.';
 
-  static String dayKey(DateTime now) => '${now.year.toString().padLeft(4, '0')}-'
+  static String dayKey(DateTime now) =>
+      '${now.year.toString().padLeft(4, '0')}-'
       '${now.month.toString().padLeft(2, '0')}-'
       '${now.day.toString().padLeft(2, '0')}';
 
@@ -88,6 +89,28 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
   String? _question;
   String? _questionAbout;
   String? _questionWords;
+  List<String> _questionAnswers = const [];
+
+  /// Rows this screen has already put a question about in front of the person,
+  /// since it was opened.
+  ///
+  /// The day's catch-up hands in the oldest unanswered question every time the
+  /// day is read, and the day is read again the moment a sentence lands — so
+  /// without this, answering a question made the panel vanish and then come
+  /// straight back with the same question on it, about a row that had just been
+  /// dealt with. Aidan, 21 August: "The 'which meal was that' field disappears
+  /// after I submit, but then reappears after that, even though I haven't
+  /// submitted anything new."
+  ///
+  /// It is deliberately forgotten when the app is closed. Asked once per
+  /// sitting is not the same as asked once ever: a question genuinely left
+  /// unanswered is food that never arrives, and it has to be asked again next
+  /// time the app opens.
+  final _askedAbout = <String>{};
+
+  /// Whether the question is on screen as a sheet right now, so a rebuild does
+  /// not stack a second one on top of it.
+  bool _asking = false;
   final _typed = TextEditingController();
   final _answer = TextEditingController();
   final _log = Logger('SayWhatYouAte');
@@ -114,9 +137,13 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
   void _takeUpAnyQuestionWaiting() {
     final waiting = widget.waiting;
     if (waiting == null || _busy || _question != null) return;
+    if (_askedAbout.contains(waiting.about)) return;
+    _askedAbout.add(waiting.about);
     _question = waiting.question;
     _questionAbout = waiting.about;
     _questionWords = waiting.words;
+    _questionAnswers = waiting.answers;
+    _askItWhenThisFrameIsOver();
   }
 
   @override
@@ -205,16 +232,27 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
     });
     try {
       final name = await widget.said.heard(
-          day: widget.day, words: words, recording: recording);
-      final answer =
-          await widget.said.workOut(clientId: name, version: 0, words: words);
+        day: widget.day,
+        words: words,
+        recording: recording,
+      );
+      final answer = await widget.said.workOut(
+        clientId: name,
+        version: 0,
+        words: words,
+      );
       if (!mounted) return;
       setState(() {
         _question = answer?.question;
         _questionAbout = answer?.question == null ? null : name;
         _questionWords = answer?.said ?? words;
+        _questionAnswers = answer?.answers ?? const [];
         _problem = _whatWentWrong(answer);
       });
+      // Asked here, so the catch-up that is about to run does not ask it a
+      // second time when the day comes back with this same row still waiting.
+      if (_question != null) _askedAbout.add(name);
+      _askItWhenThisFrameIsOver();
       widget.onChanged?.call();
     } catch (e) {
       _log.info('[SAID] that sentence did not get through: $e');
@@ -249,20 +287,29 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
   /// same route, with the answer said alongside the original words — which is
   /// exactly what a person would do out loud, and means there is no second kind
   /// of message for the server to understand.
-  Future<void> _answerQuestion() async {
+  ///
+  /// The answer comes in as an argument rather than being read off the box,
+  /// because since 21 August most answers are not typed at all: a question with
+  /// a known, short set of answers is offered as those answers, and tapping one
+  /// is the whole of it.
+  Future<void> _answerQuestion(String answer) async {
     final about = _questionAbout;
-    final reply = _answer.text.trim();
+    final reply = answer.trim();
     if (about == null || reply.isEmpty || _busy) return;
     final original = _questionWords ?? '';
     _answer.clear();
     setState(() {
       _question = null;
       _questionAbout = null;
+      _questionAnswers = const [];
       _busy = true;
     });
     try {
       await widget.said.workOut(
-          clientId: about, version: 0, words: '$original — $reply'.trim());
+        clientId: about,
+        version: 0,
+        words: '$original — $reply'.trim(),
+      );
       widget.onChanged?.call();
     } catch (e) {
       _log.info('[SAID] the answer did not get through: $e');
@@ -295,13 +342,16 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
                   ? const SizedBox(
                       width: 16,
                       height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : Icon(_listening ? Icons.mic : Icons.mic_none),
-              label: Text(_busy
-                  ? SayWhatYouAteSection.workingOut
-                  : _listening
-                      ? SayWhatYouAteSection.listening
-                      : SayWhatYouAteSection.holdToTalk),
+              label: Text(
+                _busy
+                    ? SayWhatYouAteSection.workingOut
+                    : _listening
+                    ? SayWhatYouAteSection.listening
+                    : SayWhatYouAteSection.holdToTalk,
+              ),
             ),
           ),
         ),
@@ -335,9 +385,12 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
         if (_problem != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Text(_problem!,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.outline)),
+            child: Text(
+              _problem!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.outline,
+              ),
+            ),
           ),
         if (_question != null) _questionPanel(theme),
       ],
@@ -345,35 +398,123 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
   }
 
   Widget _questionPanel(ThemeData theme) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Semantics(
-              identifier: 'say-question',
-              child: Text(_question!, style: theme.textTheme.bodyMedium),
-            ),
-            Semantics(
-              identifier: 'say-answer',
-              child: TextField(
-                controller: _answer,
-                enabled: !_busy,
-                textInputAction: TextInputAction.send,
-                onSubmitted: (_) => _answerQuestion(),
-                decoration: InputDecoration(
-                  isDense: true,
-                  hintText: 'Answer',
-                  suffixIcon: Semantics(
-                    identifier: 'say-answer-send',
-                    child: IconButton(
-                      icon: const Icon(Icons.send),
-                      onPressed: _busy ? null : _answerQuestion,
-                    ),
-                  ),
+    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+    child: _theQuestion(theme),
+  );
+
+  /// The question and the way to answer it, in whichever of the two places it
+  /// is being shown. One builder for both so the sheet and the strip left
+  /// behind it can never drift into offering different answers.
+  ///
+  /// [closeFirst] is how the sheet gets out of the way before the answer goes
+  /// off, and is null when this is the panel on the page itself.
+  Widget _theQuestion(ThemeData theme, {VoidCallback? closeFirst}) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Semantics(
+        identifier: 'say-question',
+        child: Text(_question ?? '', style: theme.textTheme.bodyMedium),
+      ),
+      const SizedBox(height: 8),
+      if (_questionAnswers.isEmpty)
+        Semantics(
+          identifier: 'say-answer',
+          child: TextField(
+            controller: _answer,
+            enabled: !_busy,
+            textInputAction: TextInputAction.send,
+            onSubmitted: (typed) => _answerQuestion(typed),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: 'Answer',
+              suffixIcon: Semantics(
+                identifier: 'say-answer-send',
+                child: IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _busy ? null : () => _answerQuestion(_answer.text),
                 ),
               ),
             ),
+          ),
+        )
+      else
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final answer in _questionAnswers)
+              Semantics(
+                identifier: 'say-answer-$answer',
+                child: FilledButton.tonal(
+                  onPressed: _busy
+                      ? null
+                      : () {
+                          closeFirst?.call();
+                          _answerQuestion(answer);
+                        },
+                  child: Text(_capitalised(answer)),
+                ),
+              ),
           ],
         ),
-      );
+    ],
+  );
+
+  static String _capitalised(String word) =>
+      word.isEmpty ? word : word[0].toUpperCase() + word.substring(1);
+
+  /// Put the question in front of the person, rather than leaving it on the
+  /// page to be noticed.
+  ///
+  /// Aidan asked for this on 21 August — "there are only four options, let's
+  /// make it a modal with four buttons" — and it is worth more than the taps it
+  /// saves: nothing goes on a day until this is answered, so a question that
+  /// gets scrolled past is food that never arrives. Only a question with a
+  /// known set of answers is raised this way; one that has to be typed into
+  /// stays on the page, where the keyboard has somewhere to go.
+  ///
+  /// It can be dismissed without answering, and the panel underneath stays put
+  /// with the same buttons on it. Being made to answer before you can use the
+  /// app again would be a worse thing than being asked twice.
+  void _askItProperly() {
+    if (!mounted || _asking) return;
+    if (_question == null || _questionAnswers.isEmpty) return;
+    _asking = true;
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _theQuestion(
+                Theme.of(sheet),
+                closeFirst: () => Navigator.of(sheet).pop(),
+              ),
+              const SizedBox(height: 4),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => Navigator.of(sheet).pop(),
+                  child: const Text('Not now'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).whenComplete(() {
+      if (mounted) _asking = false;
+    });
+  }
+
+  /// The question is taken up while the screen is being built — from
+  /// [initState], or from a rebuild — and a sheet cannot be opened in the
+  /// middle of that. So it waits for the frame to finish.
+  void _askItWhenThisFrameIsOver() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _askItProperly());
+  }
 }
