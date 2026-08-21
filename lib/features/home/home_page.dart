@@ -18,6 +18,7 @@ import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/said/data/microphone.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
+import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/said/presentation/say_what_you_ate_section.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -386,8 +387,45 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     });
   }
 
+  /// Have another go at anything spoken that never got worked out.
+  ///
+  /// A sentence is asked about once, straight after it is said. If that single
+  /// attempt does not land — the Mac Mini asleep, the address wrong, the phone
+  /// put down mid-answer — nothing ever asked again, and the row stayed on the
+  /// day reading "Something you said" with no calories against it for good.
+  /// Aidan ended up with three of them.
+  ///
+  /// [SaidRepository.catchUp] was written for exactly this and had no caller
+  /// anywhere in the app. Its own comment says it runs "when the day is read",
+  /// and the screen that read the day was the second tab — which was removed at
+  /// Aidan's instruction, taking the only moment the retry could have happened
+  /// with it. Nobody noticed, because a retry that never runs and a retry that
+  /// has not run yet look identical from the day.
+  ///
+  /// It runs before the pull rather than after: settling a row at the house is
+  /// what turns it into food the pull can bring down, so doing it the other way
+  /// round would leave the food waiting until the next time the app opened.
+  ///
+  /// Quiet on failure, like the rest of opening the app. A sleeping Mini means
+  /// the rows wait for next time, which is what they were doing anyway.
+  Future<void> _catchUpOnWhatWasSaid() async {
+    try {
+      final day = await locator<DayRepository>()
+          .today(SayWhatYouAteSection.dayKey(DateTime.now()));
+      final settled = await locator<SaidRepository>().catchUp(day.logged);
+      if (settled > 0) {
+        log.info('[SAID] $settled row(s) that had been left unfinished '
+            'were worked out on opening');
+      }
+    } catch (e) {
+      log.info('[SAID] nothing could be caught up this time: $e');
+    }
+  }
+
   void _syncMantel() {
-    locator<MantelSyncService>().syncPending().then((result) {
+    _catchUpOnWhatWasSaid()
+        .then((_) => locator<MantelSyncService>().syncPending())
+        .then((result) {
       if (!mounted) return;
       if (result.hasNewEntries) {
         log.info('Mantel sync added ${result.synced} meal(s); refreshing');

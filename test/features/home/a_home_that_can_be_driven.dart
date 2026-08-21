@@ -52,7 +52,11 @@ import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/features/said/data/microphone.dart';
+import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
+import 'package:opennutritracker/features/today/data/day_repository.dart';
+import 'package:opennutritracker/features/today/domain/day_view.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 /// A piece of work the test decides when to finish.
@@ -204,7 +208,51 @@ class QuietCalendarDayBloc extends Fake implements CalendarDayBloc {
 
 class QuietMealDetailBloc extends Fake implements MealDetailBloc {}
 
-class QuietSaid extends Fake implements SaidRepository {}
+/// Says nothing, but writes down what it was asked to catch up on.
+///
+/// The catch-up is the retry for a spoken row that never got worked out. It
+/// existed for weeks with no caller at all, so what a test has to be able to
+/// see is not what it does but *that Home asks it*.
+class QuietSaid extends Fake implements SaidRepository {
+  /// Every set of rows Home has handed over to be caught up on.
+  final askedToCatchUp = <List<LoggedItem>>[];
+
+  /// How many of them to claim settled.
+  int settles = 0;
+
+  @override
+  Future<int> catchUp(Iterable<LoggedItem> rows) async {
+    askedToCatchUp.add(rows.toList());
+    return settles;
+  }
+}
+
+/// A day with whatever rows a test wants on it.
+class FakeDayRepository extends Fake implements DayRepository {
+  final List<LoggedItem> rows;
+
+  /// When true the Mac Mini cannot be reached, which is the ordinary case this
+  /// has to survive rather than an error worth showing anybody.
+  final bool unreachable;
+
+  FakeDayRepository({this.rows = const [], this.unreachable = false});
+
+  var asked = 0;
+
+  @override
+  Future<DayView> today(String day) async {
+    asked += 1;
+    if (unreachable) throw HouseholdUnreachable('nothing is listening');
+    return DayView(
+      day: day,
+      personId: 1,
+      settings: const PersonSettings(personId: 1),
+      logged: rows,
+      planned: const [],
+      exercise: const [],
+    );
+  }
+}
 
 class QuietMicrophone extends Fake implements Microphone {}
 
@@ -230,11 +278,21 @@ class ADrivableHome {
   final FakeGetIntake day;
   final HomeBloc bloc;
 
-  ADrivableHome._(this.foodRemoval, this.exerciseRemoval, this.day, this.bloc);
+  /// The spoken-sentence side, exposed so a test can ask what Home asked it.
+  final QuietSaid said;
+
+  /// The household's own copy of today, which is where the rows that are still
+  /// being worked out live.
+  final FakeDayRepository dayAtTheHouse;
+
+  ADrivableHome._(this.foodRemoval, this.exerciseRemoval, this.day, this.bloc,
+      this.said, this.dayAtTheHouse);
 
   factory ADrivableHome({
     List<IntakeEntity> food = const [],
     List<UserActivityEntity> exercise = const [],
+    List<LoggedItem> onTheHouseholdsDay = const [],
+    bool houseUnreachable = false,
   }) {
     final foodRemoval = HeldOpen();
     final exerciseRemoval = HeldOpen();
@@ -254,7 +312,15 @@ class ADrivableHome {
       FakeHealth(),
       FakeConfigRepo(),
     );
-    return ADrivableHome._(foodRemoval, exerciseRemoval, day, bloc);
+    return ADrivableHome._(
+      foodRemoval,
+      exerciseRemoval,
+      day,
+      bloc,
+      QuietSaid(),
+      FakeDayRepository(
+          rows: onTheHouseholdsDay, unreachable: houseUnreachable),
+    );
   }
 
   /// Register everything Home reaches for out of the locator.
@@ -264,7 +330,8 @@ class ADrivableHome {
       ..registerSingleton<DiaryBloc>(QuietDiaryBloc())
       ..registerSingleton<CalendarDayBloc>(QuietCalendarDayBloc())
       ..registerSingleton<MealDetailBloc>(QuietMealDetailBloc())
-      ..registerSingleton<SaidRepository>(QuietSaid())
+      ..registerSingleton<SaidRepository>(said)
+      ..registerSingleton<DayRepository>(dayAtTheHouse)
       ..registerSingleton<Microphone>(QuietMicrophone())
       ..registerSingleton<MantelSyncService>(QuietMantelSync())
       ..registerSingleton<ExerciseSync>(QuietExerciseSync());
