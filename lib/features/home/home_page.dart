@@ -264,7 +264,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         context: context, builder: (context) => const DeleteDialog());
 
     if (deleteIntake != null) {
-      _homeBloc.deleteUserActivityItem(activityEntity);
+      // Awaited before redrawing, for the same reason as a correction: the day
+      // is read back out of the database, so a redraw that overtakes the write
+      // puts the exercise's allowance back on the ring it just came off.
+      await _homeBloc.deleteUserActivityItem(activityEntity);
       _reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -282,7 +285,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         context: context, builder: (context) => const DeleteDialog());
 
     if (deleteIntake != null) {
-      _homeBloc.deleteIntakeItem(intakeEntity);
+      // Awaited before redrawing, for the same reason as a swipe: the day is
+      // read back out of the database, so a redraw that overtakes the write
+      // puts the row's figures back on the ring it just came off.
+      await _homeBloc.deleteIntakeItem(intakeEntity);
       _reload();
       messenger.showSnackBar(
           SnackBar(
