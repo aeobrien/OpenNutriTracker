@@ -57,10 +57,17 @@ this and nothing about it needs testing.
 - **Photographing a packet still has no finish.** Your words: *"there was no
   success message… Everything went grey and I had to hit back."* Recorded, not
   chased — nobody has looked at it yet.
-- Everything in build 42's "What is not fixed" list still stands, unchanged:
-  batch cooking, the shopping list and meal components are untouched; the
-  question about backfilling old days is unanswered; the kitchen-tablet steps
-  are untested.
+- Everything else in build 42's "What is not fixed" list still stands: batch
+  cooking, the shopping list and meal components are untouched; the question
+  about backfilling old days is unanswered; the kitchen-tablet steps are
+  untested.
+- **One thing from that list has come off it.** Build 42 said the two waits
+  behind hold-to-delete were unproved — they looked right and I could not watch
+  them work. They are proved now, by a check that holds the removal open so the
+  screen can be caught in the act of waiting. Nothing in the app changed for
+  it; what changed is that I can now say it works rather than that it reads
+  correctly. You confirmed both on your phone already, so there is nothing here
+  for you to test.
 - **The limit from this morning still applies to the app work.** Everything I
   drove today ran against a throwaway Mantel on my own Mac, not the Mini. The
   one exception is the two cleared rows, which were done on the Mini itself and
