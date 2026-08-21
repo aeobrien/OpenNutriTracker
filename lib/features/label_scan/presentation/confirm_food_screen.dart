@@ -25,6 +25,18 @@ class ConfirmFoodScreen extends StatefulWidget {
   /// out which blanks were meant.
   static const couldNotRead = "Couldn't read this — check the packet";
 
+  /// What the person is told once the food is in the list.
+  ///
+  /// It names the food, because "Saved" on a screen that is about to disappear
+  /// tells somebody who pressed Save nothing they did not already know. And it
+  /// says where it went, because the household food list and today's day are
+  /// two different places and putting a packet in the first does not put it on
+  /// the second — Aidan pressed Save, was told nothing at all, and had to go
+  /// and scan the barcode afterwards to find out whether it had worked.
+  static String savedSentence(String name) =>
+      '$name is in the household food list. '
+      'Search for it when you want to put it on a day.';
+
   /// The same message for a food that came off a web page rather than a
   /// photograph. Different words because it is a different situation: nothing
   /// failed to be read, the page simply never said, and telling somebody to
@@ -152,6 +164,12 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
       setState(() => _problem = 'A food needs a name before it can be saved.');
       return;
     }
+    // Held before the first await. This is the messenger at the root of the
+    // app rather than one belonging to this screen, which is what lets the
+    // sentence outlive the form: on the photograph route [widget.onSaved] pops
+    // this screen and the one under it, and the person reads the confirmation
+    // on the screen they land on.
+    final messenger = ScaffoldMessenger.of(context);
     setState(() {
       _saving = true;
       _problem = null;
@@ -170,6 +188,13 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
         packGrams: food.packGrams,
         servingG: food.servingG,
       );
+      // Said before the screen is dismissed, not after: onSaved is what closes
+      // the form, and a message queued behind it would be shouted at a widget
+      // that no longer exists.
+      messenger.showSnackBar(SnackBar(
+        content: Text(ConfirmFoodScreen.savedSentence(food.name)),
+        duration: const Duration(seconds: 5),
+      ));
       widget.onSaved?.call(clientId);
     } on HouseholdRefused catch (e) {
       if (!mounted) return;

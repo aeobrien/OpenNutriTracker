@@ -39,6 +39,15 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
   List<CapturedShot> _taken = const [];
   LabelShot? _next;
   bool _busy = true;
+
+  /// Whether the Mac Mini is reading the photographs right now.
+  ///
+  /// Separate from [_busy] because it is the only wait long enough to need
+  /// saying out loud. The rest are a database read and gone. This one takes
+  /// seconds, and while it ran the screen used to do nothing but grey its own
+  /// buttons out — which is exactly what Aidan described on 21 August:
+  /// *"Everything went grey and I had to hit back."*
+  bool _reading = false;
   bool _resumed = false;
   String? _problem;
 
@@ -69,6 +78,7 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
       _taken = taken;
       _next = next;
       _busy = false;
+      _reading = false;
     });
   }
 
@@ -88,6 +98,7 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
   Future<void> _read() async {
     setState(() {
       _busy = true;
+      _reading = true;
       _problem = null;
     });
     final id = _captureId!;
@@ -106,13 +117,32 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
       if (!mounted) return;
       setState(() {
         _busy = false;
+        _reading = false;
         _problem = '${e.headline}, so the photographs '
             "can't be read yet. They're kept — try again in a moment.";
       });
       return;
+    } catch (_) {
+      // Anything nobody foresaw — a photograph no longer on disk, a reply that
+      // will not parse. The two failures above are the ones this screen knows
+      // how to talk about; a third used to escape [_read] with [_busy] still
+      // true, leaving every button dead and nothing on screen to say why. The
+      // back button was the only way out, and a person who has just taken three
+      // photographs has no way to tell that from the app having stopped.
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _reading = false;
+        _problem = "Something went wrong reading the photographs. They're "
+            'kept — try again, or type the numbers in by hand.';
+      });
+      return;
     }
     if (!mounted) return;
-    setState(() => _busy = false);
+    setState(() {
+      _busy = false;
+      _reading = false;
+    });
     final navigator = Navigator.of(context);
     final saved = await navigator.push<String>(
       MaterialPageRoute(
@@ -172,6 +202,23 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
                             child: const Text('Retake'),
                           )
                         : null,
+                  ),
+                if (_reading)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8, bottom: 4),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                            width: 16,
+                            height: 16,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2)),
+                        SizedBox(width: 12),
+                        Expanded(
+                            child: Text('Reading the packet — this takes a '
+                                'few seconds.')),
+                      ],
+                    ),
                   ),
                 const SizedBox(height: 16),
                 if (_problem != null)
