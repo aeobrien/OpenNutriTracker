@@ -63,6 +63,17 @@ class IntakeEntity extends Equatable {
   /// silent: the house answers "no row called that has reached here yet" and
   /// the correction never lands.
   String get householdName => externalId ?? id;
+
+  /// Whether this row is something this phone did.
+  ///
+  /// Undo is scoped to local actions. If two people are editing the same
+  /// document and one adds a word, the other cannot undo it away — they can
+  /// still delete it the ordinary way, but undo never reaches across. A row
+  /// the household put on this day is the same: it is not this phone's action
+  /// to reverse, and un-retiring it at the house is not something undo gets to
+  /// decide. The row stays removable by the ordinary path like any other.
+  bool get isALocalAction => externalId == null;
+
   bool get isRecipe => entryType == 'recipe';
 
   factory IntakeEntity.fromLogEntry(LogEntryWithFoodItem row) {

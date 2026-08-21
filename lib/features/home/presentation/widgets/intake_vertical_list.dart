@@ -204,21 +204,27 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
         // via its broken internal timer — we handle dismissal ourselves.
         duration: const Duration(days: 1),
         content: Text(deletedText),
-        action: SnackBarAction(
-          label: undoText,
-          onPressed: () {
-            _mealDetailBloc.addIntake(
-                context,
-                intake.unit,
-                intake.amount.toString(),
-                widget.addMealType.getIntakeType(),
-                intake.meal,
-                intake.dateTime);
-            locator<HomeBloc>().add(const LoadItemsEvent());
-            locator<DiaryBloc>().add(const LoadDiaryYearEvent());
-            locator<CalendarDayBloc>().add(RefreshCalendarDayEvent());
-          },
-        ),
+        // Undo only ever reverses what this phone did. A row the household put
+        // on this day is somebody else's action, so the offer is not made for
+        // it — see IntakeEntity.isALocalAction. Removing it stays possible the
+        // ordinary way, which is the same gesture that just removed it.
+        action: intake.isALocalAction
+            ? SnackBarAction(
+                label: undoText,
+                onPressed: () {
+                  _mealDetailBloc.addIntake(
+                      context,
+                      intake.unit,
+                      intake.amount.toString(),
+                      widget.addMealType.getIntakeType(),
+                      intake.meal,
+                      intake.dateTime);
+                  locator<HomeBloc>().add(const LoadItemsEvent());
+                  locator<DiaryBloc>().add(const LoadDiaryYearEvent());
+                  locator<CalendarDayBloc>().add(RefreshCalendarDayEvent());
+                },
+              )
+            : null,
       ),
     );
     Future.delayed(const Duration(seconds: 5), () {

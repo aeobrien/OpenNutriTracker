@@ -1,0 +1,205 @@
+[
+  {
+    "action": "systemalert",
+    "button": "Allow",
+    "timeout": 10,
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 12
+  },
+  {
+    "action": "press",
+    "label": "Aidan",
+    "type": "button",
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 20
+  },
+  {
+    "action": "press",
+    "label": "OK",
+    "type": "button",
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 10
+  },
+  {
+    "action": "press",
+    "label": "OK",
+    "type": "button",
+    "optional": true
+  },
+  {
+    "action": "sleep",
+    "seconds": 6
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "screenshot",
+    "name": "01-home"
+  },
+  {
+    "action": "swipe",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "swipe",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "swipe",
+    "label": "Porridge",
+    "match": "contains",
+    "direction": "left"
+  },
+  {
+    "action": "sleep",
+    "seconds": 4
+  },
+  {
+    "action": "screenshot",
+    "name": "02-the-houses-row-offers-no-undo"
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "swipe",
+    "direction": "down"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "press",
+    "label": "Quick Add",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 4
+  },
+  {
+    "action": "screenshot",
+    "name": "03-the-quick-add-screen"
+  },
+  {
+    "action": "settext",
+    "label": "Calories",
+    "match": "contains",
+    "text": "120"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "settext",
+    "label": "Label",
+    "match": "contains",
+    "text": "Biscuit"
+  },
+  {
+    "action": "sleep",
+    "seconds": 1
+  },
+  {
+    "action": "press",
+    "label": "Save",
+    "match": "contains"
+  },
+  {
+    "action": "sleep",
+    "seconds": 6
+  },
+  {
+    "action": "screenshot",
+    "name": "04-my-own-row-is-on-the-day"
+  },
+  {
+    "action": "swipe",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "swipe",
+    "direction": "up"
+  },
+  {
+    "action": "sleep",
+    "seconds": 2
+  },
+  {
+    "action": "swipe",
+    "label": "Biscuit",
+    "match": "contains",
+    "direction": "left"
+  },
+  {
+    "action": "sleep",
+    "seconds": 4
+  },
+  {
+    "action": "screenshot",
+    "name": "05-my-own-row-still-offers-undo"
+  },
+  {
+    "action": "assert",
+    "label": "Undo",
+    "match": "contains"
+  }
+]
