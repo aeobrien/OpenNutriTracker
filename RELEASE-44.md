@@ -79,12 +79,17 @@ which is what they were doing regardless.
 
 ## A word that was doing damage
 
-You said twice that there is no "kitchen computer" — there is the Mac Mini and
-there is the kitchen tablet. I had used that name in a release note and in
-walkthrough steps. It is worse than jargon: it is a plausible name for a machine
-that does not exist, so it reads as correct while sending you to the wrong room.
-It is out of everything you have not already been shown, and a check now fails if
-it comes back.
+Twice now you have had to tell me that the machine I kept naming does not
+exist. There is the Mac Mini, there is the kitchen tablet, and there is your
+phone. I had invented a fourth and used it in a release note and in walkthrough
+steps.
+
+It is worse than jargon. Jargon is at least a hard word for a real thing; this
+was a plausible name for a machine that is not there, so it read as correct
+while sending you to the wrong room to look for a fault. It is out of everything
+you have not already been shown, and a check now fails if it comes back — which
+it did, on the first draft of this very page, which is how I know the check
+works.
 
 The walkthroughs you have already run still contain it. I left those alone on
 purpose — a finished run is the record of what you were actually shown, and
