@@ -25,12 +25,16 @@ class IntakeVerticalList extends StatefulWidget {
   final List<IntakeEntity> intakeList;
   final bool usesImperialUnits;
   final Function(IntakeEntity intake, TrackedDayEntity? trackedDayEntity)
-      onDeleteIntakeCallback;
+  onDeleteIntakeCallback;
   final Function(BuildContext, IntakeEntity)? onItemLongPressedCallback;
   final Function(bool)? onItemDragCallback;
   final Function(BuildContext, IntakeEntity, bool)? onItemTappedCallback;
-  final Function(IntakeEntity intake, TrackedDayEntity? trackedDayEntity,
-      AddMealType? type)? onCopyIntakeCallback;
+  final Function(
+    IntakeEntity intake,
+    TrackedDayEntity? trackedDayEntity,
+    AddMealType? type,
+  )?
+  onCopyIntakeCallback;
   final TrackedDayEntity? trackedDayEntity;
 
   const IntakeVerticalList({
@@ -65,8 +69,10 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
   }
 
   double get totalKcal {
-    return widget.intakeList
-        .fold(0, (previousValue, element) => previousValue + element.totalKcal);
+    return widget.intakeList.fold(
+      0,
+      (previousValue, element) => previousValue + element.totalKcal,
+    );
   }
 
   @override
@@ -78,15 +84,17 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
           alignment: Alignment.centerLeft,
           child: Row(
             children: [
-              Icon(widget.listIcon,
-                  size: 24, color: Theme.of(context).colorScheme.onSurface),
+              Icon(
+                widget.listIcon,
+                size: 24,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               const SizedBox(width: 4.0),
               Text(
                 widget.title,
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(color: Theme.of(context).colorScheme.onSurface),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
               const Spacer(),
               if (totalKcal > 0) ...[
@@ -94,51 +102,61 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                   context,
                   totalKcal,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.7)),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
                 ),
                 PopupMenuButton<VerticalListPopupMenuSelections>(
-                    onSelected:
-                        (VerticalListPopupMenuSelections selection) async {
-                      switch (selection) {
-                        case VerticalListPopupMenuSelections.onCopy:
-                          const copyDialog = CopyDialog();
-                          final selectedMealType =
-                              await showDialog<AddMealType>(
+                  onSelected:
+                      (VerticalListPopupMenuSelections selection) async {
+                        switch (selection) {
+                          case VerticalListPopupMenuSelections.onCopy:
+                            const copyDialog = CopyDialog();
+                            final selectedMealType =
+                                await showDialog<AddMealType>(
                                   context: context,
-                                  builder: (context) => copyDialog);
-                          if (selectedMealType != null) {
-                            for (IntakeEntity intake in widget.intakeList) {
-                              widget.onCopyIntakeCallback!(
-                                  intake, null, selectedMealType);
-                            }
-                          }
-                          break;
-                        case VerticalListPopupMenuSelections.onDelete:
-                          final shouldDeleteIntakes = await showDialog<bool>(
-                              context: context,
-                              builder: (context) => const DeleteAllDialog());
-                          if (shouldDeleteIntakes != null) {
-                            for (IntakeEntity intake in widget.intakeList) {
-                              widget.onDeleteIntakeCallback(
-                                  intake, widget.trackedDayEntity);
+                                  builder: (context) => copyDialog,
+                                );
+                            if (selectedMealType != null) {
+                              for (IntakeEntity intake in widget.intakeList) {
+                                widget.onCopyIntakeCallback!(
+                                  intake,
+                                  null,
+                                  selectedMealType,
+                                );
+                              }
                             }
                             break;
-                          }
-                      }
-                    },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<VerticalListPopupMenuSelections>>[
-                          if (widget.onCopyIntakeCallback != null)
-                            PopupMenuItem<VerticalListPopupMenuSelections>(
-                                value: VerticalListPopupMenuSelections.onCopy,
-                                child: Text(S.of(context).dialogCopyLabel)),
+                          case VerticalListPopupMenuSelections.onDelete:
+                            final shouldDeleteIntakes = await showDialog<bool>(
+                              context: context,
+                              builder: (context) => const DeleteAllDialog(),
+                            );
+                            if (shouldDeleteIntakes != null) {
+                              for (IntakeEntity intake in widget.intakeList) {
+                                widget.onDeleteIntakeCallback(
+                                  intake,
+                                  widget.trackedDayEntity,
+                                );
+                              }
+                              break;
+                            }
+                        }
+                      },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<VerticalListPopupMenuSelections>>[
+                        if (widget.onCopyIntakeCallback != null)
                           PopupMenuItem<VerticalListPopupMenuSelections>(
-                              value: VerticalListPopupMenuSelections.onDelete,
-                              child: Text(S.of(context).deleteAllLabel)),
-                        ]),
+                            value: VerticalListPopupMenuSelections.onCopy,
+                            child: Text(S.of(context).dialogCopyLabel),
+                          ),
+                        PopupMenuItem<VerticalListPopupMenuSelections>(
+                          value: VerticalListPopupMenuSelections.onDelete,
+                          child: Text(S.of(context).deleteAllLabel),
+                        ),
+                      ],
+                ),
               ],
             ],
           ),
@@ -158,9 +176,10 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                   final firstListElement = index == 0 ? true : false;
                   if (index == widget.intakeList.length) {
                     return PlaceholderCard(
-                        day: widget.day,
-                        onTap: () => _onPlaceholderCardTapped(context),
-                        firstListElement: firstListElement);
+                      day: widget.day,
+                      onTap: () => _onPlaceholderCardTapped(context),
+                      firstListElement: firstListElement,
+                    );
                   } else {
                     final intakeEntity = widget.intakeList[index];
                     return IntakeCard(
@@ -168,8 +187,6 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                       intake: intakeEntity,
                       onItemLongPressed: widget.onItemLongPressedCallback,
                       onItemTapped: widget.onItemTappedCallback,
-                      onItemDismissed: (intake) =>
-                          _onItemDismissed(context, intake),
                       firstListElement: firstListElement,
                       usesImperialUnits: widget.usesImperialUnits,
                     );
@@ -184,57 +201,22 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
   }
 
   void _onPlaceholderCardTapped(BuildContext context) {
-    Navigator.pushNamed(context, NavigationOptions.addMealRoute,
-        arguments: AddMealScreenArguments(widget.addMealType, widget.day));
-  }
-
-  void _onItemDismissed(BuildContext context, IntakeEntity intake) {
-    final messenger = ScaffoldMessenger.of(context);
-    final deletedText = S.of(context).itemDeletedSnackbar;
-    final undoText = S.of(context).undoLabel;
-
-    widget.onDeleteIntakeCallback(intake, widget.trackedDayEntity);
-    locator<HomeBloc>().add(const LoadItemsEvent());
-
-    // SnackBar's internal animation timer doesn't fire after widget tree
-    // rebuilds (Flutter 3.41 bug). Use Future.delayed as workaround.
-    messenger.showSnackBar(
-      SnackBar(
-        // Set very long duration so the SnackBar doesn't try to auto-dismiss
-        // via its broken internal timer — we handle dismissal ourselves.
-        duration: const Duration(days: 1),
-        content: Text(deletedText),
-        // Undo only ever reverses what this phone did. A row the household put
-        // on this day is somebody else's action, so the offer is not made for
-        // it — see IntakeEntity.isALocalAction. Removing it stays possible the
-        // ordinary way, which is the same gesture that just removed it.
-        action: intake.isALocalAction
-            ? SnackBarAction(
-                label: undoText,
-                onPressed: () {
-                  _mealDetailBloc.addIntake(
-                      context,
-                      intake.unit,
-                      intake.amount.toString(),
-                      widget.addMealType.getIntakeType(),
-                      intake.meal,
-                      intake.dateTime);
-                  locator<HomeBloc>().add(const LoadItemsEvent());
-                  locator<DiaryBloc>().add(const LoadDiaryYearEvent());
-                  locator<CalendarDayBloc>().add(RefreshCalendarDayEvent());
-                },
-              )
-            : null,
-      ),
+    Navigator.pushNamed(
+      context,
+      NavigationOptions.addMealRoute,
+      arguments: AddMealScreenArguments(widget.addMealType, widget.day),
     );
-    Future.delayed(const Duration(seconds: 5), () {
-      messenger.hideCurrentSnackBar();
-    });
   }
 
   void _onItemDropped(IntakeEntity entity) {
-    _mealDetailBloc.addIntake(context, entity.unit, entity.amount.toString(),
-        widget.addMealType.getIntakeType(), entity.meal, entity.dateTime);
+    _mealDetailBloc.addIntake(
+      context,
+      entity.unit,
+      entity.amount.toString(),
+      widget.addMealType.getIntakeType(),
+      entity.meal,
+      entity.dateTime,
+    );
     _homeBloc.deleteIntakeItem(entity);
 
     // Refresh Home Page

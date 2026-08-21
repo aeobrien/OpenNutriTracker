@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/domain/usecase/add_intake_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/add_tracked_day_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_kcal_goal_usecase.dart';
@@ -26,12 +27,21 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
   final GetKcalGoalUsecase _getKcalGoalUsecase;
   final GetMacroGoalUsecase _getMacroGoalUsecase;
   final FoodLedger _household;
+  final IntakeRepository _intakes;
 
-  MealDetailBloc(this._addIntakeUseCase, this._addTrackedDayUsecase,
-      this._getKcalGoalUsecase, this._getMacroGoalUsecase, this._household)
-      : super(MealDetailInitial(
-            totalQuantityConverted: '100',
-            selectedUnit: UnitDropdownItem.gml.toString())) {
+  MealDetailBloc(
+    this._addIntakeUseCase,
+    this._addTrackedDayUsecase,
+    this._getKcalGoalUsecase,
+    this._getMacroGoalUsecase,
+    this._household,
+    this._intakes,
+  ) : super(
+        MealDetailInitial(
+          totalQuantityConverted: '100',
+          selectedUnit: UnitDropdownItem.gml.toString(),
+        ),
+      ) {
     on<UpdateKcalEvent>((event, emit) async {
       try {
         final selectedTotalQuantity =
@@ -47,19 +57,26 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
         final fatPerUnit = (event.meal.nutriments.fatPerUnit ?? 0);
         final proteinPerUnit = (event.meal.nutriments.proteinsPerUnit ?? 0);
 
-        final quantity =
-            double.parse(selectedTotalQuantity.replaceAll(',', '.'));
+        final quantity = double.parse(
+          selectedTotalQuantity.replaceAll(',', '.'),
+        );
 
-        final convertedQuantity =
-            convertQuantity(event.meal, quantity, selectedUnit);
+        final convertedQuantity = convertQuantity(
+          event.meal,
+          quantity,
+          selectedUnit,
+        );
 
-        emit(state.copyWith(
+        emit(
+          state.copyWith(
             totalQuantityConverted: convertedQuantity.toString(),
             totalKcal: convertedQuantity * energyPerUnit,
             totalCarbs: convertedQuantity * carbsPerUnit,
             totalFat: convertedQuantity * fatPerUnit,
             totalProtein: convertedQuantity * proteinPerUnit,
-            selectedUnit: selectedUnit));
+            selectedUnit: selectedUnit,
+          ),
+        );
       } catch (e) {
         log.severe('Error calculating kcal: $e');
       }
@@ -104,26 +121,94 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
     return quantity;
   }
 
-  void addIntake(BuildContext context, String unit, String amountText,
-      IntakeTypeEntity type, MealEntity meal, DateTime day,
-      {List<FoodShare> alsoFor = const []}) async {
+  void addIntake(
+    BuildContext context,
+    String unit,
+    String amountText,
+    IntakeTypeEntity type,
+    MealEntity meal,
+    DateTime day, {
+    List<FoodShare> alsoFor = const [],
+  }) async {
     final quantity = double.parse(amountText.replaceAll(',', '.'));
 
     final intakeEntity = IntakeEntity(
-        id: IdGenerator.getUniqueID(),
-        unit: unit,
-        amount: quantity,
-        type: type,
-        meal: meal,
-        dateTime: day);
+      id: IdGenerator.getUniqueID(),
+      unit: unit,
+      amount: quantity,
+      type: type,
+      meal: meal,
+      dateTime: day,
+    );
     await _addIntakeUseCase.addIntake(intakeEntity);
     _updateTrackedDay(intakeEntity, day);
     await _alsoTellTheHousehold(
-        intakeEntity.id, type, meal, day, quantity, alsoFor);
+      intakeEntity.id,
+      type,
+      meal,
+      day,
+      quantity,
+      alsoFor,
+    );
   }
 
-  Future<void> _alsoTellTheHousehold(String intakeId, IntakeTypeEntity type,
-      MealEntity meal, DateTime day, double mine, List<FoodShare> alsoFor) {
+  /// Put a row back, as it was.
+  ///
+  /// Undo has to restore what was taken away, not something resembling it. A
+  /// spoken or quick-added row carries its own name and its own figures and has
+  /// no food behind it, so putting it back the ordinary way — as an amount of a
+  /// food — would return a nameless row worth nothing, which is worse than not
+  /// offering the undo at all. Those go back in through the same door they came
+  /// in by.
+  ///
+  /// The household is not told about a row that goes back. Retiring one there
+  /// is a one-way door at the moment — nothing un-retires — so an undone row is
+  /// this phone's again while the house still counts it as gone. That gap is
+  /// real and it is written down here rather than papered over.
+  Future<void> putBack(IntakeEntity intake) async {
+    if (intake.isQuickAdd) {
+      final restored = await _intakes.addQuickAddIntake(
+        id: IdGenerator.getUniqueID(),
+        kcal: intake.snapshotKcal,
+        protein: intake.snapshotProtein,
+        carbs: intake.snapshotCarbs,
+        fat: intake.snapshotFat,
+        label: intake.quickAddLabel,
+        mealSlot: intake.type.name,
+        dateTime: intake.dateTime,
+        said: intake.said,
+      );
+      await _updateTrackedDay(restored, intake.dateTime);
+      return;
+    }
+    final restored = IntakeEntity(
+      id: IdGenerator.getUniqueID(),
+      unit: intake.unit,
+      amount: intake.amount,
+      type: intake.type,
+      meal: intake.meal,
+      dateTime: intake.dateTime,
+    );
+    await _addIntakeUseCase.addIntake(restored);
+    await _updateTrackedDay(restored, intake.dateTime);
+    await _alsoTellTheHousehold(
+      restored.id,
+      intake.type,
+      intake.meal,
+      intake.dateTime,
+      intake.amount,
+      const [],
+    );
+  }
+
+  Future<void> _alsoTellTheHousehold(
+    String intakeId,
+    IntakeTypeEntity type,
+    MealEntity meal,
+    DateTime day,
+    double mine,
+    List<FoodShare> alsoFor,
+  ) {
     final n = meal.nutriments;
     return _household.add(
       // The diary row's own id, so both machines call this the same thing and
@@ -144,26 +229,38 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
   }
 
   Future<void> _updateTrackedDay(
-      IntakeEntity intakeEntity, DateTime day) async {
+    IntakeEntity intakeEntity,
+    DateTime day,
+  ) async {
     final hasTrackedDay = await _addTrackedDayUsecase.hasTrackedDay(day);
     if (!hasTrackedDay) {
       final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
-      final totalCarbsGoal =
-          await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
-      final totalFatGoal =
-          await _getMacroGoalUsecase.getFatsGoal(totalKcalGoal);
-      final totalProteinGoal =
-          await _getMacroGoalUsecase.getProteinsGoal(totalKcalGoal);
+      final totalCarbsGoal = await _getMacroGoalUsecase.getCarbsGoal(
+        totalKcalGoal,
+      );
+      final totalFatGoal = await _getMacroGoalUsecase.getFatsGoal(
+        totalKcalGoal,
+      );
+      final totalProteinGoal = await _getMacroGoalUsecase.getProteinsGoal(
+        totalKcalGoal,
+      );
 
       await _addTrackedDayUsecase.addNewTrackedDay(
-          day, totalKcalGoal, totalCarbsGoal, totalFatGoal, totalProteinGoal);
+        day,
+        totalKcalGoal,
+        totalCarbsGoal,
+        totalFatGoal,
+        totalProteinGoal,
+      );
     }
 
     _addTrackedDayUsecase.addDayCaloriesTracked(day, intakeEntity.totalKcal);
-    _addTrackedDayUsecase.addDayMacrosTracked(day,
-        carbsTracked: intakeEntity.totalCarbsGram,
-        fatTracked: intakeEntity.totalFatsGram,
-        proteinTracked: intakeEntity.totalProteinsGram);
+    _addTrackedDayUsecase.addDayMacrosTracked(
+      day,
+      carbsTracked: intakeEntity.totalCarbsGram,
+      fatTracked: intakeEntity.totalFatsGram,
+      proteinTracked: intakeEntity.totalProteinsGram,
+    );
   }
 }
 

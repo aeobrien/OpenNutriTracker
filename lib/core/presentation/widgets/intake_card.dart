@@ -11,18 +11,17 @@ class IntakeCard extends StatelessWidget {
   final IntakeEntity intake;
   final Function(BuildContext, IntakeEntity)? onItemLongPressed;
   final Function(BuildContext, IntakeEntity, bool)? onItemTapped;
-  final Function(IntakeEntity)? onItemDismissed;
   final bool firstListElement;
   final bool usesImperialUnits;
 
-  const IntakeCard(
-      {required super.key,
-      required this.intake,
-      this.onItemLongPressed,
-      this.onItemTapped,
-      this.onItemDismissed,
-      required this.firstListElement,
-      required this.usesImperialUnits});
+  const IntakeCard({
+    required super.key,
+    required this.intake,
+    this.onItemLongPressed,
+    this.onItemTapped,
+    required this.firstListElement,
+    required this.usesImperialUnits,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -32,140 +31,129 @@ class IntakeCard extends StatelessWidget {
         SizedBox(
           width: 120,
           height: 120,
-          child: Dismissible(
-            key: ValueKey('dismiss_${intake.id}'),
-            direction: DismissDirection.endToStart,
-            background: const SizedBox.shrink(),
-            secondaryBackground: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: const Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: EdgeInsets.only(right: 16.0),
-                  child: Icon(Icons.delete_outline),
-                ),
-              ),
+          // No sideways swipe here on purpose. The strip these cards sit in
+          // scrolls sideways, and a card that also answered a sideways drag
+          // took every one of them: past three items a meal could not be read
+          // at all. Removing a row is asked for by name now — tap the card, or
+          // hold it — and the undo offer went with it, see sayTheRowIsGone.
+          child: Card(
+            semanticContainer: true,
+            clipBehavior: Clip.antiAliasWithSaveLayer,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16.0),
             ),
-            onDismissed: (_) {
-              onItemDismissed?.call(intake);
-            },
-            child: Card(
-              semanticContainer: true,
-              clipBehavior: Clip.antiAliasWithSaveLayer,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              elevation: 1,
-              child: InkWell(
-                onLongPress: onItemLongPressed != null
-                    ? () => onLongPressedItem(context)
-                    : null,
-                onTap: onItemTapped != null
-                    ? () => onTappedItem(context, usesImperialUnits)
-                    : null,
-                child: Stack(
-                  children: [
-                    intake.isQuickAdd
-                        ? Center(
-                            child: Icon(Icons.bolt,
-                                size: 36,
-                                color: Theme.of(context).colorScheme.primary))
-                        : intake.isRecipe
-                            ? Center(
-                                child: Icon(Icons.restaurant_menu,
-                                    size: 36,
-                                    color: Theme.of(context).colorScheme.primary))
-                            : intake.meal.mainImageUrl != null
-                            ? CachedNetworkImage(
-                                cacheManager: locator<CacheManager>(),
-                                imageUrl: intake.meal.mainImageUrl ?? "",
-                                imageBuilder: (context, imageProvider) =>
-                                    Container(
-                                  decoration: BoxDecoration(
-                                      image: DecorationImage(
-                                    image: imageProvider,
-                                    fit: BoxFit.cover,
-                                  )),
-                                ),
-                              )
-                            : Center(
-                                child: Icon(Icons.restaurant_outlined,
-                                    color:
-                                        Theme.of(context).colorScheme.secondary)),
-                    Container(
-                      // Add color shade
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .secondaryContainer
-                            .withValues(alpha: 0.5),
-                      ),
+            elevation: 1,
+            child: InkWell(
+              onLongPress: onItemLongPressed != null
+                  ? () => onLongPressedItem(context)
+                  : null,
+              onTap: onItemTapped != null
+                  ? () => onTappedItem(context, usesImperialUnits)
+                  : null,
+              child: Stack(
+                children: [
+                  intake.isQuickAdd
+                      ? Center(
+                          child: Icon(
+                            Icons.bolt,
+                            size: 36,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : intake.isRecipe
+                      ? Center(
+                          child: Icon(
+                            Icons.restaurant_menu,
+                            size: 36,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        )
+                      : intake.meal.mainImageUrl != null
+                      ? CachedNetworkImage(
+                          cacheManager: locator<CacheManager>(),
+                          imageUrl: intake.meal.mainImageUrl ?? "",
+                          imageBuilder: (context, imageProvider) => Container(
+                            decoration: BoxDecoration(
+                              image: DecorationImage(
+                                image: imageProvider,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                        )
+                      : Center(
+                          child: Icon(
+                            Icons.restaurant_outlined,
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                  Container(
+                    // Add color shade
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.secondaryContainer.withValues(alpha: 0.5),
                     ),
-                    if (!Figures.off(context))
-                      Container(
-                        margin: const EdgeInsets.all(8.0),
-                        padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
-                        decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .tertiaryContainer
-                                .withValues(alpha: 0.8),
-                            borderRadius: BorderRadius.circular(20)),
-                        child: Figures.kcalText(
+                  ),
+                  if (!Figures.off(context))
+                    Container(
+                      margin: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.fromLTRB(8.0, 4.0, 8.0, 4.0),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
                           context,
-                          intake.totalKcal,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onTertiaryContainer),
+                        ).colorScheme.tertiaryContainer.withValues(alpha: 0.8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Figures.kcalText(
+                        context,
+                        intake.totalKcal,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onTertiaryContainer,
                         ),
                       ),
-                    Container(
-                        padding: const EdgeInsets.all(8.0),
-                        alignment: Alignment.bottomLeft,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AutoSizeText(
-                              intake.isQuickAdd || intake.isRecipe
-                                  ? (intake.quickAddLabel ?? (intake.isRecipe ? 'Recipe' : 'Quick add'))
-                                  : (intake.meal.name ?? "?"),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                      fontWeight: FontWeight.w500,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSecondaryContainer),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (!intake.isQuickAdd && !intake.isRecipe)
-                              MealValueUnitText(
-                                value: intake.amount,
-                                meal: intake.meal,
-                                usesImperialUnits: usesImperialUnits,
-                                textStyle: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondaryContainer
-                                            .withValues(alpha: 0.7)),
+                    ),
+                  Container(
+                    padding: const EdgeInsets.all(8.0),
+                    alignment: Alignment.bottomLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AutoSizeText(
+                          intake.isQuickAdd || intake.isRecipe
+                              ? (intake.quickAddLabel ??
+                                    (intake.isRecipe ? 'Recipe' : 'Quick add'))
+                              : (intake.meal.name ?? "?"),
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer,
                               ),
-                          ],
-                        ))
-                  ],
-                ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (!intake.isQuickAdd && !intake.isRecipe)
+                          MealValueUnitText(
+                            value: intake.amount,
+                            meal: intake.meal,
+                            usesImperialUnits: usesImperialUnits,
+                            textStyle: Theme.of(context).textTheme.titleSmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSecondaryContainer
+                                      .withValues(alpha: 0.7),
+                                ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -32,24 +32,41 @@ class IntakeEdit {
   /// Who to move it to, or null to leave it where it is.
   final int? moveTo;
 
-  const IntakeEdit(this.amount, {this.label, this.kcal, this.moveTo});
+  /// Whether what was asked for is that the row goes away entirely.
+  ///
+  /// Removing used to be a sideways swipe on the card. The strip of a meal's
+  /// items scrolls sideways too, so the two fought and the swipe always won —
+  /// which is why removing is asked for here by name now, alongside the
+  /// corrections, rather than by a gesture nobody could aim.
+  final bool remove;
+
+  const IntakeEdit(
+    this.amount, {
+    this.label,
+    this.kcal,
+    this.moveTo,
+    this.remove = false,
+  });
 
   /// The correction as the diary takes it. Only the fields actually corrected
   /// are present, so a row is never quietly rewritten in a way nobody asked
   /// for.
   Map<String, dynamic> get fields => {
-        if (amount != null) 'amount': amount,
-        if (label != null) 'label': label,
-        if (kcal != null) 'kcal': kcal,
-      };
+    if (amount != null) 'amount': amount,
+    if (label != null) 'label': label,
+    if (kcal != null) 'kcal': kcal,
+  };
 }
 
 class EditDialog extends StatefulWidget {
   final IntakeEntity intakeEntity;
   final bool usesImperialUnits;
 
-  const EditDialog(
-      {super.key, required this.intakeEntity, required this.usesImperialUnits});
+  const EditDialog({
+    super.key,
+    required this.intakeEntity,
+    required this.usesImperialUnits,
+  });
 
   @override
   State<StatefulWidget> createState() => _EditDialogState();
@@ -77,23 +94,31 @@ class _EditDialogState extends State<EditDialog> {
   void initState() {
     super.initState();
     double initialAmount = _convertValue(
-        widget.intakeEntity.amount, widget.intakeEntity.meal.mealUnit);
-    amountEditingController =
-        TextEditingController(text: initialAmount.toStringAsFixed(2));
+      widget.intakeEntity.amount,
+      widget.intakeEntity.meal.mealUnit,
+    );
+    amountEditingController = TextEditingController(
+      text: initialAmount.toStringAsFixed(2),
+    );
     nameEditingController = TextEditingController(
-        text: widget.intakeEntity.quickAddLabel ?? '');
+      text: widget.intakeEntity.quickAddLabel ?? '',
+    );
     kcalEditingController = TextEditingController(
-        text: widget.intakeEntity.totalKcal.round().toString());
+      text: widget.intakeEntity.totalKcal.round().toString(),
+    );
     _currentKcalEstimate = _hasNoFoodBehindIt
         ? widget.intakeEntity.totalKcal
         : _calculateKcal(widget.intakeEntity.amount);
 
     // Pre-select text for easy replacement
     amountEditingController.selection = TextSelection(
-        baseOffset: 0,
-        extentOffset: amountEditingController.text.length);
+      baseOffset: 0,
+      extentOffset: amountEditingController.text.length,
+    );
     kcalEditingController.selection = TextSelection(
-        baseOffset: 0, extentOffset: kcalEditingController.text.length);
+      baseOffset: 0,
+      extentOffset: kcalEditingController.text.length,
+    );
 
     amountEditingController.addListener(_onAmountChanged);
     kcalEditingController.addListener(_onKcalChanged);
@@ -118,7 +143,9 @@ class _EditDialogState extends State<EditDialog> {
     final parsed = double.tryParse(amountEditingController.text);
     if (parsed != null) {
       final metricAmount = _convertBackToMetricValue(
-          parsed, widget.intakeEntity.meal.mealUnit);
+        parsed,
+        widget.intakeEntity.meal.mealUnit,
+      );
       setState(() {
         _currentKcalEstimate = _calculateKcal(metricAmount);
       });
@@ -134,7 +161,7 @@ class _EditDialogState extends State<EditDialog> {
     final current = double.tryParse(amountEditingController.text) ?? 0.0;
     final displayDelta = widget.usesImperialUnits
         ? _convertValue(delta, widget.intakeEntity.meal.mealUnit) -
-            _convertValue(0, widget.intakeEntity.meal.mealUnit)
+              _convertValue(0, widget.intakeEntity.meal.mealUnit)
         : delta;
     final newVal = (current + displayDelta).clamp(0.0, double.infinity);
     amountEditingController.text = newVal.toStringAsFixed(2);
@@ -142,7 +169,9 @@ class _EditDialogState extends State<EditDialog> {
 
   void _setAmount(double metricValue) {
     final displayValue = _convertValue(
-        metricValue, widget.intakeEntity.meal.mealUnit);
+      metricValue,
+      widget.intakeEntity.meal.mealUnit,
+    );
     amountEditingController.text = displayValue.toStringAsFixed(2);
   }
 
@@ -151,7 +180,8 @@ class _EditDialogState extends State<EditDialog> {
     final unitStr = _convertUnit(widget.intakeEntity.meal.mealUnit ?? '');
     final isLiquid = widget.intakeEntity.meal.isLiquid;
     final unitLabel = isLiquid ? 'ml' : 'g';
-    final hasServing = widget.intakeEntity.meal.hasServingValues &&
+    final hasServing =
+        widget.intakeEntity.meal.hasServingValues &&
         widget.intakeEntity.meal.servingQuantity != null;
 
     return AlertDialog(
@@ -163,13 +193,20 @@ class _EditDialogState extends State<EditDialog> {
       ),
       actions: [
         TextButton(
-            onPressed: _save,
-            child: Text(S.of(context).dialogOKLabel)),
+          onPressed: () =>
+              Navigator.of(context).pop(const IntakeEdit(null, remove: true)),
+          style: TextButton.styleFrom(
+            foregroundColor: Theme.of(context).colorScheme.error,
+          ),
+          child: Text(S.of(context).dialogDeleteLabel),
+        ),
+        TextButton(onPressed: _save, child: Text(S.of(context).dialogOKLabel)),
         TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text(S.of(context).dialogCancelLabel))
+          onPressed: () {
+            Navigator.of(context).pop();
+          },
+          child: Text(S.of(context).dialogCancelLabel),
+        ),
       ],
     );
   }
@@ -178,20 +215,24 @@ class _EditDialogState extends State<EditDialog> {
   void _save() {
     if (_hasNoFoodBehindIt) {
       final name = nameEditingController.text.trim();
-      Navigator.of(context).pop(IntakeEdit(
-        null,
-        label: name.isEmpty ? null : name,
-        kcal: double.tryParse(kcalEditingController.text.trim()),
-        moveTo: _moveTo?.id,
-      ));
+      Navigator.of(context).pop(
+        IntakeEdit(
+          null,
+          label: name.isEmpty ? null : name,
+          kcal: double.tryParse(kcalEditingController.text.trim()),
+          moveTo: _moveTo?.id,
+        ),
+      );
       return;
     }
     final newAmount = double.tryParse(amountEditingController.text);
     if (newAmount == null) return;
-    Navigator.of(context).pop(IntakeEdit(
-        _convertBackToMetricValue(
-            newAmount, widget.intakeEntity.meal.mealUnit),
-        moveTo: _moveTo?.id));
+    Navigator.of(context).pop(
+      IntakeEdit(
+        _convertBackToMetricValue(newAmount, widget.intakeEntity.meal.mealUnit),
+        moveTo: _moveTo?.id,
+      ),
+    );
   }
 
   /// A row with nothing underneath it: what it is called, what it came to, and
@@ -200,62 +241,74 @@ class _EditDialogState extends State<EditDialog> {
   /// hearing.
   Widget _foodlessRow(BuildContext context) {
     final said = widget.intakeEntity.said;
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-      if (said != null && said.trim().isNotEmpty) ...[
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (said != null && said.trim().isNotEmpty) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'You said: "${said.trim()}"',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontStyle: FontStyle.italic,
+                color: Theme.of(
+                  context,
+                ).colorScheme.onSurface.withValues(alpha: 0.7),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12.0),
+        ],
+        TextFormField(
+          controller: nameEditingController,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: const InputDecoration(labelText: 'What it was'),
+        ),
+        const SizedBox(height: 8.0),
+        TextFormField(
+          controller: kcalEditingController,
+          keyboardType: TextInputType.number,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Calories',
+            suffixText: 'kcal',
+          ),
+        ),
+        const SizedBox(height: 4.0),
         Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            'You said: "${said.trim()}"',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontStyle: FontStyle.italic,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.7)),
+            'The protein, fat and carbs move with the calories.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(
+                context,
+              ).colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
         ),
-        const SizedBox(height: 12.0),
+        const SizedBox(height: 8.0),
+        WhoseDayIsIt(onChanged: (person) => _moveTo = person),
       ],
-      TextFormField(
-        controller: nameEditingController,
-        textCapitalization: TextCapitalization.sentences,
-        decoration: const InputDecoration(labelText: 'What it was'),
-      ),
-      const SizedBox(height: 8.0),
-      TextFormField(
-        controller: kcalEditingController,
-        keyboardType: TextInputType.number,
-        autofocus: true,
-        decoration: const InputDecoration(
-            labelText: 'Calories', suffixText: 'kcal'),
-      ),
-      const SizedBox(height: 4.0),
-      Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          'The protein, fat and carbs move with the calories.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.6)),
-        ),
-      ),
-      const SizedBox(height: 8.0),
-      WhoseDayIsIt(onChanged: (person) => _moveTo = person),
-    ]);
+    );
   }
 
-  Widget _rowWithAFoodBehindIt(BuildContext context, String unitStr,
-      String unitLabel, bool hasServing) {
-    return Column(mainAxisSize: MainAxisSize.min, children: [
+  Widget _rowWithAFoodBehindIt(
+    BuildContext context,
+    String unitStr,
+    String unitLabel,
+    bool hasServing,
+  ) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         TextFormField(
           controller: amountEditingController,
           keyboardType: TextInputType.number,
           autofocus: true,
           decoration: InputDecoration(
-              labelText: S.of(context).quantityLabel,
-              suffixText: unitStr),
+            labelText: S.of(context).quantityLabel,
+            suffixText: unitStr,
+          ),
         ),
         const SizedBox(height: 8.0),
         Wrap(
@@ -273,8 +326,8 @@ class _EditDialogState extends State<EditDialog> {
             if (hasServing) ...[
               ActionChip(
                 label: const Text('\u00BD srv'),
-                onPressed: () => _setAmount(
-                    widget.intakeEntity.meal.servingQuantity! * 0.5),
+                onPressed: () =>
+                    _setAmount(widget.intakeEntity.meal.servingQuantity! * 0.5),
               ),
               ActionChip(
                 label: const Text('1 srv'),
@@ -291,12 +344,13 @@ class _EditDialogState extends State<EditDialog> {
           context,
           _currentKcalEstimate,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
-                  .withValues(alpha: 0.7)),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
         ),
-      ]);
+      ],
+    );
   }
 
   double _convertValue(double value, String? unit) {

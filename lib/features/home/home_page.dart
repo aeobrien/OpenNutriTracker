@@ -9,6 +9,7 @@ import 'package:opennutritracker/core/presentation/widgets/activity_vertial_list
 import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/delete_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/disclaimer_dialog.dart';
+import 'package:opennutritracker/core/presentation/widgets/say_the_row_is_gone.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
@@ -79,30 +80,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           return _getLoadingContent();
         } else if (state is HomeLoadedState) {
           return _getLoadedContent(
-              context,
-              state.showDisclaimerDialog,
-              state.totalKcalDaily,
-              state.totalKcalLeft,
-              state.totalKcalSupplied,
-              state.totalKcalBurned,
-              state.totalCarbsIntake,
-              state.totalFatsIntake,
-              state.totalProteinsIntake,
-              state.totalCarbsGoal,
-              state.totalFatsGoal,
-              state.totalProteinsGoal,
-              state.breakfastIntakeList,
-              state.lunchIntakeList,
-              state.dinnerIntakeList,
-              state.snackIntakeList,
-              state.userActivityList,
-              state.usesImperialUnits,
-              state.totalKcalBase,
-              state.totalKcalEarned,
-              state.weeklyRemaining,
-              state.activeCaloriesToday,
-              state.activeCaloriesUpdatedAt,
-              state.healthKitConnected);
+            context,
+            state.showDisclaimerDialog,
+            state.totalKcalDaily,
+            state.totalKcalLeft,
+            state.totalKcalSupplied,
+            state.totalKcalBurned,
+            state.totalCarbsIntake,
+            state.totalFatsIntake,
+            state.totalProteinsIntake,
+            state.totalCarbsGoal,
+            state.totalFatsGoal,
+            state.totalProteinsGoal,
+            state.breakfastIntakeList,
+            state.lunchIntakeList,
+            state.dinnerIntakeList,
+            state.snackIntakeList,
+            state.userActivityList,
+            state.usesImperialUnits,
+            state.totalKcalBase,
+            state.totalKcalEarned,
+            state.weeklyRemaining,
+            state.activeCaloriesToday,
+            state.activeCaloriesUpdatedAt,
+            state.healthKitConnected,
+          );
         } else {
           return _getLoadingContent();
         }
@@ -122,147 +124,155 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Widget _getLoadingContent() {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _getLoadedContent(
-      BuildContext context,
-      bool showDisclaimerDialog,
-      double totalKcalDaily,
-      double totalKcalLeft,
-      double totalKcalSupplied,
-      double totalKcalBurned,
-      double totalCarbsIntake,
-      double totalFatsIntake,
-      double totalProteinsIntake,
-      double totalCarbsGoal,
-      double totalFatsGoal,
-      double totalProteinsGoal,
-      List<IntakeEntity> breakfastIntakeList,
-      List<IntakeEntity> lunchIntakeList,
-      List<IntakeEntity> dinnerIntakeList,
-      List<IntakeEntity> snackIntakeList,
-      List<UserActivityEntity> userActivities,
-      bool usesImperialUnits,
-      double totalKcalBase,
-      double totalKcalEarned,
-      double? weeklyRemaining,
-      double activeCaloriesToday,
-      DateTime? activeCaloriesUpdatedAt,
-      bool healthKitConnected) {
+    BuildContext context,
+    bool showDisclaimerDialog,
+    double totalKcalDaily,
+    double totalKcalLeft,
+    double totalKcalSupplied,
+    double totalKcalBurned,
+    double totalCarbsIntake,
+    double totalFatsIntake,
+    double totalProteinsIntake,
+    double totalCarbsGoal,
+    double totalFatsGoal,
+    double totalProteinsGoal,
+    List<IntakeEntity> breakfastIntakeList,
+    List<IntakeEntity> lunchIntakeList,
+    List<IntakeEntity> dinnerIntakeList,
+    List<IntakeEntity> snackIntakeList,
+    List<UserActivityEntity> userActivities,
+    bool usesImperialUnits,
+    double totalKcalBase,
+    double totalKcalEarned,
+    double? weeklyRemaining,
+    double activeCaloriesToday,
+    DateTime? activeCaloriesUpdatedAt,
+    bool healthKitConnected,
+  ) {
     if (showDisclaimerDialog) {
       _showDisclaimerDialog(context);
     }
-    return Stack(children: [
-      ListView(key: const PageStorageKey('home_list'), children: [
-        DashboardWidget(
-          totalKcalDaily: totalKcalDaily,
-          totalKcalLeft: totalKcalLeft,
-          totalKcalSupplied: totalKcalSupplied,
-          totalKcalBurned: totalKcalBurned,
-          totalCarbsIntake: totalCarbsIntake,
-          totalFatsIntake: totalFatsIntake,
-          totalProteinsIntake: totalProteinsIntake,
-          totalCarbsGoal: totalCarbsGoal,
-          totalFatsGoal: totalFatsGoal,
-          totalProteinsGoal: totalProteinsGoal,
-          totalKcalBase: totalKcalBase,
-          totalKcalEarned: totalKcalEarned,
-          weeklyRemaining: weeklyRemaining,
-          activeCaloriesToday: activeCaloriesToday,
-          activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
-          healthKitConnected: healthKitConnected,
+    return Stack(
+      children: [
+        ListView(
+          key: const PageStorageKey('home_list'),
+          children: [
+            DashboardWidget(
+              totalKcalDaily: totalKcalDaily,
+              totalKcalLeft: totalKcalLeft,
+              totalKcalSupplied: totalKcalSupplied,
+              totalKcalBurned: totalKcalBurned,
+              totalCarbsIntake: totalCarbsIntake,
+              totalFatsIntake: totalFatsIntake,
+              totalProteinsIntake: totalProteinsIntake,
+              totalCarbsGoal: totalCarbsGoal,
+              totalFatsGoal: totalFatsGoal,
+              totalProteinsGoal: totalProteinsGoal,
+              totalKcalBase: totalKcalBase,
+              totalKcalEarned: totalKcalEarned,
+              weeklyRemaining: weeklyRemaining,
+              activeCaloriesToday: activeCaloriesToday,
+              activeCaloriesUpdatedAt: activeCaloriesUpdatedAt,
+              healthKitConnected: healthKitConnected,
+            ),
+            // Saying what you ate, above the day it lands on. The button is here
+            // rather than behind a tab because the whole promise is that it takes
+            // one motion — a screen you have to find first is a screen people go
+            // back to typing instead of.
+            //
+            // What it no longer has under it is a list of its own. On 20 August
+            // 2026 this screen showed spoken food in one place and the four meal
+            // slots below in another, with nothing joining them and the ring at the
+            // top counting only the second. Aidan's words: "it seems like despite
+            // the issues we had yesterday you are still building a separate system
+            // inside the existing system." Spoken food now goes where all the other
+            // food goes — into the slots below, through the mirror the app has had
+            // all along — so there is one day on this screen and not two.
+            //
+            // The planned-meals list and the week that used to sit here went with
+            // it, at his instruction: planning is what the kitchen panel is for,
+            // and a second copy of it on the phone was a second thing to keep in
+            // step for no gain.
+            SayWhatYouAteSection(
+              key: _said,
+              said: locator<SaidRepository>(),
+              microphone: locator<Microphone>(),
+              day: SayWhatYouAteSection.dayKey(DateTime.now()),
+              // Understanding a sentence takes seconds, and the meal it turns into
+              // has to be fetched from the household before it is in the diary. So
+              // the pull runs here rather than only on open — otherwise you would
+              // say something, watch nothing happen, and put the phone down.
+              onChanged: _afterSaying,
+            ),
+            ActivityVerticalList(
+              day: DateTime.now(),
+              title: S.of(context).activityLabel,
+              userActivityList: userActivities,
+              onItemLongPressedCallback: onActivityItemLongPressed,
+            ),
+            IntakeVerticalList(
+              day: DateTime.now(),
+              title: S.of(context).breakfastLabel,
+              listIcon: IntakeTypeEntity.breakfast.getIconData(),
+              addMealType: AddMealType.breakfastType,
+              intakeList: breakfastIntakeList,
+              onDeleteIntakeCallback: onDeleteIntake,
+              onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
+              usesImperialUnits: usesImperialUnits,
+            ),
+            IntakeVerticalList(
+              day: DateTime.now(),
+              title: S.of(context).lunchLabel,
+              listIcon: IntakeTypeEntity.lunch.getIconData(),
+              addMealType: AddMealType.lunchType,
+              intakeList: lunchIntakeList,
+              onDeleteIntakeCallback: onDeleteIntake,
+              onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
+              usesImperialUnits: usesImperialUnits,
+            ),
+            IntakeVerticalList(
+              day: DateTime.now(),
+              title: S.of(context).dinnerLabel,
+              addMealType: AddMealType.dinnerType,
+              listIcon: IntakeTypeEntity.dinner.getIconData(),
+              intakeList: dinnerIntakeList,
+              onDeleteIntakeCallback: onDeleteIntake,
+              onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
+              usesImperialUnits: usesImperialUnits,
+            ),
+            IntakeVerticalList(
+              day: DateTime.now(),
+              title: S.of(context).snackLabel,
+              listIcon: IntakeTypeEntity.snack.getIconData(),
+              addMealType: AddMealType.snackType,
+              intakeList: snackIntakeList,
+              onDeleteIntakeCallback: onDeleteIntake,
+              onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
+              usesImperialUnits: usesImperialUnits,
+            ),
+            const SizedBox(height: 48.0),
+          ],
         ),
-        // Saying what you ate, above the day it lands on. The button is here
-        // rather than behind a tab because the whole promise is that it takes
-        // one motion — a screen you have to find first is a screen people go
-        // back to typing instead of.
-        //
-        // What it no longer has under it is a list of its own. On 20 August
-        // 2026 this screen showed spoken food in one place and the four meal
-        // slots below in another, with nothing joining them and the ring at the
-        // top counting only the second. Aidan's words: "it seems like despite
-        // the issues we had yesterday you are still building a separate system
-        // inside the existing system." Spoken food now goes where all the other
-        // food goes — into the slots below, through the mirror the app has had
-        // all along — so there is one day on this screen and not two.
-        //
-        // The planned-meals list and the week that used to sit here went with
-        // it, at his instruction: planning is what the kitchen panel is for,
-        // and a second copy of it on the phone was a second thing to keep in
-        // step for no gain.
-        SayWhatYouAteSection(
-          key: _said,
-          said: locator<SaidRepository>(),
-          microphone: locator<Microphone>(),
-          day: SayWhatYouAteSection.dayKey(DateTime.now()),
-          // Understanding a sentence takes seconds, and the meal it turns into
-          // has to be fetched from the household before it is in the diary. So
-          // the pull runs here rather than only on open — otherwise you would
-          // say something, watch nothing happen, and put the phone down.
-          onChanged: _afterSaying,
-        ),
-        ActivityVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).activityLabel,
-          userActivityList: userActivities,
-          onItemLongPressedCallback: onActivityItemLongPressed,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).breakfastLabel,
-          listIcon: IntakeTypeEntity.breakfast.getIconData(),
-          addMealType: AddMealType.breakfastType,
-          intakeList: breakfastIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).lunchLabel,
-          listIcon: IntakeTypeEntity.lunch.getIconData(),
-          addMealType: AddMealType.lunchType,
-          intakeList: lunchIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).dinnerLabel,
-          addMealType: AddMealType.dinnerType,
-          listIcon: IntakeTypeEntity.dinner.getIconData(),
-          intakeList: dinnerIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        IntakeVerticalList(
-          day: DateTime.now(),
-          title: S.of(context).snackLabel,
-          listIcon: IntakeTypeEntity.snack.getIconData(),
-          addMealType: AddMealType.snackType,
-          intakeList: snackIntakeList,
-          onDeleteIntakeCallback: onDeleteIntake,
-          onItemLongPressedCallback: onIntakeItemLongPressed,
-          onItemTappedCallback: onIntakeItemTapped,
-          usesImperialUnits: usesImperialUnits,
-        ),
-        const SizedBox(height: 48.0)
-      ]),
-    ]);
+      ],
+    );
   }
 
   void onActivityItemLongPressed(
-      BuildContext context, UserActivityEntity activityEntity) async {
+    BuildContext context,
+    UserActivityEntity activityEntity,
+  ) async {
     final deleteIntake = await showDialog<bool>(
-        context: context, builder: (context) => const DeleteDialog());
+      context: context,
+      builder: (context) => const DeleteDialog(),
+    );
 
     if (deleteIntake != null) {
       // Awaited before redrawing, for the same reason as a correction: the day
@@ -272,45 +282,66 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _reload();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(S.of(context).itemDeletedSnackbar)));
+          SnackBar(content: Text(S.of(context).itemDeletedSnackbar)),
+        );
       }
     }
   }
 
   void onIntakeItemLongPressed(
-      BuildContext context, IntakeEntity intakeEntity) async {
-    final messenger = ScaffoldMessenger.of(context);
-    final deletedText = S.of(context).itemDeletedSnackbar;
-
+    BuildContext context,
+    IntakeEntity intakeEntity,
+  ) async {
     final deleteIntake = await showDialog<bool>(
-        context: context, builder: (context) => const DeleteDialog());
+      context: context,
+      builder: (context) => const DeleteDialog(),
+    );
 
     if (deleteIntake != null) {
-      // Awaited before redrawing, for the same reason as a swipe: the day is
-      // read back out of the database, so a redraw that overtakes the write
-      // puts the row's figures back on the ring it just came off.
-      await _homeBloc.deleteIntakeItem(intakeEntity);
-      _reload();
-      messenger.showSnackBar(
-          SnackBar(
-            duration: const Duration(days: 1),
-            content: Text(deletedText),
-          ));
-      Future.delayed(const Duration(seconds: 4), () {
-        messenger.hideCurrentSnackBar();
-      });
+      if (!context.mounted) return;
+      await _removeTheRow(context, intakeEntity);
     }
   }
 
-  void onIntakeItemTapped(BuildContext context, IntakeEntity intakeEntity,
-      bool usesImperialUnits) async {
+  /// Take a row off the day, and say so in a way that can be taken back.
+  ///
+  /// Both ways of removing a row come through here — holding the card, and
+  /// asking for it inside the card's own dialog — so the offer to undo is made
+  /// the same way whichever one was used, and cannot be lost by changing one
+  /// of them.
+  Future<void> _removeTheRow(
+    BuildContext context,
+    IntakeEntity intakeEntity,
+  ) async {
+    // Awaited before redrawing: the day is read back out of the database, so a
+    // redraw that overtakes the write puts the row's figures back on the ring
+    // it just came off.
+    await _homeBloc.deleteIntakeItem(intakeEntity);
+    _reload();
+    if (!context.mounted) return;
+    sayTheRowIsGone(context, intakeEntity);
+  }
+
+  void onIntakeItemTapped(
+    BuildContext context,
+    IntakeEntity intakeEntity,
+    bool usesImperialUnits,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     final updatedText = S.of(context).itemUpdatedSnackbar;
 
     final edit = await showDialog<IntakeEdit>(
-        context: context,
-        builder: (context) => EditDialog(
-            intakeEntity: intakeEntity, usesImperialUnits: usesImperialUnits));
+      context: context,
+      builder: (context) => EditDialog(
+        intakeEntity: intakeEntity,
+        usesImperialUnits: usesImperialUnits,
+      ),
+    );
+    if (edit != null && edit.remove) {
+      if (!context.mounted) return;
+      await _removeTheRow(context, intakeEntity);
+      return;
+    }
     // A tap that changed nothing is not a correction, and must not travel to
     // the household as one — an amend with an empty body still bumps the row's
     // version there and discards anything still on the wire for it.
@@ -318,16 +349,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       // Awaited, then redrawn. Redrawing without waiting reads the day back
       // out of the database before the correction has been written to it, and
       // the ring keeps showing the figure the person just changed.
-      await _homeBloc.updateIntakeItem(intakeEntity.id, edit.fields,
-          moveTo: edit.moveTo);
+      await _homeBloc.updateIntakeItem(
+        intakeEntity.id,
+        edit.fields,
+        moveTo: edit.moveTo,
+      );
       _reload();
       messenger.showSnackBar(
-          SnackBar(
-            duration: const Duration(days: 1),
-            content: Text(edit.moveTo != null
-                ? 'Moved off your day.'
-                : updatedText),
-          ));
+        SnackBar(
+          duration: const Duration(days: 1),
+          content: Text(
+            edit.moveTo != null ? 'Moved off your day.' : updatedText,
+          ),
+        ),
+      );
       Future.delayed(const Duration(seconds: 4), () {
         messenger.hideCurrentSnackBar();
       });
@@ -335,7 +370,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   void onDeleteIntake(
-      IntakeEntity intake, TrackedDayEntity? trackedDayEntity) async {
+    IntakeEntity intake,
+    TrackedDayEntity? trackedDayEntity,
+  ) async {
     // Awaited before redrawing, for the same reason as a correction: the day
     // is read back out of the database, so a redraw that overtakes the write
     // puts the row's figures back on the ring it just came off.
@@ -347,10 +384,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   void _showDisclaimerDialog(BuildContext context) async {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final dialogConfirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) {
-            return const DisclaimerDialog();
-          });
+        context: context,
+        builder: (context) {
+          return const DisclaimerDialog();
+        },
+      );
       if (dialogConfirmed != null) {
         _homeBloc.saveConfigData(dialogConfirmed);
         _reload();
@@ -382,9 +420,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     locator<ExerciseSync>()
         .syncFromHealth(day: ExerciseSync.dayKey(DateTime.now()))
         .catchError((Object e) {
-      log.info('Watch sync skipped: $e');
-      return null;
-    });
+          log.info('Watch sync skipped: $e');
+          return null;
+        });
   }
 
   /// Have another go at anything spoken that never got worked out.
@@ -410,12 +448,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// the rows wait for next time, which is what they were doing anyway.
   Future<void> _catchUpOnWhatWasSaid() async {
     try {
-      final day = await locator<DayRepository>()
-          .today(SayWhatYouAteSection.dayKey(DateTime.now()));
+      final day = await locator<DayRepository>().today(
+        SayWhatYouAteSection.dayKey(DateTime.now()),
+      );
       final settled = await locator<SaidRepository>().catchUp(day.logged);
       if (settled > 0) {
-        log.info('[SAID] $settled row(s) that had been left unfinished '
-            'were worked out on opening');
+        log.info(
+          '[SAID] $settled row(s) that had been left unfinished '
+          'were worked out on opening',
+        );
       }
     } catch (e) {
       log.info('[SAID] nothing could be caught up this time: $e');
@@ -426,13 +467,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _catchUpOnWhatWasSaid()
         .then((_) => locator<MantelSyncService>().syncPending())
         .then((result) {
-      if (!mounted) return;
-      if (result.hasNewEntries) {
-        log.info('Mantel sync added ${result.synced} meal(s); refreshing');
-        _reload();
-      }
-    }).catchError((Object e) {
-      log.warning('Mantel sync failed: $e');
-    });
+          if (!mounted) return;
+          if (result.hasNewEntries) {
+            log.info('Mantel sync added ${result.synced} meal(s); refreshing');
+            _reload();
+          }
+        })
+        .catchError((Object e) {
+          log.warning('Mantel sync failed: $e');
+        });
   }
 }

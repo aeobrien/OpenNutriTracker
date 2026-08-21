@@ -360,6 +360,39 @@ void main() {
     });
   });
 
+  group('a meal with more than three things in it', () {
+    // Aidan, 21 August: "if there are more than three items in a meal, I can't
+    // view them all - they disappear off the right, and I can't scroll because
+    // scrolling swipes left as if to delete." Two gestures were wired to the
+    // same drag — the strip scrolling sideways, and the card under the thumb
+    // being swiped away — and the card won every time.
+    test('the card does not answer a sideways drag', () {
+      final card = _read('lib/core/presentation/widgets/intake_card.dart');
+      expect(card.contains('Dismissible'), isFalse,
+          reason: 'a card that swipes away takes the drag that scrolls the '
+              'strip, and a meal past its third item cannot be read at all');
+    });
+
+    test('removing a row is asked for by name, and can still be taken back',
+        () {
+      // The swipe was the only place Undo was ever offered, so losing it would
+      // have quietly deleted a feature Aidan had not yet seen. These two lines
+      // are where it went instead.
+      final home = _calls('lib/features/home/home_page.dart');
+      expect(home.contains('edit.remove'), isTrue,
+          reason: 'the DELETE button in the edit dialog reaches nothing — '
+              'tapping a row is now the way a row is removed');
+      expect(home.contains('sayTheRowIsGone(context,intakeEntity)'), isTrue,
+          reason: 'a row can be removed with no offer to put it back');
+
+      final dialog =
+          _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('IntakeEdit(null,remove:true)'), isTrue,
+          reason: 'the edit dialog offers no way to remove the row it is '
+              'showing');
+    });
+  });
+
   group('correcting something already logged', () {
     // Release D's three promises each die at a different call site, and each
     // death is invisible to the tests that cover the pieces: the ledger's own
