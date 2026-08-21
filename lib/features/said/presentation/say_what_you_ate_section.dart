@@ -412,6 +412,22 @@ class SayWhatYouAteSectionState extends State<SayWhatYouAteSection> {
     crossAxisAlignment: CrossAxisAlignment.start,
     mainAxisSize: MainAxisSize.min,
     children: [
+      // What was said, above the question about it. Aidan, 21 August: "when
+      // you close the app and reopen it, it just says 'Which meal was that?'
+      // and it doesn't show you what food you logged. If you logged it six
+      // hours ago, there's no way you'd be able to remember what it was." A
+      // question asked hours after the sentence it is about is unanswerable
+      // without it.
+      if ((_questionWords ?? '').isNotEmpty) ...[
+        Semantics(
+          identifier: 'say-question-about',
+          child: Text(
+            '“${_questionWords!}”',
+            style: theme.textTheme.titleMedium,
+          ),
+        ),
+        const SizedBox(height: 4),
+      ],
       Semantics(
         identifier: 'say-question',
         child: Text(_question ?? '', style: theme.textTheme.bodyMedium),

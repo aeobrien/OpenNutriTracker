@@ -424,6 +424,24 @@ void main() {
       expect(find.byType(BottomSheet), findsNothing);
     });
 
+    testWidgets('says what it is asking about, not just what it is asking',
+        (tester) async {
+      // Aidan, 21 August, having reopened the app to a bare question: "it just
+      // says 'Which meal was that?' and it doesn't show you what food you
+      // logged. If you logged it six hours ago, there's no way you'd be able
+      // to remember what it was."
+      const waiting = AQuestionStillWaiting(
+        about: 'a-row-said-this-morning',
+        words: 'a handful of nuts',
+        question: 'Which meal was that?',
+        answers: ['breakfast', 'lunch', 'dinner', 'snack'],
+      );
+      await tester.pumpWidget(screen(waiting: waiting));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('a handful of nuts'), findsWidgets);
+    });
+
     testWidgets('a question that has been answered does not come back',
         (tester) async {
       // Aidan, 21 August: "The 'which meal was that' field disappears after I
