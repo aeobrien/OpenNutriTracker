@@ -104,6 +104,10 @@ class IntakeRepository {
     required DateTime dateTime,
     String? externalId,
     String? said,
+
+    /// True when this phone is what put this row on the household in the first
+    /// place, even though it is arriving back down the pull like any other.
+    bool thisPhoneDidIt = false,
   }) async {
     _log.fine('Adding quick-add intake: $id, kcal=$kcal, label=$label');
 
@@ -122,6 +126,7 @@ class IntakeRepository {
       quickAddLabel: Value(label),
       externalId: Value(externalId),
       said: Value(said),
+      thisPhoneDidIt: Value(thisPhoneDidIt),
     ));
 
     return IntakeEntity(
@@ -137,6 +142,7 @@ class IntakeRepository {
       quickAddLabel: label,
       externalId: externalId,
       said: said,
+      thisPhoneDidIt: thisPhoneDidIt,
       snapshotKcal: kcal,
       snapshotProtein: protein,
       snapshotCarbs: carbs,

@@ -6,9 +6,17 @@
 /// word in the document, but undo never touches it. The same should be true
 /// for us."
 ///
-/// So a row the household put on this day is not something Undo reaches for.
+/// So a row somebody else put on this day is not something Undo reaches for.
 /// It is still removable the ordinary way — the same gesture that removes any
 /// other row, which is the one that put the offer on screen in the first place.
+///
+/// "Somebody else" is the whole difficulty. A sentence spoken into this phone
+/// goes to the household and comes back down the pull looking exactly like a
+/// sentence spoken at the kitchen panel, so "did it come from the house?" is
+/// not the same question as "did this phone do it?" — and on 21 August Aidan
+/// found the difference from the outside: "Step 1 was on the phone — logging an
+/// item here would come from the phone, not from the House." Hence
+/// [IntakeEntity.thisPhoneDidIt], settled once on the way in.
 ///
 /// What the deletion itself does at the house is covered by
 /// correcting_a_row_the_house_sent_test.dart; this file is only about which
@@ -20,7 +28,8 @@ import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 
-IntakeEntity _row({String? externalId}) => IntakeEntity(
+IntakeEntity _row({String? externalId, bool thisPhoneDidIt = false}) =>
+    IntakeEntity(
     id: 'local-1',
     unit: 'serving',
     amount: 1,
@@ -31,11 +40,21 @@ IntakeEntity _row({String? externalId}) => IntakeEntity(
     quickAddLabel: 'Porridge',
     externalId: externalId,
     said: 'I had a big bowl of porridge with honey',
+    thisPhoneDidIt: thisPhoneDidIt,
     snapshotKcal: 350);
 
 void main() {
-  test('a row the house sent is not this phone\'s to undo', () {
+  test('a row somebody spoke at the kitchen panel is not this phone\'s to undo',
+      () {
+    // It arrived from the house and this phone has no record of doing it.
     expect(_row(externalId: 'house-9').isALocalAction, isFalse);
+  });
+
+  test('a sentence spoken into this phone is still this phone\'s to undo', () {
+    // The same shape of row — it went to the house and came back — but the
+    // phone's own record says the phone is what sent it.
+    expect(_row(externalId: 'house-9', thisPhoneDidIt: true).isALocalAction,
+        isTrue);
   });
 
   test('a row this phone logged still is', () {

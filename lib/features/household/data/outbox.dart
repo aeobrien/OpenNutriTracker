@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/data/drift/daos/outbox_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/own_row_dao.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 
@@ -50,6 +51,11 @@ class Outbox {
   static const _maxAttempts = 8;
 
   final OutboxDao _dao;
+
+  /// What this phone has done, written down as it does it. The queue is the
+  /// only place every write passes through, so it is the only place that can
+  /// keep that record completely. See [OwnRowDao].
+  final OwnRowDao? _own;
   final HouseholdApi _api;
   final _log = Logger('Outbox');
 
@@ -68,10 +74,10 @@ class Outbox {
   /// disagreed for as long as somebody kept looking at the phone.
   void Function()? onQueued;
 
-  Outbox(this._dao, this._api);
+  Outbox(this._dao, this._api, {OwnRowDao? own}) : _own = own;
 
   factory Outbox.of(AppDatabase db, HouseholdApi api) =>
-      Outbox(OutboxDao(db), api);
+      Outbox(OutboxDao(db), api, own: OwnRowDao(db));
 
   /// Put work on the queue. Returns the client id, which is how this piece of
   /// work is known from here on — to the queue, to the server, and to any
@@ -96,6 +102,12 @@ class Outbox {
       loggedAt: Value(seconds),
       queuedAt: Value(DateTime.now().millisecondsSinceEpoch),
     ));
+    // Written down before anything is sent, because the record is of what this
+    // phone *did*, not of what got through. A row that reaches the house on a
+    // retry tomorrow is still this phone's action today.
+    // Stamped now rather than with the row's own time: this is a record of
+    // when the phone acted, and a backdated entry is still today's action.
+    await _own?.remember(id);
     _log.info('[OUTBOX] queued $path as $id for person $ownerId');
     onQueued?.call();
     return id;

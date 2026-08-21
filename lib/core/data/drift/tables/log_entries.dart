@@ -33,6 +33,20 @@ class LogEntries extends Table {
   /// nobody spoke.
   TextColumn get said => text().nullable()();
 
+  /// Whether this phone is the thing that did it.
+  ///
+  /// A row that arrived from the household could have started anywhere — this
+  /// phone's own spoken sentence, or somebody holding the talk button on the
+  /// kitchen panel. The two arrive identical. This is settled once, on the way
+  /// in, by asking the phone's own record of what it did (see OwnRows), because
+  /// that is the only moment the answer is knowable without asking the house.
+  ///
+  /// False for anything logged before the phone kept that record. That is the
+  /// honest answer, and it is also the safe one: it withholds Undo rather than
+  /// offering it over somebody else's row.
+  BoolColumn get thisPhoneDidIt =>
+      boolean().withDefault(const Constant(false))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

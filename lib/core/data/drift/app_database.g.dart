@@ -1496,6 +1496,21 @@ class $LogEntriesTable extends LogEntries
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _thisPhoneDidItMeta = const VerificationMeta(
+    'thisPhoneDidIt',
+  );
+  @override
+  late final GeneratedColumn<bool> thisPhoneDidIt = GeneratedColumn<bool>(
+    'this_phone_did_it',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("this_phone_did_it" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1513,6 +1528,7 @@ class $LogEntriesTable extends LogEntries
     recipeId,
     externalId,
     said,
+    thisPhoneDidIt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1641,6 +1657,15 @@ class $LogEntriesTable extends LogEntries
         said.isAcceptableOrUnknown(data['said']!, _saidMeta),
       );
     }
+    if (data.containsKey('this_phone_did_it')) {
+      context.handle(
+        _thisPhoneDidItMeta,
+        thisPhoneDidIt.isAcceptableOrUnknown(
+          data['this_phone_did_it']!,
+          _thisPhoneDidItMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1710,6 +1735,10 @@ class $LogEntriesTable extends LogEntries
         DriftSqlType.string,
         data['${effectivePrefix}said'],
       ),
+      thisPhoneDidIt: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}this_phone_did_it'],
+      )!,
     );
   }
 
@@ -1748,6 +1777,19 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
   /// guessing from before deciding whether the guess was right. Null for rows
   /// nobody spoke.
   final String? said;
+
+  /// Whether this phone is the thing that did it.
+  ///
+  /// A row that arrived from the household could have started anywhere — this
+  /// phone's own spoken sentence, or somebody holding the talk button on the
+  /// kitchen panel. The two arrive identical. This is settled once, on the way
+  /// in, by asking the phone's own record of what it did (see OwnRows), because
+  /// that is the only moment the answer is knowable without asking the house.
+  ///
+  /// False for anything logged before the phone kept that record. That is the
+  /// honest answer, and it is also the safe one: it withholds Undo rather than
+  /// offering it over somebody else's row.
+  final bool thisPhoneDidIt;
   const LogEntry({
     required this.id,
     required this.timestamp,
@@ -1764,6 +1806,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     this.recipeId,
     this.externalId,
     this.said,
+    required this.thisPhoneDidIt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1793,6 +1836,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     if (!nullToAbsent || said != null) {
       map['said'] = Variable<String>(said);
     }
+    map['this_phone_did_it'] = Variable<bool>(thisPhoneDidIt);
     return map;
   }
 
@@ -1821,6 +1865,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           ? const Value.absent()
           : Value(externalId),
       said: said == null && nullToAbsent ? const Value.absent() : Value(said),
+      thisPhoneDidIt: Value(thisPhoneDidIt),
     );
   }
 
@@ -1845,6 +1890,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       recipeId: serializer.fromJson<String?>(json['recipeId']),
       externalId: serializer.fromJson<String?>(json['externalId']),
       said: serializer.fromJson<String?>(json['said']),
+      thisPhoneDidIt: serializer.fromJson<bool>(json['thisPhoneDidIt']),
     );
   }
   @override
@@ -1866,6 +1912,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
       'recipeId': serializer.toJson<String?>(recipeId),
       'externalId': serializer.toJson<String?>(externalId),
       'said': serializer.toJson<String?>(said),
+      'thisPhoneDidIt': serializer.toJson<bool>(thisPhoneDidIt),
     };
   }
 
@@ -1885,6 +1932,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     Value<String?> recipeId = const Value.absent(),
     Value<String?> externalId = const Value.absent(),
     Value<String?> said = const Value.absent(),
+    bool? thisPhoneDidIt,
   }) => LogEntry(
     id: id ?? this.id,
     timestamp: timestamp ?? this.timestamp,
@@ -1903,6 +1951,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     recipeId: recipeId.present ? recipeId.value : this.recipeId,
     externalId: externalId.present ? externalId.value : this.externalId,
     said: said.present ? said.value : this.said,
+    thisPhoneDidIt: thisPhoneDidIt ?? this.thisPhoneDidIt,
   );
   LogEntry copyWithCompanion(LogEntriesCompanion data) {
     return LogEntry(
@@ -1935,6 +1984,9 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           ? data.externalId.value
           : this.externalId,
       said: data.said.present ? data.said.value : this.said,
+      thisPhoneDidIt: data.thisPhoneDidIt.present
+          ? data.thisPhoneDidIt.value
+          : this.thisPhoneDidIt,
     );
   }
 
@@ -1955,7 +2007,8 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           ..write('quickAddLabel: $quickAddLabel, ')
           ..write('recipeId: $recipeId, ')
           ..write('externalId: $externalId, ')
-          ..write('said: $said')
+          ..write('said: $said, ')
+          ..write('thisPhoneDidIt: $thisPhoneDidIt')
           ..write(')'))
         .toString();
   }
@@ -1977,6 +2030,7 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
     recipeId,
     externalId,
     said,
+    thisPhoneDidIt,
   );
   @override
   bool operator ==(Object other) =>
@@ -1996,7 +2050,8 @@ class LogEntry extends DataClass implements Insertable<LogEntry> {
           other.quickAddLabel == this.quickAddLabel &&
           other.recipeId == this.recipeId &&
           other.externalId == this.externalId &&
-          other.said == this.said);
+          other.said == this.said &&
+          other.thisPhoneDidIt == this.thisPhoneDidIt);
 }
 
 class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
@@ -2015,6 +2070,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
   final Value<String?> recipeId;
   final Value<String?> externalId;
   final Value<String?> said;
+  final Value<bool> thisPhoneDidIt;
   final Value<int> rowid;
   const LogEntriesCompanion({
     this.id = const Value.absent(),
@@ -2032,6 +2088,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     this.recipeId = const Value.absent(),
     this.externalId = const Value.absent(),
     this.said = const Value.absent(),
+    this.thisPhoneDidIt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LogEntriesCompanion.insert({
@@ -2050,6 +2107,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     this.recipeId = const Value.absent(),
     this.externalId = const Value.absent(),
     this.said = const Value.absent(),
+    this.thisPhoneDidIt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        timestamp = Value(timestamp),
@@ -2072,6 +2130,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     Expression<String>? recipeId,
     Expression<String>? externalId,
     Expression<String>? said,
+    Expression<bool>? thisPhoneDidIt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2090,6 +2149,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
       if (recipeId != null) 'recipe_id': recipeId,
       if (externalId != null) 'external_id': externalId,
       if (said != null) 'said': said,
+      if (thisPhoneDidIt != null) 'this_phone_did_it': thisPhoneDidIt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2110,6 +2170,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     Value<String?>? recipeId,
     Value<String?>? externalId,
     Value<String?>? said,
+    Value<bool>? thisPhoneDidIt,
     Value<int>? rowid,
   }) {
     return LogEntriesCompanion(
@@ -2128,6 +2189,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
       recipeId: recipeId ?? this.recipeId,
       externalId: externalId ?? this.externalId,
       said: said ?? this.said,
+      thisPhoneDidIt: thisPhoneDidIt ?? this.thisPhoneDidIt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2180,6 +2242,9 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
     if (said.present) {
       map['said'] = Variable<String>(said.value);
     }
+    if (thisPhoneDidIt.present) {
+      map['this_phone_did_it'] = Variable<bool>(thisPhoneDidIt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2204,6 +2269,7 @@ class LogEntriesCompanion extends UpdateCompanion<LogEntry> {
           ..write('recipeId: $recipeId, ')
           ..write('externalId: $externalId, ')
           ..write('said: $said, ')
+          ..write('thisPhoneDidIt: $thisPhoneDidIt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -6327,6 +6393,227 @@ class LabelCapturesCompanion extends UpdateCompanion<LabelCapture> {
   }
 }
 
+class $OwnRowsTable extends OwnRows with TableInfo<$OwnRowsTable, OwnRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OwnRowsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _clientIdMeta = const VerificationMeta(
+    'clientId',
+  );
+  @override
+  late final GeneratedColumn<String> clientId = GeneratedColumn<String>(
+    'client_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _mintedAtMeta = const VerificationMeta(
+    'mintedAt',
+  );
+  @override
+  late final GeneratedColumn<int> mintedAt = GeneratedColumn<int>(
+    'minted_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [clientId, mintedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'own_rows';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OwnRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('client_id')) {
+      context.handle(
+        _clientIdMeta,
+        clientId.isAcceptableOrUnknown(data['client_id']!, _clientIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_clientIdMeta);
+    }
+    if (data.containsKey('minted_at')) {
+      context.handle(
+        _mintedAtMeta,
+        mintedAt.isAcceptableOrUnknown(data['minted_at']!, _mintedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mintedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {clientId};
+  @override
+  OwnRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OwnRow(
+      clientId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_id'],
+      )!,
+      mintedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}minted_at'],
+      )!,
+    );
+  }
+
+  @override
+  $OwnRowsTable createAlias(String alias) {
+    return $OwnRowsTable(attachedDatabase, alias);
+  }
+}
+
+class OwnRow extends DataClass implements Insertable<OwnRow> {
+  /// The client id this phone minted. For a spoken sentence that became
+  /// several foods, the house names the extras by adding `#2`, `#3` and so on
+  /// to this one — so a lookup matches on the part before the `#`.
+  final String clientId;
+
+  /// When this phone did it, so old ones can be cleared out.
+  final int mintedAt;
+  const OwnRow({required this.clientId, required this.mintedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['client_id'] = Variable<String>(clientId);
+    map['minted_at'] = Variable<int>(mintedAt);
+    return map;
+  }
+
+  OwnRowsCompanion toCompanion(bool nullToAbsent) {
+    return OwnRowsCompanion(
+      clientId: Value(clientId),
+      mintedAt: Value(mintedAt),
+    );
+  }
+
+  factory OwnRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OwnRow(
+      clientId: serializer.fromJson<String>(json['clientId']),
+      mintedAt: serializer.fromJson<int>(json['mintedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'clientId': serializer.toJson<String>(clientId),
+      'mintedAt': serializer.toJson<int>(mintedAt),
+    };
+  }
+
+  OwnRow copyWith({String? clientId, int? mintedAt}) => OwnRow(
+    clientId: clientId ?? this.clientId,
+    mintedAt: mintedAt ?? this.mintedAt,
+  );
+  OwnRow copyWithCompanion(OwnRowsCompanion data) {
+    return OwnRow(
+      clientId: data.clientId.present ? data.clientId.value : this.clientId,
+      mintedAt: data.mintedAt.present ? data.mintedAt.value : this.mintedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnRow(')
+          ..write('clientId: $clientId, ')
+          ..write('mintedAt: $mintedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(clientId, mintedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OwnRow &&
+          other.clientId == this.clientId &&
+          other.mintedAt == this.mintedAt);
+}
+
+class OwnRowsCompanion extends UpdateCompanion<OwnRow> {
+  final Value<String> clientId;
+  final Value<int> mintedAt;
+  final Value<int> rowid;
+  const OwnRowsCompanion({
+    this.clientId = const Value.absent(),
+    this.mintedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OwnRowsCompanion.insert({
+    required String clientId,
+    required int mintedAt,
+    this.rowid = const Value.absent(),
+  }) : clientId = Value(clientId),
+       mintedAt = Value(mintedAt);
+  static Insertable<OwnRow> custom({
+    Expression<String>? clientId,
+    Expression<int>? mintedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (clientId != null) 'client_id': clientId,
+      if (mintedAt != null) 'minted_at': mintedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OwnRowsCompanion copyWith({
+    Value<String>? clientId,
+    Value<int>? mintedAt,
+    Value<int>? rowid,
+  }) {
+    return OwnRowsCompanion(
+      clientId: clientId ?? this.clientId,
+      mintedAt: mintedAt ?? this.mintedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (clientId.present) {
+      map['client_id'] = Variable<String>(clientId.value);
+    }
+    if (mintedAt.present) {
+      map['minted_at'] = Variable<int>(mintedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnRowsCompanion(')
+          ..write('clientId: $clientId, ')
+          ..write('mintedAt: $mintedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -6341,6 +6628,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $RecipeIngredientsTable(this);
   late final $OutboxItemsTable outboxItems = $OutboxItemsTable(this);
   late final $LabelCapturesTable labelCaptures = $LabelCapturesTable(this);
+  late final $OwnRowsTable ownRows = $OwnRowsTable(this);
   late final FoodItemDao foodItemDao = FoodItemDao(this as AppDatabase);
   late final LogEntryDao logEntryDao = LogEntryDao(this as AppDatabase);
   late final DailyStatsDao dailyStatsDao = DailyStatsDao(this as AppDatabase);
@@ -6356,6 +6644,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final LabelCaptureDao labelCaptureDao = LabelCaptureDao(
     this as AppDatabase,
   );
+  late final OwnRowDao ownRowDao = OwnRowDao(this as AppDatabase);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -6371,6 +6660,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     recipeIngredients,
     outboxItems,
     labelCaptures,
+    ownRows,
   ];
 }
 
@@ -7167,6 +7457,7 @@ typedef $$LogEntriesTableCreateCompanionBuilder =
       Value<String?> recipeId,
       Value<String?> externalId,
       Value<String?> said,
+      Value<bool> thisPhoneDidIt,
       Value<int> rowid,
     });
 typedef $$LogEntriesTableUpdateCompanionBuilder =
@@ -7186,6 +7477,7 @@ typedef $$LogEntriesTableUpdateCompanionBuilder =
       Value<String?> recipeId,
       Value<String?> externalId,
       Value<String?> said,
+      Value<bool> thisPhoneDidIt,
       Value<int> rowid,
     });
 
@@ -7292,6 +7584,11 @@ class $$LogEntriesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
+  ColumnFilters<bool> get thisPhoneDidIt => $composableBuilder(
+    column: $table.thisPhoneDidIt,
+    builder: (column) => ColumnFilters(column),
+  );
+
   $$FoodItemsTableFilterComposer get foodItemId {
     final $$FoodItemsTableFilterComposer composer = $composerBuilder(
       composer: this,
@@ -7395,6 +7692,11 @@ class $$LogEntriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get thisPhoneDidIt => $composableBuilder(
+    column: $table.thisPhoneDidIt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$FoodItemsTableOrderingComposer get foodItemId {
     final $$FoodItemsTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -7482,6 +7784,11 @@ class $$LogEntriesTableAnnotationComposer
   GeneratedColumn<String> get said =>
       $composableBuilder(column: $table.said, builder: (column) => column);
 
+  GeneratedColumn<bool> get thisPhoneDidIt => $composableBuilder(
+    column: $table.thisPhoneDidIt,
+    builder: (column) => column,
+  );
+
   $$FoodItemsTableAnnotationComposer get foodItemId {
     final $$FoodItemsTableAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -7549,6 +7856,7 @@ class $$LogEntriesTableTableManager
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> externalId = const Value.absent(),
                 Value<String?> said = const Value.absent(),
+                Value<bool> thisPhoneDidIt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogEntriesCompanion(
                 id: id,
@@ -7566,6 +7874,7 @@ class $$LogEntriesTableTableManager
                 recipeId: recipeId,
                 externalId: externalId,
                 said: said,
+                thisPhoneDidIt: thisPhoneDidIt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -7585,6 +7894,7 @@ class $$LogEntriesTableTableManager
                 Value<String?> recipeId = const Value.absent(),
                 Value<String?> externalId = const Value.absent(),
                 Value<String?> said = const Value.absent(),
+                Value<bool> thisPhoneDidIt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LogEntriesCompanion.insert(
                 id: id,
@@ -7602,6 +7912,7 @@ class $$LogEntriesTableTableManager
                 recipeId: recipeId,
                 externalId: externalId,
                 said: said,
+                thisPhoneDidIt: thisPhoneDidIt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10066,6 +10377,143 @@ typedef $$LabelCapturesTableProcessedTableManager =
       LabelCapture,
       PrefetchHooks Function()
     >;
+typedef $$OwnRowsTableCreateCompanionBuilder =
+    OwnRowsCompanion Function({
+      required String clientId,
+      required int mintedAt,
+      Value<int> rowid,
+    });
+typedef $$OwnRowsTableUpdateCompanionBuilder =
+    OwnRowsCompanion Function({
+      Value<String> clientId,
+      Value<int> mintedAt,
+      Value<int> rowid,
+    });
+
+class $$OwnRowsTableFilterComposer
+    extends Composer<_$AppDatabase, $OwnRowsTable> {
+  $$OwnRowsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get clientId => $composableBuilder(
+    column: $table.clientId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mintedAt => $composableBuilder(
+    column: $table.mintedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$OwnRowsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OwnRowsTable> {
+  $$OwnRowsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get clientId => $composableBuilder(
+    column: $table.clientId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mintedAt => $composableBuilder(
+    column: $table.mintedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$OwnRowsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OwnRowsTable> {
+  $$OwnRowsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get clientId =>
+      $composableBuilder(column: $table.clientId, builder: (column) => column);
+
+  GeneratedColumn<int> get mintedAt =>
+      $composableBuilder(column: $table.mintedAt, builder: (column) => column);
+}
+
+class $$OwnRowsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OwnRowsTable,
+          OwnRow,
+          $$OwnRowsTableFilterComposer,
+          $$OwnRowsTableOrderingComposer,
+          $$OwnRowsTableAnnotationComposer,
+          $$OwnRowsTableCreateCompanionBuilder,
+          $$OwnRowsTableUpdateCompanionBuilder,
+          (OwnRow, BaseReferences<_$AppDatabase, $OwnRowsTable, OwnRow>),
+          OwnRow,
+          PrefetchHooks Function()
+        > {
+  $$OwnRowsTableTableManager(_$AppDatabase db, $OwnRowsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OwnRowsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OwnRowsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OwnRowsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> clientId = const Value.absent(),
+                Value<int> mintedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OwnRowsCompanion(
+                clientId: clientId,
+                mintedAt: mintedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String clientId,
+                required int mintedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => OwnRowsCompanion.insert(
+                clientId: clientId,
+                mintedAt: mintedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$OwnRowsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OwnRowsTable,
+      OwnRow,
+      $$OwnRowsTableFilterComposer,
+      $$OwnRowsTableOrderingComposer,
+      $$OwnRowsTableAnnotationComposer,
+      $$OwnRowsTableCreateCompanionBuilder,
+      $$OwnRowsTableUpdateCompanionBuilder,
+      (OwnRow, BaseReferences<_$AppDatabase, $OwnRowsTable, OwnRow>),
+      OwnRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -10090,4 +10538,6 @@ class $AppDatabaseManager {
       $$OutboxItemsTableTableManager(_db, _db.outboxItems);
   $$LabelCapturesTableTableManager get labelCaptures =>
       $$LabelCapturesTableTableManager(_db, _db.labelCaptures);
+  $$OwnRowsTableTableManager get ownRows =>
+      $$OwnRowsTableTableManager(_db, _db.ownRows);
 }

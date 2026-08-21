@@ -25,6 +25,9 @@ class IntakeEntity extends Equatable {
   /// for anything nobody spoke.
   final String? said;
 
+  /// Whether this phone is the thing that did it — see LogEntries.thisPhoneDidIt.
+  final bool thisPhoneDidIt;
+
   /// Snapshot values from the log entry row. For quick-add entries (amount=1),
   /// these are the user-provided totals. For food entries, these are computed
   /// from the food item nutriments at log time.
@@ -47,6 +50,7 @@ class IntakeEntity extends Equatable {
       this.recipeId,
       this.externalId,
       this.said,
+      this.thisPhoneDidIt = false,
       this.snapshotKcal = 0,
       this.snapshotProtein = 0,
       this.snapshotCarbs = 0,
@@ -66,13 +70,23 @@ class IntakeEntity extends Equatable {
 
   /// Whether this row is something this phone did.
   ///
-  /// Undo is scoped to local actions. If two people are editing the same
-  /// document and one adds a word, the other cannot undo it away — they can
-  /// still delete it the ordinary way, but undo never reaches across. A row
-  /// the household put on this day is the same: it is not this phone's action
-  /// to reverse, and un-retiring it at the house is not something undo gets to
-  /// decide. The row stays removable by the ordinary path like any other.
-  bool get isALocalAction => externalId == null;
+  /// Undo is scoped to this phone's own actions. If two people are editing the
+  /// same document and one adds a word, the other cannot undo it away — they
+  /// can still delete it the ordinary way, but undo never reaches across. A row
+  /// somebody put on this day at the kitchen panel is the same: it is not this
+  /// phone's action to reverse, and un-retiring it at the house is not
+  /// something undo gets to decide. The row stays removable by the ordinary
+  /// path like any other.
+  ///
+  /// Two ways a row is this phone's. It never left — nothing from the household
+  /// is attached to it. Or it did leave and came back, and the phone's own
+  /// record says the phone is what sent it. Before 21 August 2026 only the
+  /// first counted, so a sentence Aidan spoke into his own phone went to the
+  /// house, came back, and arrived looking exactly like something his wife had
+  /// said in the kitchen — and lost its Undo. His words: "Step 1 was on the
+  /// phone — logging an item here would come from the phone, not from the
+  /// House."
+  bool get isALocalAction => externalId == null || thisPhoneDidIt;
 
   bool get isRecipe => entryType == 'recipe';
 
@@ -96,6 +110,7 @@ class IntakeEntity extends Equatable {
         recipeId: entry.recipeId,
         externalId: entry.externalId,
         said: entry.said,
+        thisPhoneDidIt: entry.thisPhoneDidIt,
         snapshotKcal: entry.snapshotKcal,
         snapshotProtein: entry.snapshotProtein,
         snapshotCarbs: entry.snapshotCarbs,

@@ -7,6 +7,7 @@ import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/daily_stats_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/own_row_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/recipe_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_activity_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
@@ -123,6 +124,7 @@ Future<void> initLocator() async {
   final userProfileDao = UserProfileDao(appDatabase);
   final userActivityDao = UserActivityDao(appDatabase);
   final recipeDao = RecipeDao(appDatabase);
+  final ownRowDao = OwnRowDao(appDatabase);
 
   // Run Hive → drift migration if needed
   final migrator = HiveToDriftMigrator(appDatabase, configDao);
@@ -365,7 +367,8 @@ Future<void> initLocator() async {
       secureAppStorageProvider,
       locator<AddTrackedDayUsecase>(),
       locator<GetKcalGoalUsecase>(),
-      locator<GetMacroGoalUsecase>()));
+      locator<GetMacroGoalUsecase>(),
+      own: ownRowDao));
   // Mantel push (Phase B) — registers the device + syncs on a push.
   locator.registerLazySingleton<MantelPushService>(() => MantelPushService(
       locator<MantelSyncService>(),

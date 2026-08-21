@@ -2,6 +2,7 @@ import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/usecase/add_tracked_day_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_kcal_goal_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_macro_goal_usecase.dart';
+import 'package:opennutritracker/core/data/drift/daos/own_row_dao.dart';
 import 'package:opennutritracker/core/data/repository/intake_repository.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
@@ -65,6 +66,12 @@ class MantelSyncService {
   /// Test seam: when set, used instead of building one from secure storage.
   final MantelDataSource? _injectedDataSource;
 
+  /// The phone's own record of what it did. A row coming down this pull is
+  /// indistinguishable from one somebody spoke at the kitchen panel, so this is
+  /// the only moment the difference can be established — and it has to be
+  /// established here, because afterwards there is nothing left to ask.
+  final OwnRowDao? _own;
+
   final _log = Logger('MantelSyncService');
   static const _pageSize = 50;
 
@@ -77,7 +84,9 @@ class MantelSyncService {
     this._getKcalGoalUsecase,
     this._getMacroGoalUsecase, {
     MantelDataSource? dataSource,
-  }) : _injectedDataSource = dataSource;
+    OwnRowDao? own,
+  })  : _injectedDataSource = dataSource,
+        _own = own;
 
   /// Syncs pending intakes. Overlapping calls share the one in-flight run.
   Future<MantelSyncResult> syncPending() {
@@ -128,6 +137,8 @@ class MantelSyncService {
             mealSlot: dto.foodTrackerMealSlot,
             dateTime: dto.eatenAtLocal,
             said: dto.description,
+            thisPhoneDidIt:
+                await _own?.didThisPhoneMint(dto.id) ?? false,
           );
           await _countTowardsTheDay(dto);
           synced++;

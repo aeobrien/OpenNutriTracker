@@ -8,6 +8,7 @@ import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/label_capture_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/log_entry_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/outbox_dao.dart';
+import 'package:opennutritracker/core/data/drift/daos/own_row_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/recipe_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_activity_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/user_profile_dao.dart';
@@ -17,6 +18,7 @@ import 'package:opennutritracker/core/data/drift/tables/food_items.dart';
 import 'package:opennutritracker/core/data/drift/tables/label_captures.dart';
 import 'package:opennutritracker/core/data/drift/tables/log_entries.dart';
 import 'package:opennutritracker/core/data/drift/tables/outbox_items.dart';
+import 'package:opennutritracker/core/data/drift/tables/own_rows.dart';
 import 'package:opennutritracker/core/data/drift/tables/recipe_ingredients.dart';
 import 'package:opennutritracker/core/data/drift/tables/recipes.dart';
 import 'package:opennutritracker/core/data/drift/tables/user_activities.dart';
@@ -29,14 +31,14 @@ import 'package:sqlite3/sqlite3.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(
-  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients, OutboxItems, LabelCaptures],
-  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao, OutboxDao, LabelCaptureDao],
+  tables: [FoodItems, LogEntries, DailyStats, Config, UserProfile, UserActivities, Recipes, RecipeIngredients, OutboxItems, LabelCaptures, OwnRows],
+  daos: [FoodItemDao, LogEntryDao, DailyStatsDao, ConfigDao, UserProfileDao, UserActivityDao, RecipeDao, OutboxDao, LabelCaptureDao, OwnRowDao],
 )
 class AppDatabase extends _$AppDatabase {
   AppDatabase(super.e);
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -221,6 +223,23 @@ class AppDatabase extends _$AppDatabase {
             // exactly what "nobody spoke this one" means.
             await customStatement(
               'ALTER TABLE log_entries ADD COLUMN said TEXT',
+            );
+          }
+          if (from < 10) {
+            // What this phone itself did, and which rows on the day came of it.
+            // Both additive. Every row already in the diary gets 0 — "this
+            // phone has no record of doing it" — which is the honest answer for
+            // anything logged before the phone started keeping the record, and
+            // the safe one: it withholds Undo rather than offering it wrongly.
+            await customStatement('''
+              CREATE TABLE IF NOT EXISTS own_rows (
+                client_id TEXT NOT NULL PRIMARY KEY,
+                minted_at INTEGER NOT NULL
+              )
+            ''');
+            await customStatement(
+              'ALTER TABLE log_entries ADD COLUMN this_phone_did_it '
+              'INTEGER NOT NULL DEFAULT 0',
             );
           }
         },
