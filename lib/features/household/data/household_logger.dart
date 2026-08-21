@@ -200,6 +200,25 @@ class HouseholdLogger {
     );
   }
 
+  /// Put something back on a day after it was taken off.
+  ///
+  /// The other half of [retireFood], and the reason Undo can be honest. The
+  /// house's removal was always soft — the row stays and stops counting — so
+  /// putting it back is the same row counting again rather than a new one. That
+  /// matters: a fresh row would make the total right and the day wrong, with
+  /// two entries where the person had one thing.
+  ///
+  /// Queued like everything else, so undoing something on a train works.
+  Future<String> putBackFood(String entryClientId) async {
+    final holder = await _whoseDay();
+    return _outbox.enqueue(
+      path: '/household/entry/by-client/$entryClientId/unretire',
+      body: const {},
+      ownerId: holder,
+      authorId: holder,
+    );
+  }
+
   /// Correct something already on a day — including moving it to the other
   /// person, which is [owner].
   ///

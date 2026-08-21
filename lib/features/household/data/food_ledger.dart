@@ -47,6 +47,24 @@ class FoodLedger {
     }
   }
 
+  /// Put a logged food back on the day at the household end.
+  ///
+  /// Only the row belonging to the person holding the phone, for the same
+  /// reason [retire] is: a share on the other person's day is theirs.
+  ///
+  /// This existing is what makes Undo true on both machines. Until 21 August
+  /// 2026 the house could only be told to stop counting something, so undoing a
+  /// removal put the row back on the phone and left the house counting it as
+  /// gone — and the app looked completely correct while it happened, which is
+  /// why it went unnoticed.
+  Future<void> putBack(String intakeId) async {
+    try {
+      await _logger.putBackFood(nameFor(intakeId));
+    } catch (e) {
+      _log.severe('[HOUSE] back on this phone but not in the household: $e');
+    }
+  }
+
   /// Correct a logged food at the household end — what it is called, its
   /// amount, its figures, and whose day it counts against.
   ///

@@ -728,6 +728,10 @@ class FakeHouseholdServer {
             // back to waiting — is its own behaviour and is held to account in
             // its own tests, not reproduced here.
             row['deleted_at'] = 'then';
+          } else if (action == 'unretire') {
+            // And back again. Soft both ways: the same row counts again rather
+            // than a second one appearing.
+            row['deleted_at'] = null;
           } else {
             for (final field in amendable) {
               if (body.containsKey(field)) row[field] = body[field];

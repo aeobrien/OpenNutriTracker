@@ -161,14 +161,26 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
   /// offering the undo at all. Those go back in through the same door they came
   /// in by.
   ///
-  /// The household is not told about a row that goes back. Retiring one there
-  /// is a one-way door at the moment — nothing un-retires — so an undone row is
-  /// this phone's again while the house still counts it as gone. That gap is
-  /// real and it is written down here rather than papered over.
+  /// It goes back under its own name, not a new one. Both halves of that
+  /// matter. On this phone, reusing the id means the row that comes back is the
+  /// row that went — the id is free, because the row was deleted. At the house,
+  /// it is the name the household row already carries, which is the only way
+  /// the house can be told to count that row again rather than being handed a
+  /// second one.
+  ///
+  /// The house is told, which until 21 August 2026 it was not: retiring there
+  /// was a one-way door, so an undone row was this phone's again while the Mac
+  /// Mini went on counting it as gone. Two machines disagreeing about somebody's
+  /// day, and — because the app itself looked entirely correct — nothing
+  /// anywhere saying so. The house now has an un-retire and this uses it.
+  ///
+  /// Un-retiring rather than adding again is deliberate. Adding would make the
+  /// total right and the day wrong: two entries at the house where the person
+  /// had one thing, one of them dead, both of them real in the record.
   Future<void> putBack(IntakeEntity intake) async {
     if (intake.isQuickAdd) {
       final restored = await _intakes.addQuickAddIntake(
-        id: IdGenerator.getUniqueID(),
+        id: intake.id,
         kcal: intake.snapshotKcal,
         protein: intake.snapshotProtein,
         carbs: intake.snapshotCarbs,
@@ -176,29 +188,17 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
         label: intake.quickAddLabel,
         mealSlot: intake.type.name,
         dateTime: intake.dateTime,
+        externalId: intake.externalId,
         said: intake.said,
+        thisPhoneDidIt: intake.thisPhoneDidIt,
       );
       await _updateTrackedDay(restored, intake.dateTime);
+      await _household.putBack(intake.householdName);
       return;
     }
-    final restored = IntakeEntity(
-      id: IdGenerator.getUniqueID(),
-      unit: intake.unit,
-      amount: intake.amount,
-      type: intake.type,
-      meal: intake.meal,
-      dateTime: intake.dateTime,
-    );
-    await _addIntakeUseCase.addIntake(restored);
-    await _updateTrackedDay(restored, intake.dateTime);
-    await _alsoTellTheHousehold(
-      restored.id,
-      intake.type,
-      intake.meal,
-      intake.dateTime,
-      intake.amount,
-      const [],
-    );
+    await _addIntakeUseCase.addIntake(intake);
+    await _updateTrackedDay(intake, intake.dateTime);
+    await _household.putBack(intake.householdName);
   }
 
   Future<void> _alsoTellTheHousehold(
