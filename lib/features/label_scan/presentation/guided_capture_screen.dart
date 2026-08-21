@@ -6,6 +6,7 @@ import 'package:opennutritracker/features/label_scan/data/household_label_reader
 import 'package:opennutritracker/features/label_scan/domain/food_draft.dart';
 import 'package:opennutritracker/features/label_scan/domain/label_shot.dart';
 import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
+import 'package:opennutritracker/features/label_scan/presentation/take_it_to_today.dart';
 
 /// Photographing a packet, one shot at a time.
 ///
@@ -155,6 +156,7 @@ class _GuidedCaptureScreenState extends State<GuidedCaptureScreen> {
                 logger: widget.logger,
                 draft: draft,
                 onSaved: (clientId) => Navigator.of(formContext).pop(clientId),
+                onPutOnDay: takeItToToday,
               ),
             ),
           ),

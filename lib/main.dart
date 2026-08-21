@@ -28,6 +28,7 @@ import 'package:opennutritracker/features/label_scan/data/guided_capture.dart';
 import 'package:opennutritracker/features/label_scan/data/household_label_reader.dart';
 import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
 import 'package:opennutritracker/features/label_scan/presentation/guided_capture_screen.dart';
+import 'package:opennutritracker/features/label_scan/presentation/take_it_to_today.dart';
 import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
@@ -181,7 +182,10 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
               body: SafeArea(
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 24),
-                  child: ConfirmFoodScreen(logger: locator<HouseholdLogger>()),
+                  child: ConfirmFoodScreen(
+                    logger: locator<HouseholdLogger>(),
+                    onPutOnDay: takeItToToday,
+                  ),
                 ),
               ),
             ),

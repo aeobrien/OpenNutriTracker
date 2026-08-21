@@ -37,6 +37,19 @@ class ConfirmFoodScreen extends StatefulWidget {
       '$name is in the household food list. '
       'Search for it when you want to put it on a day.';
 
+  /// The shorter version, for when the offer is there to be taken.
+  ///
+  /// It drops "search for it when you want to put it on a day", because a
+  /// button offering to do exactly that is sitting beside the words. Telling
+  /// somebody to go and look for something while offering to fetch it reads as
+  /// though the button is for something else.
+  static String savedWithOfferSentence(String name) =>
+      '$name is in the household food list.';
+
+  /// The offer itself. A verb, and it names the day rather than the list, so
+  /// it cannot be misread as another way of saving.
+  static const putItOnToday = 'Put it on today';
+
   /// The same message for a food that came off a web page rather than a
   /// photograph. Different words because it is a different situation: nothing
   /// failed to be read, the page simply never said, and telling somebody to
@@ -53,11 +66,28 @@ class ConfirmFoodScreen extends StatefulWidget {
   /// Called once the food has been put on the queue for the household list.
   final void Function(String clientId)? onSaved;
 
+  /// What to do if the person takes up the offer to put the packet straight on
+  /// today. Optional: where it is not given, no offer is made and saving ends
+  /// where it always did.
+  ///
+  /// It is an offer and not something that happens on its own, on Aidan's
+  /// answer of 21 August 2026. Entering a packet and eating a packet are two
+  /// different acts — somebody typing in a jar of coffee at the point of
+  /// putting it in the cupboard has not drunk it — so the day is never touched
+  /// unless it is asked for.
+  /// [where] is the messenger's own context, not this form's. The offer is
+  /// pressed from a message that deliberately outlives the screen that raised
+  /// it — on the photograph route the form and the one under it are both gone
+  /// by then — so a callback handed this form's context would be navigating
+  /// from a widget that no longer exists.
+  final void Function(BuildContext where, FoodDraft saved)? onPutOnDay;
+
   const ConfirmFoodScreen({
     super.key,
     required this.logger,
     this.draft,
     this.onSaved,
+    this.onPutOnDay,
   });
 
   @override
@@ -191,10 +221,26 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
       // Said before the screen is dismissed, not after: onSaved is what closes
       // the form, and a message queued behind it would be shouted at a widget
       // that no longer exists.
-      messenger.showSnackBar(SnackBar(
-        content: Text(ConfirmFoodScreen.savedSentence(food.name)),
-        duration: const Duration(seconds: 5),
-      ));
+      final offer = widget.onPutOnDay;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            offer == null
+                ? ConfirmFoodScreen.savedSentence(food.name)
+                : ConfirmFoodScreen.savedWithOfferSentence(food.name),
+          ),
+          // Longer when there is something to press. Five seconds is enough to
+          // read a confirmation and not enough to notice an offer, put the
+          // packet down and decide.
+          duration: Duration(seconds: offer == null ? 5 : 10),
+          action: offer == null
+              ? null
+              : SnackBarAction(
+                  label: ConfirmFoodScreen.putItOnToday,
+                  onPressed: () => offer(messenger.context, food),
+                ),
+        ),
+      );
       widget.onSaved?.call(clientId);
     } on HouseholdRefused catch (e) {
       if (!mounted) return;
@@ -212,24 +258,27 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
   bool _unread(String key, TextEditingController controller) =>
       _draft.unreadable.contains(key) && controller.text.trim().isEmpty;
 
-  Widget _field(String label, TextEditingController controller,
-          {bool number = false, String? readingKey}) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-        child: TextField(
-          controller: controller,
-          keyboardType: number ? TextInputType.number : TextInputType.text,
-          decoration: InputDecoration(
-            labelText: label,
-            helperText: readingKey != null && _unread(readingKey, controller)
-                ? (_draft.trust == 'web'
-                    ? ConfirmFoodScreen.pageDidNotSay
-                    : ConfirmFoodScreen.couldNotRead)
-                : null,
-            helperMaxLines: 2,
-          ),
-        ),
-      );
+  Widget _field(
+    String label,
+    TextEditingController controller, {
+    bool number = false,
+    String? readingKey,
+  }) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+    child: TextField(
+      controller: controller,
+      keyboardType: number ? TextInputType.number : TextInputType.text,
+      decoration: InputDecoration(
+        labelText: label,
+        helperText: readingKey != null && _unread(readingKey, controller)
+            ? (_draft.trust == 'web'
+                  ? ConfirmFoodScreen.pageDidNotSay
+                  : ConfirmFoodScreen.couldNotRead)
+            : null,
+        helperMaxLines: 2,
+      ),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -239,14 +288,31 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
       children: [
         _field('Name', _name, readingKey: 'name'),
         _field('Brand', _brand, readingKey: 'brand'),
-        _field('Calories per 100g', _kcal, number: true, readingKey: 'kcal_100'),
-        _field('Protein per 100g', _protein,
-            number: true, readingKey: 'protein_100'),
+        _field(
+          'Calories per 100g',
+          _kcal,
+          number: true,
+          readingKey: 'kcal_100',
+        ),
+        _field(
+          'Protein per 100g',
+          _protein,
+          number: true,
+          readingKey: 'protein_100',
+        ),
         _field('Fat per 100g', _fat, number: true, readingKey: 'fat_100'),
-        _field('Carbohydrate per 100g', _carbs,
-            number: true, readingKey: 'carbs_100'),
-        _field('Serving size in grams', _serving,
-            number: true, readingKey: 'serving_g'),
+        _field(
+          'Carbohydrate per 100g',
+          _carbs,
+          number: true,
+          readingKey: 'carbs_100',
+        ),
+        _field(
+          'Serving size in grams',
+          _serving,
+          number: true,
+          readingKey: 'serving_g',
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(trustSentence(food)),
@@ -255,14 +321,17 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-                'No calories yet. It will go in the list by name, and you can '
-                'add the numbers later.'),
+              'No calories yet. It will go in the list by name, and you can '
+              'add the numbers later.',
+            ),
           ),
         if (_problem != null)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Text(_problem!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            child: Text(
+              _problem!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
           ),
         Padding(
           padding: const EdgeInsets.all(16),

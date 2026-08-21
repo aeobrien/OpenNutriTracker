@@ -156,10 +156,16 @@ void main() {
     // screen closes and he is back where he started with nothing said, so a
     // save that worked and a save that did nothing look identical.
     expect(
-        find.widgetWithText(
-            SnackBar, ConfirmFoodScreen.savedSentence('Peanut butter')),
+        find.widgetWithText(SnackBar,
+            ConfirmFoodScreen.savedWithOfferSentence('Peanut butter')),
         findsOneWidget,
         reason: 'the food was saved and nobody said so');
+
+    // The shorter of the two sentences, because this route also offers the day.
+    // Telling somebody to go and search for a food while offering to fetch it
+    // reads as though the button does something else.
+    expect(find.text(ConfirmFoodScreen.putItOnToday), findsOneWidget,
+        reason: 'photographing a packet should offer to put it on today');
   });
 
   testWidgets('the screen says it is reading rather than just greying out',
