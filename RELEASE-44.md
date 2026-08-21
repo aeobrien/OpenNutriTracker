@@ -2,7 +2,9 @@
 
 **Date:** 2026-08-21
 **Branch:** `household-release-1`
-**Status:** built here, not on your phone. Build 43 goes on first.
+**Status:** going on your phone tonight, ahead of the plan — the evening of the
+21st turned up a fault that stopped food reaching the Mac Mini at all, and the
+half of the fix that matters lives in here.
 
 Everything in here was found by using build 42 — three of the four are things
 you reported yourself, in your own words, and the fourth turned up while I was
@@ -94,6 +96,53 @@ works.
 The walkthroughs you have already run still contain it. I left those alone on
 purpose — a finished run is the record of what you were actually shown, and
 tidying it up afterwards would be rewriting history in my own favour.
+
+## The evening food stopped reaching the Mac Mini
+
+You said adding food by voice had stopped working, and that the server address
+looked like it had gone back to an old one. The address was fine. Your phone was
+talking to the Mac Mini the whole time — dozens of successful calls a minute —
+while telling you it could not reach it.
+
+One old item near the front of the queue your phone sends from was asking for a
+web address that no longer exists, left behind by a build since replaced. The
+Mac Mini said no. But it said no as a web page rather than in the format the app
+reads, because that particular kind of refusal never reaches the part of the Mac
+Mini that writes proper answers. The app could not read it, and the only sentence
+it has for something it cannot read is *"cannot reach the Mac Mini"* — and the
+queue stops the moment it believes that, on purpose, so that fifty things waiting
+do not collect fifty identical timeouts.
+
+So it stopped. On that one item. Every time. For hours. Everything behind it —
+including a sentence you had just spoken onto your day — never left the phone.
+
+Three things were wrong, and any one of them alone would have been survivable.
+
+**The Mac Mini now says no in a form the app can read.** That half went on the
+Mini the same evening and needs no new app at all. It is what got your food
+moving again.
+
+**The app now reads the answer's code before its contents.** A refusal is a
+refusal whatever it happens to be written in. A server in genuine trouble still
+stops the queue, which is right — that is the Mac Mini being unwell rather than
+one item being wrong. This half is what protects your phone from any other
+server that has not been taught the first half.
+
+**And two of the app's own habits, both of which made it worse.** When the queue
+was already being emptied, a second request to empty it came straight back saying
+all was well — which reads exactly like an empty queue. Saying what you ate
+empties the queue and then asks the Mac Mini about the row, precisely because a
+question about a row it has never heard of is meaningless. That is the question
+you saw go unanswered: it went out about a row still sitting on your phone. It
+now waits for the real answer.
+
+The other: the pass that goes back over rows left unfinished walks them oldest
+first, and gave up entirely the first time the Mac Mini declined one. Your day
+had three of them — two recorded days ago with no words left on them, which the
+Mac Mini rightly declines because there is nothing to work out, and one you typed
+that evening which would have settled perfectly well. Oldest first meant the two
+dead ones came first. The live one would never have been reached, and from where
+you are sitting that is indistinguishable from the pass not running at all.
 
 ## What is not fixed
 
