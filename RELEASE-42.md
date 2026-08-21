@@ -19,7 +19,7 @@ this build exists.
    the first line for exactly those rows. It now opens the same box every other
    row opens, in the shape that row actually has. Three things were broken
    underneath it and are fixed with it: the correction was being sent under a
-   name the kitchen computer had never heard of, so it answered "no such row"
+   name the Mac Mini had never heard of, so it answered "no such row"
    and nothing told you; the sentence you had said was fetched and thrown away
    rather than shown to you; and moving a row to Emily put it on her day at the
    house and left it sitting on your phone as well.
@@ -68,8 +68,7 @@ in (2) is different: I watched that one show a stale figure before the fix and
 the right one after. Proving the other two needs a test that controls the
 timing rather than a check that hopes for it, and that does not exist yet.
 
-**Everything today ran against a stand-in kitchen computer on my Mac, not the
-Mac Mini.** Your phone talks to the Mac Mini. The Mini is up and running the
+**Everything today ran against a stand-in Mac Mini on my own Mac, not yours.** Your phone talks to the Mac Mini. The Mini is up and running the
 right version, and the half of each fix that lives there was already in place —
 but this build has never been down the real wire until you do it.
 
