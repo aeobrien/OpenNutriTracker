@@ -246,6 +246,31 @@ class FakeHouseholdServer {
     return row;
   }
 
+  /// The house's shopping list. Each line as the Mini answers it: an id, the
+  /// words, whether it is ticked, and which planned meals put it there.
+  final List<Map<String, dynamic>> shopping = [];
+
+  /// Put a line on the list.
+  Map<String, dynamic> addShoppingLine(String text,
+      {bool done = false, List<Map<String, String>> putItThere = const []}) {
+    final row = <String, dynamic>{
+      'id': shopping.length + 1,
+      'text': text,
+      'done': done ? 1 : 0,
+      'from_meals': putItThere,
+    };
+    shopping.add(row);
+    return row;
+  }
+
+  /// What the plan would compile to, when the button is pressed. The folding
+  /// itself is the Mini's and is proved there; this is the answer, not the
+  /// arithmetic.
+  List<Map<String, dynamic>> compilesTo = const [];
+
+  /// How many times the button was pressed.
+  int madeTheList = 0;
+
   /// What this house has cooked before, as the Mini's pairing graph would
   /// answer it. Keyed (protein, prep) → {'veg': [...], 'carb': [...]}; a prep
   /// of '' is the household's general habit with that protein, which is what
@@ -892,6 +917,33 @@ class FakeHouseholdServer {
                 if (p['why'] != null) p['component'],
             ],
           };
+        } else if (path == '/household/shopping' && request.method == 'GET') {
+          result = {'ok': true, 'shopping': shopping};
+        } else if (path == '/household/shopping/make') {
+          madeTheList++;
+          shopping
+            ..removeWhere((line) =>
+                (line['from_meals'] as List).isNotEmpty && line['done'] == 0)
+            ..addAll(compilesTo);
+          result = {
+            'ok': true,
+            'added': compilesTo.length,
+            'removed': 0,
+            'meals': compilesTo.isEmpty ? 0 : 1,
+            'shopping': shopping,
+          };
+        } else if (path.startsWith('/household/shopping/') &&
+            path.endsWith('/tick')) {
+          final id = int.parse(path.split('/')[3]);
+          for (final line in shopping) {
+            if (line['id'] == id) line['done'] = body['done'] == true ? 1 : 0;
+          }
+          result = {'ok': true, 'shopping': shopping};
+        } else if (path.startsWith('/household/shopping/') &&
+            path.endsWith('/remove')) {
+          final id = int.parse(path.split('/')[3]);
+          shopping.removeWhere((line) => line['id'] == id);
+          result = {'ok': true, 'shopping': shopping};
         } else if (path == '/household/meal-parts') {
           final protein =
               (request.url.queryParameters['protein'] ?? '').trim().toLowerCase();

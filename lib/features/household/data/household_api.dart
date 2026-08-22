@@ -523,6 +523,19 @@ class HouseholdApi {
     return body['meal'] as Map<String, dynamic>;
   }
 
+  /// The house's shopping list, one line per thing, with the planned meals
+  /// that put each line there.
+  Future<Map<String, dynamic>> shopping() => get('/household/shopping');
+
+  /// Turn the plan into the shopping list. Needs the server: compiling reads
+  /// the whole plan and every meal behind it, and there is no honest way to do
+  /// that from a phone.
+  Future<Map<String, dynamic>> shoppingMake({String? start, String? end}) =>
+      post('/household/shopping/make', {
+        if (start != null) 'start': start,
+        if (end != null) 'end': end,
+      });
+
   /// Take one meal off the plan. Anything already logged against it stays
   /// logged — the plan is what is intended, the ledger is what happened.
   Future<void> planRemove(int planId) async {

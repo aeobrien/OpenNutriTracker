@@ -538,6 +538,44 @@ void main() {
     });
   });
 
+  group('the shopping list', () {
+    test('there is a way to it from the screen people already look at', () {
+      // Not a section, and not the week. Aidan's call of 20 August stands —
+      // planning is the kitchen panel's job and the week stays off this phone.
+      // The list is a different thing: it is read standing in a supermarket,
+      // which is the one place a phone beats a panel in a kitchen.
+      final home = _calls('lib/features/home/home_page.dart');
+      expect(home.contains('ShoppingScreen.show('), isTrue,
+          reason: 'the list exists and nothing on Home opens it, so it is '
+              'only reachable by somebody who already knows it is there');
+      expect(_read('lib/features/home/home_page.dart')
+          .contains('WeekAheadSection('), isFalse,
+          reason: 'the week came back onto the phone alongside the list');
+    });
+
+    test('everything it needs is built', () {
+      expect(_read('lib/core/utils/locator.dart').contains(
+          'ShoppingRepository(\n        householdApi, householdRepository, '
+          'configDao, householdOutbox)'), isTrue,
+          reason: 'Home asks for something nothing ever registered');
+    });
+
+    test('ticking is queued and making the list is not', () {
+      // The two halves pull opposite ways and both are deliberate. A tick has
+      // to work in an aisle with no signal; compiling reads the whole plan,
+      // and a queued compile would run against a week nobody meant.
+      final repository =
+          _calls('lib/features/shopping/data/shopping_repository.dart');
+      expect(repository.contains('_outbox.enqueue('), isTrue,
+          reason: 'ticking needs the network, so the list cannot be used in '
+              'the one place it is for');
+      final make = repository.substring(repository.indexOf('Future<ListMade>make'));
+      expect(make.contains('enqueue('), isFalse,
+          reason: 'compiling was put on the queue, so pressing the button in '
+              'a shop compiles a week nobody meant, later');
+    });
+  });
+
   group('saying what you ate', () {
     test('the button is on the screen people already look at', () {
       // Not behind a tab. A screen you have to find first is a screen people

@@ -3,6 +3,8 @@ import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/plan/presentation/plan_day_sheet.dart';
+import 'package:opennutritracker/features/shopping/data/shopping_repository.dart';
+import 'package:opennutritracker/features/shopping/presentation/shopping_screen.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:opennutritracker/features/week/domain/week_view.dart';
 
@@ -30,6 +32,11 @@ class WeekAheadSection extends StatefulWidget {
   /// simply does not open rather than opening onto controls that do nothing.
   final PlanRepository? planner;
 
+  /// The shopping list, which is what a planned week is for. Optional on the
+  /// same terms as [planner]: without it the way through is not on the screen
+  /// at all rather than there and inert.
+  final ShoppingRepository? shopping;
+
   /// Called after the plan changes, so the screen around this can redraw —
   /// putting tonight's dinner on the plan changes what today looks like.
   final VoidCallback? onPlanned;
@@ -44,11 +51,13 @@ class WeekAheadSection extends StatefulWidget {
     required this.repository,
     this.start,
     this.planner,
+    this.shopping,
     this.onPlanned,
   });
 
   static const heading = 'This week';
   static const nothingYet = 'Nothing on the week yet.';
+  static const shoppingLabel = 'Shopping list';
 
   /// What the day is called on its row. The date comes from the server, so
   /// this is the phone's only say in the matter.
@@ -154,6 +163,21 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
             onTap: widget.planner == null ? null : () => _plan(day.day),
           ),
         _WeekFooter(week: week),
+        // Under the week rather than above it: the list is what the week is
+        // for, and it is reached after looking at the week, not instead of it.
+        if (widget.shopping != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(8, 0, 16, 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.shopping_basket_outlined),
+                label: const Text(WeekAheadSection.shoppingLabel),
+                onPressed: () => ShoppingScreen.show(context,
+                    repository: widget.shopping!),
+              ),
+            ),
+          ),
       ],
     );
   }

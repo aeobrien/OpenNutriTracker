@@ -97,6 +97,7 @@ import 'package:opennutritracker/features/weight/data/weight_repository.dart';
 import 'package:opennutritracker/features/intake/data/mantel_secure_storage.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
+import 'package:opennutritracker/features/shopping/data/shopping_repository.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:logging/logging.dart';
 
@@ -200,6 +201,16 @@ Future<void> initLocator() async {
   // so it goes straight to the Mac Mini or not at all.
   locator.registerLazySingleton<PlanRepository>(
     () => PlanRepository(householdApi, householdRepository),
+  );
+
+  // The shopping list. Ticking DOES go on the queue, unlike planning above,
+  // and for the opposite reason: the list is read in a shop, which is a place
+  // with no signal, and a tick that needed the network would be a tick that
+  // did not happen. Making the list is not queued — it reads the whole plan
+  // and there is no honest way to do that from a phone.
+  locator.registerLazySingleton<ShoppingRepository>(
+    () => ShoppingRepository(
+        householdApi, householdRepository, configDao, householdOutbox),
   );
 
   // Saying what you ate. The row goes on the queue like every other write; the

@@ -24,6 +24,8 @@ import 'package:opennutritracker/features/said/presentation/say_what_you_ate_sec
 import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/today/domain/day_view.dart';
+import 'package:opennutritracker/features/shopping/data/shopping_repository.dart';
+import 'package:opennutritracker/features/shopping/presentation/shopping_screen.dart';
 import 'package:opennutritracker/features/today/presentation/planned_meal_card.dart';
 import 'package:opennutritracker/features/today/domain/planned_today.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -291,6 +293,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               onItemLongPressedCallback: onIntakeItemLongPressed,
               onItemTappedCallback: onIntakeItemTapped,
               usesImperialUnits: usesImperialUnits,
+            ),
+            // The shopping list, which is a phone thing rather than a panel
+            // thing: it is read standing in a supermarket. Not a section — a
+            // way through to a screen of its own. The week itself stays off
+            // this phone, which is Aidan's call from 20 August and not
+            // something a shopping list needs reversed.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.shopping_basket_outlined),
+                label: const Text(ShoppingScreen.heading),
+                onPressed: () => ShoppingScreen.show(context,
+                    repository: locator<ShoppingRepository>()),
+              ),
             ),
             const SizedBox(height: 48.0),
           ],
