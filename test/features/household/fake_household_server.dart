@@ -175,6 +175,29 @@ class FakeHouseholdServer {
   int get aidan => 1;
   int get emily => 2;
 
+  /// What each meal is made of, keyed by meal id then by component — the
+  /// shape the Mac Mini answers `/household/meal/<id>/parts` in.
+  final Map<int, Map<String, Map<String, dynamic>>> mealParts = {};
+
+  /// Say what one component of a meal is. [kcal100] left null is a food the
+  /// house has but has no numbers for; [qty] left null is a part nobody has
+  /// said the amount of. Both are gaps a meal's screen has to name.
+  void addMealPart(int mealId, String component,
+      {required String foodName,
+      num? qty,
+      String? unit,
+      num? kcal100,
+      String trust = 'typed'}) {
+    mealParts.putIfAbsent(mealId, () => {})[component] = {
+      'component': component,
+      'food_name': foodName,
+      'qty': qty,
+      'unit': unit,
+      'kcal_100': kcal100,
+      'trust': trust,
+    };
+  }
+
   /// The house's own meals, the list the phone's planner picks from. Kept
   /// separate from [foods]: a food is a packet with numbers per 100g, a meal
   /// is something you plan an evening around.
@@ -792,6 +815,10 @@ class FakeHouseholdServer {
             ...line,
             'planned_unknown': line['awaiting_count'],
           };
+        } else if (path.startsWith('/household/meal/') &&
+            path.endsWith('/parts')) {
+          final id = int.parse(path.split('/')[3]);
+          result = {'ok': true, 'parts': mealParts[id] ?? const {}};
         } else if (path == '/household/meals') {
           final needle =
               (request.url.queryParameters['q'] ?? '').trim().toLowerCase();

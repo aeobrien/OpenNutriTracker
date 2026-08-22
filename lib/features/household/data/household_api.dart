@@ -426,6 +426,15 @@ class HouseholdApi {
     return body['plan_id'] as int;
   }
 
+  /// What one of the house's meals is made of.
+  ///
+  /// The Mac Mini has answered this since it was built and nothing on a phone
+  /// has ever asked. A meal that is not described by parts answers with an
+  /// empty set rather than an error — a ready meal out of a box is not a
+  /// broken meal, its numbers just come off the packet instead.
+  Future<Map<String, dynamic>> mealParts(int mealId) =>
+      get('/household/meal/$mealId/parts');
+
   /// Take one meal off the plan. Anything already logged against it stays
   /// logged — the plan is what is intended, the ledger is what happened.
   Future<void> planRemove(int planId) async {

@@ -1,5 +1,6 @@
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/plan/domain/meal_parts.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 
 /// Reading and changing the household's plan from the phone.
@@ -29,6 +30,14 @@ class PlanRepository {
   /// handsets and the panel cannot disagree about where a week starts.
   Future<PlanWeek> week({String? start}) async =>
       PlanWeek.fromJson(await _api.plan(start: start));
+
+  /// What one of the house's meals is made of.
+  ///
+  /// A meal with no parts recorded comes back as a meal with no parts, not as
+  /// a failure. Most of what this house eats is a packet; being made of parts
+  /// is the interesting case, not the normal one.
+  Future<MealMadeOf> madeOf(int mealId) async =>
+      MealMadeOf.fromJson(mealId, await _api.mealParts(mealId));
 
   /// The house's own meals, for the picker. [q] narrows by name.
   Future<List<MealChoice>> meals({String? q}) async {
