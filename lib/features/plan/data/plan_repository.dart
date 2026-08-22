@@ -85,6 +85,27 @@ class PlanRepository {
   /// Take one meal off the plan.
   Future<void> remove(int planId) => _api.planRemove(planId);
 
+  /// Say what one component of a meal is, and how much of it goes in.
+  ///
+  /// The units a part may be measured in. The house's own list — anything
+  /// outside it is refused there, so offering more here would only produce a
+  /// refusal after the typing.
+  static const partUnits = ['g', 'ml', 'serving', 'pack', 'item'];
+
+  Future<void> setPart({
+    required int mealId,
+    required String component,
+    required int foodId,
+    required num qty,
+    required String unit,
+  }) =>
+      _api.mealSetPart(
+          mealId: mealId,
+          component: component,
+          foodId: foodId,
+          qty: qty,
+          unit: unit);
+
   /// Ask the house to add a meal up from its parts and remember the figure.
   ///
   /// Once, on purpose. The figure is stored on the meal, so every day it is

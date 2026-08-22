@@ -5,10 +5,12 @@ import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/domain/household_food.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/plan/domain/meal_parts.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 
@@ -34,10 +36,10 @@ import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 ///      it was built from. A dinner mostly weighed and partly guessed is a
 ///      guess, and the line says so in words rather than showing a badge.
 ///
-/// The portions are editable here and the parts are not. Correcting a portion
-/// is an ordinary weekly thing — he had less of it than usual — and correcting
-/// what a meal is made of is a change to a household record that the kitchen
-/// panel owns. Both were asked for; only the first belongs on a phone.
+/// Both the portions and the parts are set from here. A part named as missing
+/// and not fixable from the screen that named it is a screen that reports a
+/// problem and offers nothing — and until this existed, every gap this screen
+/// found could only be closed by walking to the kitchen panel.
 class MealScreen extends StatefulWidget {
   final PlanRepository repository;
 
@@ -70,6 +72,10 @@ class MealScreen extends StatefulWidget {
       'added up from anything.';
   static const noPortionsHere =
       'Portions are set on the day this is planned for.';
+  static const sayWhatItIs = 'Say what this is';
+  static const changeIt = 'Change it';
+  static const whichFood = 'Which food?';
+  static const howMuch = 'How much goes in?';
   static const workItOut = 'Work out its calories';
   static const doItAgain = 'Work them out again';
   static const nobodyHasSaid = 'Nobody has said';
@@ -335,13 +341,13 @@ class _MealScreenState extends State<MealScreen> {
           // A part that cannot be counted shows its reason where its figure
           // would be, so the row that is holding the total up is the row that
           // explains itself.
-          trailing: part.isAGap
-              ? Icon(Icons.help_outline, color: theme.colorScheme.outline)
-              : _partFigure(part),
+          trailing: _partTrailing(theme, part),
           // Tapping a part logs that food, opening on this person's share of
           // it rather than on whatever they last had of it on its own. A
           // component with no food behind it has nothing to open.
-          onTap: part.food == null ? null : () => _logPart(part),
+          // A row does the one thing that makes sense for it: a part with a
+          // gap is filled in, a part that is settled is logged.
+          onTap: part.isAGap ? () => _sayWhatItIs(part) : () => _logPart(part),
         ),
       if (trust != null)
         Padding(
@@ -351,6 +357,43 @@ class _MealScreenState extends State<MealScreen> {
                   ?.copyWith(color: theme.colorScheme.outline)),
         ),
     ];
+  }
+
+  /// Say what one part of this meal is, and how much of it goes in.
+  ///
+  /// The same sheet whether the component had nothing against it or had the
+  /// wrong thing, because the house stores one part per component and saying
+  /// it again replaces it. A separate correction path would be a second way of
+  /// doing one thing, and the two would drift.
+  Future<void> _sayWhatItIs(MealPart part) async {
+    final said = await showModalBottomSheet<_WhatGoesIn>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _PartSheet(component: part.component, was: part),
+    );
+    if (said == null || !mounted) return;
+    setState(() {
+      _busy = true;
+      _problem = null;
+    });
+    String? wentWrong;
+    try {
+      await widget.repository.setPart(
+        mealId: widget.mealId,
+        component: part.component,
+        foodId: said.foodId,
+        qty: said.qty,
+        unit: said.unit,
+      );
+    } on HouseholdUnreachable catch (e) {
+      wentWrong = "${e.headline}, so that hasn't been saved.";
+    }
+    await _load();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (wentWrong != null) _problem = wentWrong;
+    });
   }
 
   /// Open the amount box for one part of this meal.
@@ -406,8 +449,190 @@ class _MealScreenState extends State<MealScreen> {
     }
   }
 
+  Widget _partTrailing(ThemeData theme, MealPart part) {
+    if (part.isAGap) {
+      return Icon(Icons.help_outline, color: theme.colorScheme.outline);
+    }
+    final figure = _partFigure(part);
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      if (figure != null) figure,
+      IconButton(
+        icon: const Icon(Icons.edit_outlined),
+        tooltip: MealScreen.changeIt,
+        onPressed: _busy ? null : () => _sayWhatItIs(part),
+      ),
+    ]);
+  }
+
   Widget? _partFigure(MealPart part) {
     final figure = Figures.kcal(context, part.kcal);
     return figure == null ? null : Text(figure);
+  }
+}
+
+
+/// What somebody said one part of a meal is.
+class _WhatGoesIn {
+  final int foodId;
+  final num qty;
+  final String unit;
+
+  const _WhatGoesIn(this.foodId, this.qty, this.unit);
+}
+
+/// Choosing the food that stands for one component, and how much of it.
+///
+/// The food list is the household's own and nothing else. A part of a meal
+/// this house cooks is a thing this house buys; offering the internet's food
+/// database here would let a meal be built out of somebody else's guess at a
+/// packet, and the meal's whole calorie figure is only ever as good as its
+/// worst part.
+class _PartSheet extends StatefulWidget {
+  final String component;
+
+  /// What the part already was, when it was anything. Its amount is what the
+  /// boxes open on, so correcting a 500 to a 400 is one character rather than
+  /// a re-entry.
+  final MealPart? was;
+
+  const _PartSheet({required this.component, this.was});
+
+  @override
+  State<_PartSheet> createState() => _PartSheetState();
+}
+
+class _PartSheetState extends State<_PartSheet> {
+  List<MealEntity>? _foods;
+  MealEntity? _chosen;
+  late final TextEditingController _amount;
+  late String _unit;
+
+  @override
+  void initState() {
+    super.initState();
+    _amount = TextEditingController(
+        text: widget.was?.quantity == null ? '' : '${widget.was!.quantity}');
+    // A correction opens on the amount, not on the food list. The food is
+    // already known and is usually the thing that was right — somebody
+    // weighing the chicken properly should not have to find the chicken again
+    // before they can say what it weighed.
+    final already = widget.was?.food;
+    if (already != null) _chosen = MealEntity.fromHouseholdFood(already);
+    final was = widget.was?.unit;
+    _unit = was != null && PlanRepository.partUnits.contains(was) ? was : 'g';
+    _search('');
+  }
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
+
+  Future<void> _search(String q) async {
+    final found = await locator<FoodFinder>().matching(q);
+    if (!mounted) return;
+    setState(() => _foods = found);
+  }
+
+  /// The amount as a number, or null when what is typed is not one. Null is
+  /// what disables the button — a part with no amount is not a part, and the
+  /// house refuses one anyway.
+  num? get _typed {
+    final value = num.tryParse(_amount.text.trim());
+    return (value == null || value <= 0) ? null : value;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final foods = _foods;
+    final chosen = _chosen;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(widget.component, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (chosen == null) ...[
+              TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: MealScreen.whichFood,
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: _search,
+              ),
+              const SizedBox(height: 8),
+              if (foods != null)
+                Flexible(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: [
+                      for (final food in foods)
+                        ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(food.name ?? ''),
+                          onTap: () => setState(() => _chosen = food),
+                        ),
+                    ],
+                  ),
+                ),
+            ] else ...[
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(chosen.name ?? ''),
+                trailing: TextButton(
+                  onPressed: () => setState(() => _chosen = null),
+                  child: const Text('Not that one'),
+                ),
+              ),
+              Row(children: [
+                Expanded(
+                  child: TextField(
+                    controller: _amount,
+                    autofocus: true,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    decoration:
+                        const InputDecoration(labelText: MealScreen.howMuch),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                DropdownButton<String>(
+                  value: _unit,
+                  onChanged: (u) => setState(() => _unit = u ?? _unit),
+                  items: [
+                    for (final unit in PlanRepository.partUnits)
+                      DropdownMenuItem(value: unit, child: Text(unit)),
+                  ],
+                ),
+              ]),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: _typed == null
+                    ? null
+                    : () {
+                        final id = HouseholdFood.idFromCode(chosen.code ?? '');
+                        if (id == null) return;
+                        Navigator.of(context)
+                            .pop(_WhatGoesIn(id, _typed!, _unit));
+                      },
+                child: const Text('Save'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 }

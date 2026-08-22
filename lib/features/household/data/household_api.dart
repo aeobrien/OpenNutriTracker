@@ -426,6 +426,26 @@ class HouseholdApi {
     return body['plan_id'] as int;
   }
 
+  /// Say what one component of a meal is, and how much of it goes in.
+  ///
+  /// One call whether the component had nothing against it or had the wrong
+  /// thing: the house stores one part per component, so saying it again
+  /// replaces it. There is no separate correction path to keep in step.
+  Future<void> mealSetPart({
+    required int mealId,
+    required String component,
+    required int foodId,
+    required num qty,
+    required String unit,
+  }) async {
+    await post('/household/meal/$mealId/part', {
+      'component': component,
+      'food_id': foodId,
+      'qty': qty,
+      'unit': unit,
+    });
+  }
+
   /// Add a meal's parts up into one figure and store it on the meal.
   ///
   /// A meal that cannot be added up answers ok:false with what is missing,

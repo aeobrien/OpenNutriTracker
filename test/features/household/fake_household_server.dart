@@ -898,6 +898,73 @@ class FakeHouseholdServer {
             ],
           };
         } else if (path.startsWith('/household/meal/') &&
+            path.endsWith('/part')) {
+          // Saying what a component is replaces whatever was there: the house
+          // stores one part per component. The weight is worked out here the
+          // way the Mini works it out, because that is what a part answer
+          // carries — the ladder's own correctness is the Mini's to prove and
+          // its tests do.
+          final id = int.parse(path.split('/')[3]);
+          final unit = (body['unit'] as String?) ?? 'g';
+          if (!const ['g', 'ml', 'serving', 'pack', 'item'].contains(unit)) {
+            return http.Response(
+                jsonEncode({'ok': false,
+                    'error': "'$unit' is not an amount this can add up"}),
+                400,
+                headers: {'content-type': 'application/json'});
+          }
+          final food = foods.values.firstWhere(
+              (f) => f['id'] == body['food_id'],
+              orElse: () => <String, dynamic>{});
+          if (food.isEmpty) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'no food in the house'}), 400,
+                headers: {'content-type': 'application/json'});
+          }
+          final qty = body['qty'] as num;
+          final packGrams = food['pack_grams'] as num?;
+          final perPack = food['per_pack'] as int?;
+          final servingG = food['serving_g'] as num?;
+          num? grams;
+          String? why;
+          if (unit == 'g' || unit == 'ml') {
+            grams = qty;
+          } else if (unit == 'pack' && packGrams != null) {
+            grams = qty * packGrams;
+          } else if (unit == 'serving' && servingG != null) {
+            grams = qty * servingG;
+          } else if (unit == 'item' && packGrams != null && perPack != null) {
+            grams = qty * packGrams / perPack;
+          } else {
+            why = 'nobody has said what a $unit of ${food['name']} weighs';
+          }
+          final kcal100 = food['kcal_100'] as num?;
+          if (why == null && kcal100 == null) {
+            why = "${food['name']} is in the house's list but its calories "
+                'are not';
+          }
+          final parts = mealParts.putIfAbsent(id, () => []);
+          final was = parts.indexWhere((p) => p['component'] == body['component']);
+          final row = {
+            'component': body['component'],
+            'food_name': food['name'],
+            'qty': qty,
+            'unit': unit,
+            'grams': grams,
+            'kcal': (grams == null || kcal100 == null)
+                ? null
+                : kcal100 * grams / 100,
+            'trust': food['trust'],
+            'why': why,
+            'food': food,
+          };
+          if (was >= 0) {
+            parts[was] = row;
+          } else {
+            parts.add(row);
+          }
+          result = {'ok': true, 'part': row};
+        } else if (path.startsWith('/household/meal/') &&
             path.endsWith('/work-out')) {
           // The Mini's own shape: a meal it cannot add up answers 200 with
           // what is missing, because nothing has gone wrong — the meal is
