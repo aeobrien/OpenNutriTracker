@@ -28,6 +28,7 @@ import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/meal_detail/domain/default_portion.dart';
+import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 
 import '../household/fake_household_server.dart';
 
@@ -108,6 +109,27 @@ void main() {
           usesImperialUnits: false, unit: 'item', gramsPerUnit: food.itemGrams!);
       expect(portion.source, PortionSource.lastTime);
       expect(portion.amount, '2.0');
+    });
+
+    test('two of them go in and two of them come back out', () async {
+      // The whole round trip on the app's own arithmetic, because the two ends
+      // speak different languages: the amount screen writes grams to the log
+      // whatever unit the box was counting in, and the box has to turn them
+      // back into that unit when it reopens. A test that put grams in by hand
+      // would never notice the two disagreeing.
+      aBoxOfSix();
+      final first = await asThePickerHasIt();
+      const twoOfThem = 'item';
+      await heHad(
+          MealDetailBloc.convertQuantity(first, 2, twoOfThem), first);
+
+      final again = await asThePickerHasIt();
+      final portion = defaultPortionFor(again,
+          usesImperialUnits: false,
+          unit: twoOfThem,
+          gramsPerUnit: MealDetailBloc.convertQuantity(again, 1, twoOfThem));
+      expect(portion.source, PortionSource.lastTime);
+      expect(portion.amount, '2');
     });
 
     test('somebody else\'s food is not mistaken for his', () async {
