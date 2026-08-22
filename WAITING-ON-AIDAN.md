@@ -2,9 +2,10 @@
 
 **Date:** 2026-08-22 22:58 (clock read in the turn this was written)
 
-Five things. None of them is being chased and none has been decided for him.
-The first two are the ones that change what he can do on his phone; the last
-three are small and can be answered in a sentence each.
+Six things. None of them is being chased and none has been decided for him.
+The first two are the ones that change what he can do on his phone; the rest
+are smaller and can be answered in a sentence each. The sixth was found later
+in the night, while auditing release 7.
 
 ---
 
@@ -55,6 +56,21 @@ BC-0023 proposes the current week. The kitchen panel has always done fourteen
 days and that is what the house expects, so fourteen is what the phone does too.
 Noted in the code beside the number. Changing what a shipped button does is not
 something to settle quietly while building a second copy of it.
+
+## 6. Whether moving half a shared meal onto the person who already has the other half should be refused
+
+Found while auditing release 7, after the five above were written.
+
+BC-0026 marks this one **[proposed-default]**, which means the card is proposing
+a rule rather than recording a decision. Moving half of a shared dinner onto the
+person who already holds the other half would count one dinner twice against one
+of them and leave the other with none. The card proposes that the app says
+exactly that instead, and offers to delete the entry if the meal was not really
+shared.
+
+**What he has to say.** Whether that refusal is the rule. The guard has not been
+built and will not be until he confirms it — a rule that refuses something a
+person deliberately asked for is not a thing to invent on his behalf.
 
 ---
 
