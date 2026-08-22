@@ -131,6 +131,23 @@ class FakeHouseholdServer {
     _saidGate = null;
   }
 
+  /// Holds a newly logged row on the wire until a test lets it go.
+  ///
+  /// The only way to have a drain genuinely in flight while something else
+  /// happens on the phone. What it is for: taking a queued creation off the
+  /// queue while that same creation is being posted would let the house
+  /// receive the row and leave the phone with nothing that could ever remove
+  /// it — a row standing on somebody's day that neither machine says is wrong.
+  bool holdEntries = false;
+  Completer<void>? _entryGate;
+
+  /// Let a held row through.
+  void releaseEntries() {
+    holdEntries = false;
+    _entryGate?.complete();
+    _entryGate = null;
+  }
+
   /// Whether this server is new enough to understand being asked for a *search*
   /// rather than the whole food list. False reproduces an older kitchen
   /// computer, which answers every search with everything it has — the state
@@ -745,6 +762,9 @@ class FakeHouseholdServer {
             };
           }
         } else if (path == '/household/entry') {
+          if (holdEntries) {
+            await (_entryGate ??= Completer<void>()).future;
+          }
           final id = body['client_id'] as String;
           entries.putIfAbsent(
               id,

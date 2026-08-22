@@ -510,6 +510,39 @@ void main() {
     });
   });
 
+  group('deleting something the phone has not sent yet', () {
+    test('the removal asks the queue before it asks the house', () {
+      // Release 7, BC-0025. The queue has been able to take an item back off
+      // itself since it was built and nothing ever asked it to, so a delete
+      // with no signal queued a removal behind a creation and the phone spent
+      // the trip home telling the house about a row and then telling it to
+      // forget the row.
+      final logger = _calls(
+          'lib/features/household/data/household_logger.dart');
+      expect(logger.contains('_outbox.cancelQueuedEntry(entryClientId)'),
+          isTrue,
+          reason: 'a delete before the row has been sent still sends it');
+      expect(logger.contains('_outbox.putBackQueuedEntry(entryClientId)'),
+          isTrue,
+          reason: 'undoing that delete asks the house to put back a row it '
+              'has never heard of');
+    });
+  });
+
+  group('removing a row without touching it', () {
+    test('the card offers the rotor a way to delete', () {
+      // Release 7, BC-0025's non-touch path. The card's own test drives the
+      // semantics tree; this is the check that the card the app actually
+      // builds is the one that carries them.
+      final card = _calls('lib/core/presentation/widgets/intake_card.dart');
+      expect(card.contains('customSemanticsActions:'), isTrue,
+          reason: 'the only ways into removing a row are a tap and a hold, '
+              'and a hold is not a gesture a rotor can make');
+      expect(card.contains('CustomSemanticsAction(label:deleteAction)'),
+          isTrue);
+    });
+  });
+
   group('the week', () {
     test('is not on the phone at all', () {
       // Aidan's call, 20 August 2026, after a run in which the week and the

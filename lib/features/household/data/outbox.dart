@@ -115,6 +115,90 @@ class Outbox {
     return id;
   }
 
+  /// Take a queued *create* back off the queue, if it is still there.
+  ///
+  /// Answers whether it was. True means nothing about that row ever left this
+  /// phone, so there is nothing to unsay: BC-0025's "deleting an entry that is
+  /// still queued removes it from the queue as well, so nothing is sent
+  /// afterwards for something already deleted".
+  ///
+  /// Two things it deliberately will not do.
+  ///
+  /// **It will not touch anything while a drain is running.** The drain posts
+  /// an item and then removes it; taking the row out from under that would let
+  /// the house receive the create while this phone has thrown away the only
+  /// thing that could have retired it — a row standing on somebody's day that
+  /// nothing on either machine says is wrong. So a delete during a drain
+  /// queues its retire like any other, which costs one round trip and cannot
+  /// leave that behind.
+  ///
+  /// **It will only cancel a create.** A correction or a removal for the same
+  /// row carries its own id and is not what "still queued" means here. The path
+  /// is checked as well as the id so that stays true even if an id is ever
+  /// reused.
+  Future<bool> cancelQueuedEntry(String clientId) async {
+    if (_inFlight != null) {
+      _log.info('[OUTBOX] not cancelling $clientId — a drain is running');
+      return false;
+    }
+    final queued = await _dao.byClientId(clientId);
+    if (queued == null || queued.path != _entryPath) return false;
+    _takenBack[clientId] = queued;
+    await _dao.remove(clientId);
+    _log.info('[OUTBOX] cancelled $clientId — it never left the phone');
+    return true;
+  }
+
+  /// Put back on the queue a create that [cancelQueuedEntry] took off it.
+  ///
+  /// Answers whether there was one. This is what makes Undo honest after a
+  /// delete that never left the phone: without it, undoing would ask the house
+  /// to put back a row it has never heard of, and the house would rightly
+  /// refuse — eight times, over the following hour, while the phone showed the
+  /// row perfectly happily.
+  ///
+  /// Held in memory rather than on disk, deliberately. The offer to undo lives
+  /// about five seconds; a cancelled create that outlives the app was not
+  /// undone and should stay cancelled.
+  Future<bool> putBackQueuedEntry(String clientId) async {
+    final held = _takenBack.remove(clientId);
+    if (held == null) {
+      // Nothing was taken back — but if the creation is sitting on the queue
+      // anyway, this row has still never left the phone and there is nothing
+      // for the house to put back. Answering false here would queue an undo
+      // for a row the house has never heard of, which is what a second press
+      // of Undo used to do: correct on the phone, refused eight times over the
+      // following hour on the other side of the wire.
+      final queued = await _dao.byClientId(clientId);
+      return queued != null && queued.path == _entryPath;
+    }
+    await _dao.add(OutboxItemsCompanion(
+      clientId: Value(held.clientId),
+      path: Value(held.path),
+      body: Value(held.body),
+      ownerId: Value(held.ownerId),
+      authorId: Value(held.authorId),
+      // Both the moment it happened and the moment it joined the queue are the
+      // originals. This is the same piece of work coming back, not a new one:
+      // a fresh queuedAt would send it after things that were logged later.
+      loggedAt: Value(held.loggedAt),
+      queuedAt: Value(held.queuedAt),
+      attempts: Value(held.attempts),
+      lastError: Value(held.lastError),
+    ));
+    _log.info('[OUTBOX] $clientId is back on the queue');
+    onQueued?.call();
+    return true;
+  }
+
+  /// Creates taken off the queue by a delete, kept only until the offer to undo
+  /// that delete has gone. See [putBackQueuedEntry].
+  final Map<String, OutboxItem> _takenBack = {};
+
+  /// Where a newly logged row is sent. Named here because [cancelQueuedEntry]
+  /// has to recognise one.
+  static const _entryPath = '/household/entry';
+
   Future<int> pendingCount() => _dao.count();
 
   Future<List<OutboxItem>> pending() => _dao.pending();

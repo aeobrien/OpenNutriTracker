@@ -202,8 +202,20 @@ class HouseholdLogger {
   ///
   /// [entryClientId] is the name the phone gave the row when it logged it —
   /// see [logFood].
-  Future<String> retireFood(String entryClientId) async {
+  ///
+  /// **A row still waiting to be sent is taken off the queue instead.** Nothing
+  /// about it ever left this phone, so there is nothing to unsay — BC-0025's
+  /// "deleting an entry that is still queued removes it from the queue as well,
+  /// so nothing is sent afterwards for something already deleted". Before this,
+  /// logging something with no signal and then deleting it queued a removal
+  /// behind a creation, and the phone spent the next hour telling the house
+  /// about a row and then telling it to forget the row.
+  ///
+  /// Returns the id of the queued removal, or null when there was none to
+  /// queue because the row never left.
+  Future<String?> retireFood(String entryClientId) async {
     final holder = await _whoseDay();
+    if (await _outbox.cancelQueuedEntry(entryClientId)) return null;
     return _outbox.enqueue(
       path: '/household/entry/by-client/$entryClientId/retire',
       body: const {},
@@ -221,8 +233,17 @@ class HouseholdLogger {
   /// two entries where the person had one thing.
   ///
   /// Queued like everything else, so undoing something on a train works.
-  Future<String> putBackFood(String entryClientId) async {
+  ///
+  /// **A row whose creation was cancelled by the delete goes back on the queue
+  /// instead.** The house never heard of it, so asking the house to put it back
+  /// would be asking about a row that does not exist — see
+  /// [Outbox.putBackQueuedEntry].
+  ///
+  /// Returns the id of the queued undo, or null when what happened instead was
+  /// that the original creation came back.
+  Future<String?> putBackFood(String entryClientId) async {
     final holder = await _whoseDay();
+    if (await _outbox.putBackQueuedEntry(entryClientId)) return null;
     return _outbox.enqueue(
       path: '/household/entry/by-client/$entryClientId/unretire',
       body: const {},
