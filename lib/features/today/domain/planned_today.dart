@@ -55,6 +55,14 @@ class PlannedToday {
   /// [theOther].
   HouseholdPerson? theOther;
 
+  /// Whose phone this is, once the house has said. Null for exactly the same
+  /// reasons [theOther] is.
+  ///
+  /// Read here rather than asked for again where it is needed: this is already
+  /// the one place on Home that asks the house who anybody is, and a second
+  /// asker would be a second answer that could disagree with this one.
+  int? whoseThisIs;
+
   PlannedToday(this._logger, [this._household]);
 
   /// Take a fresh read of the day, dropping anything already answered here.
@@ -76,6 +84,7 @@ class PlannedToday {
     try {
       final owner = await household.storedOwner();
       if (owner == null) return;
+      whoseThisIs = owner;
       final everyone = await household.people();
       final others = everyone.where((p) => p.id != owner).toList();
       theOther = others.length == 1 ? others.first : null;

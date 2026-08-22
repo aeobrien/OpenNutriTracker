@@ -188,7 +188,7 @@ Future<void> initLocator() async {
     () => ProfileHandover(locator<HouseholdApi>(), locator<UserRepository>()),
   );
   locator.registerLazySingleton<FoodLedger>(
-    () => FoodLedger(locator<HouseholdLogger>()),
+    () => FoodLedger(locator<HouseholdLogger>(), locator<HouseholdApi>()),
   );
   locator.registerLazySingleton<DayRepository>(
     () => DayRepository(householdApi, householdRepository),

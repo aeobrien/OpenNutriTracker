@@ -61,6 +61,32 @@ class FakeHouseholdServer {
   /// settle the meal for both — which is the mistake the tests are watching for.
   final Map<int, Map<int, String>> decisions = {};
 
+  /// What each row said before somebody changed it, keyed by the name the
+  /// phone gave the row. Newest first, exactly as the Mini answers.
+  ///
+  /// Kept here rather than faked per-test because the phone's side of this is
+  /// only worth testing against something that *earns* its history the way the
+  /// real server does — by writing the row down before overwriting it. A fake
+  /// that let a test hand it a ready-made history would prove the parsing and
+  /// nothing about whether a correction actually leaves a trace.
+  final Map<String, List<Map<String, dynamic>>> versions = {};
+
+  /// Write down what a row said, before it is changed. The real server does
+  /// this inside the same transaction as the change, which is why the fake
+  /// does it at the same moment rather than afterwards.
+  void _keepWhatItSaid(String cid, Map<String, dynamic> row, String what,
+      {int? changedBy}) {
+    versions.putIfAbsent(cid, () => []).insert(0, {
+      'entry_id': row['id'],
+      // A row the house minted itself may never have carried one.
+      'version': row['version'] ?? 0,
+      'what': what,
+      'changed_by': changedBy,
+      'changed_at': '2026-08-22T23:00:00',
+      'snapshot': Map<String, dynamic>.from(row),
+    });
+  }
+
   /// What a correction is allowed to touch, matching the real server.
   static const amendable = [
     'day', 'owner_id', 'label', 'qty', 'unit',
@@ -694,7 +720,7 @@ class FakeHouseholdServer {
             row.addAll(saidLines.first);
             row['state'] = 'settled';
             row['provisional_since'] = null;
-            row['version'] = (row['version'] as int) + 1;
+            row['version'] = (row['version'] as int? ?? 0) + 1;
             final made = <Map<String, dynamic>>[row];
             for (var n = 1; n < saidLines.length; n++) {
               final child = {
@@ -837,23 +863,57 @@ class FakeHouseholdServer {
                 jsonEncode({'ok': false, 'error': 'no entry called $cid'}), 404,
                 headers: {'content-type': 'application/json'});
           }
-          if (action == 'retire') {
+          if (action == 'history') {
+            // The Mini works out the restorable fields and sends them with
+            // each version, so the phone never keeps its own copy of which
+            // fields may be corrected.
+            result = {
+              'ok': true,
+              'history': [
+                for (final v in versions[cid] ?? const [])
+                  {
+                    ...v,
+                    'put_back': {
+                      for (final f in amendable)
+                        if ((v['snapshot'] as Map).containsKey(f))
+                          f: (v['snapshot'] as Map)[f],
+                    },
+                  },
+              ],
+            };
+          } else if (action == 'retire') {
             // Soft, like the real server: the row and its numbers stay and stop
             // counting. What the real server also does — putting a planned meal
             // back to waiting — is its own behaviour and is held to account in
             // its own tests, not reproduced here.
-            row['deleted_at'] = 'then';
+            // Only when it is actually on the day, as on the real server:
+            // taking off something already off it changes nothing and so
+            // leaves nothing behind in the history either.
+            if (row['deleted_at'] == null) {
+              _keepWhatItSaid(cid, row, 'taken off');
+              row['deleted_at'] = 'then';
+              row['version'] = (row['version'] as int? ?? 0) + 1;
+            }
           } else if (action == 'unretire') {
             // And back again. Soft both ways: the same row counts again rather
             // than a second one appearing.
-            row['deleted_at'] = null;
+            if (row['deleted_at'] != null) {
+              _keepWhatItSaid(cid, row, 'put back');
+              row['deleted_at'] = null;
+              row['version'] = (row['version'] as int? ?? 0) + 1;
+            }
           } else {
+            _keepWhatItSaid(cid, row, 'corrected',
+                changedBy: body['author_id'] as int?);
             for (final field in amendable) {
               if (body.containsKey(field)) row[field] = body[field];
             }
             row['amended_by'] = body['author_id'];
+            row['version'] = (row['version'] as int? ?? 0) + 1;
           }
-          result = {'ok': true, 'entry': row};
+          // A history read is a question, not a change, so it answers with the
+          // history rather than with the row.
+          result ??= {'ok': true, 'entry': row};
         } else if (path == '/household/food/find') {
           huntedFor = body['name'] as String?;
           if (!canHuntTheWeb) {

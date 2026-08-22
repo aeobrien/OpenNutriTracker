@@ -49,7 +49,7 @@ void main() {
     mini = FakeHouseholdServer();
     household = HouseholdRepository(ConfigDao(db), api());
     outbox = Outbox.of(db, api());
-    ledger = FoodLedger(HouseholdLogger(household, outbox));
+    ledger = FoodLedger(HouseholdLogger(household, outbox), api());
     await household.setOwner(mini.aidan);
   });
 
@@ -226,7 +226,7 @@ void main() {
       final fresh = AppDatabase.createInMemory();
       final unclaimed = HouseholdRepository(ConfigDao(fresh), api());
       final theirs =
-          FoodLedger(HouseholdLogger(unclaimed, Outbox.of(fresh, api())));
+          FoodLedger(HouseholdLogger(unclaimed, Outbox.of(fresh, api())), api());
 
       await theirs.retire('intake-abc');
       await theirs.amend('intake-abc', kcal: 1);

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
+import 'package:opennutritracker/features/household/presentation/this_entrys_history.dart';
 import 'package:opennutritracker/features/household/presentation/whose_day_is_it.dart';
+import 'package:opennutritracker/features/household/domain/what_it_was.dart';
+import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -62,10 +65,20 @@ class EditDialog extends StatefulWidget {
   final IntakeEntity intakeEntity;
   final bool usesImperialUnits;
 
+  /// Whose day this row is on at the moment, when the house has said. Only so
+  /// that putting an older version back knows whether it is also a move.
+  final int? currentOwner;
+
+  /// Only so a test can hand in a ledger for the history panel. The running
+  /// app leaves it null and the panel fetches its own.
+  final FoodLedger? ledger;
+
   const EditDialog({
     super.key,
     required this.intakeEntity,
     required this.usesImperialUnits,
+    this.currentOwner,
+    this.ledger,
   });
 
   @override
@@ -187,9 +200,23 @@ class _EditDialogState extends State<EditDialog> {
     return AlertDialog(
       title: Text(S.of(context).editItemDialogTitle),
       content: SingleChildScrollView(
-        child: _hasNoFoodBehindIt
-            ? _foodlessRow(context)
-            : _rowWithAFoodBehindIt(context, unitStr, unitLabel, hasServing),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _hasNoFoodBehindIt
+                ? _foodlessRow(context)
+                : _rowWithAFoodBehindIt(
+                    context, unitStr, unitLabel, hasServing),
+            // Under both shapes of the dialog, because a row with a food
+            // behind it and a row without one are corrected just as often and
+            // wrongly just as often.
+            ThisEntrysHistory(
+              intakeId: widget.intakeEntity.id,
+              ledger: widget.ledger,
+              onPutBack: _putBack,
+            ),
+          ],
+        ),
       ),
       actions: [
         TextButton(
@@ -208,6 +235,25 @@ class _EditDialogState extends State<EditDialog> {
           child: Text(S.of(context).dialogCancelLabel),
         ),
       ],
+    );
+  }
+
+  /// Put an older version back.
+  ///
+  /// It leaves as an ordinary correction, down the same path as anything typed
+  /// into this dialog, which is the whole design of it: there is one way of
+  /// writing to a row and restoring is that way, replayed. The fields come off
+  /// the version the Mac Mini sent, and the Mini worked out which fields those
+  /// are — a phone keeping its own copy of that list would go quietly wrong the
+  /// day the list changed.
+  void _putBack(WhatItWas was) {
+    Navigator.of(context).pop(
+      IntakeEdit(
+        was.putBackAmount?.toDouble(),
+        label: was.putBackLabel,
+        kcal: was.putBackKcal?.toDouble(),
+        moveTo: was.putBackOwner(widget.currentOwner),
+      ),
     );
   }
 

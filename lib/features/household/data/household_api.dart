@@ -523,6 +523,18 @@ class HouseholdApi {
     return body['meal'] as Map<String, dynamic>;
   }
 
+  /// Everything one logged row has been, newest first.
+  ///
+  /// Named by the id the phone minted for it, not the house's own row number,
+  /// because that is the only name the phone has months later.
+  ///
+  /// A row nobody has ever corrected answers with an empty list, not an
+  /// error. That is the honest answer: there is no earlier version of a line
+  /// that was right the first time, and inventing an "as first entered" row
+  /// would put a change in front of somebody where none was made.
+  Future<Map<String, dynamic>> entryHistory(String clientId) =>
+      get('/household/entry/by-client/$clientId/history');
+
   /// The house's shopping list, one line per thing, with the planned meals
   /// that put each line there.
   Future<Map<String, dynamic>> shopping() => get('/household/shopping');

@@ -254,7 +254,7 @@ void main() {
 
     setUp(() {
       outbox = Outbox.of(db, api());
-      ledger = FoodLedger(HouseholdLogger(household, outbox));
+      ledger = FoodLedger(HouseholdLogger(household, outbox), api());
     });
 
     test('a food from our own list is named on the entry', () async {

@@ -474,6 +474,42 @@ void main() {
     });
   });
 
+  group('what a row used to say', () {
+    // Release 7's first promise, and the release-6 lesson applied in advance:
+    // four of that release's five pieces passed their own tests while opening
+    // only from a panel that is mounted nowhere. A history panel nothing puts
+    // on screen is exactly that again.
+
+    test('the edit box shows it', () {
+      final dialog = _read('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('ThisEntrysHistory('), isTrue,
+          reason: 'the Mac Mini keeps every version of a row and no screen '
+              'ever shows one');
+    });
+
+    test('and the way back out of it is the ordinary correction', () {
+      // Not a second write path. If restoring ever grows one, the two will
+      // drift and one of them will be the wrong one.
+      final dialog = _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('onPutBack:_putBack'), isTrue,
+          reason: 'the panel offers a version back and nothing takes the '
+              'offer');
+      expect(dialog.contains('Navigator.of(context).pop(IntakeEdit('), isTrue,
+          reason: 'putting a version back leaves by some route other than '
+              'the correction every other change goes down');
+    });
+
+    test('the phone knows whose day the row is on', () {
+      // Without it a restore cannot tell "put this back" from "put this back
+      // and move it", and the panel would quietly do one while saying the
+      // other.
+      expect(_read('lib/features/home/home_page.dart')
+          .contains('currentOwner: _planned.whoseThisIs'), isTrue,
+          reason: 'restoring a version that was on the other person\'s day '
+              'would leave it on this one');
+    });
+  });
+
   group('the week', () {
     test('is not on the phone at all', () {
       // Aidan's call, 20 August 2026, after a run in which the week and the

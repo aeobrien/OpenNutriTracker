@@ -47,7 +47,7 @@ void main() {
     mini = FakeHouseholdServer();
     household = HouseholdRepository(ConfigDao(db), api());
     outbox = Outbox.of(db, api());
-    ledger = FoodLedger(HouseholdLogger(household, outbox));
+    ledger = FoodLedger(HouseholdLogger(household, outbox), api());
     await household.setOwner(mini.aidan);
   });
 

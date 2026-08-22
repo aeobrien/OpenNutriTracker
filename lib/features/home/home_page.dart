@@ -385,6 +385,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       builder: (context) => EditDialog(
         intakeEntity: intakeEntity,
         usesImperialUnits: usesImperialUnits,
+        // So that putting an older version of the row back knows whether it is
+        // also a move to the other person's day. Null until the house has said
+        // whose phone this is, and then a restore simply is not a move — which
+        // is the right answer rather than a guess.
+        currentOwner: _planned.whoseThisIs,
       ),
     );
     if (edit != null && edit.remove) {

@@ -25,7 +25,9 @@ import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/say_the_row_is_gone.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
+import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/domain/what_it_was.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -45,6 +47,14 @@ class _QuietMealDetailBloc extends Fake implements MealDetailBloc {}
 class _QuietHousehold extends Fake implements HouseholdRepository {
   @override
   Future<int?> storedOwner() async => null;
+}
+
+/// A ledger for a row nothing has ever changed. The history panel on the edit
+/// dialog asks it what the row used to say; with nothing to say the panel does
+/// not appear, which is the ordinary case and not what this file is about.
+class _QuietLedger extends Fake implements FoodLedger {
+  @override
+  Future<List<WhatItWas>> historyOf(String intakeId) async => const [];
 }
 
 IntakeEntity _row({
@@ -116,7 +126,8 @@ void main() {
     GetIt.instance
       ..registerSingleton<HomeBloc>(_QuietHomeBloc())
       ..registerSingleton<MealDetailBloc>(_QuietMealDetailBloc())
-      ..registerSingleton<HouseholdRepository>(_QuietHousehold());
+      ..registerSingleton<HouseholdRepository>(_QuietHousehold())
+      ..registerSingleton<FoodLedger>(_QuietLedger());
   });
 
   tearDown(() => GetIt.instance.reset());

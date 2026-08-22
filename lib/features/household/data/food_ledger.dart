@@ -4,7 +4,9 @@ library;
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/household/data/food_shares.dart';
+import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/domain/what_it_was.dart';
 
 /// The household half of adding a food.
 ///
@@ -16,9 +18,10 @@ import 'package:opennutritracker/features/household/data/household_logger.dart';
 /// it against a stand-in for the house and read back what arrived.
 class FoodLedger {
   final HouseholdLogger _logger;
+  final HouseholdApi _api;
   final _log = Logger('FoodLedger');
 
-  FoodLedger(this._logger);
+  FoodLedger(this._logger, this._api);
 
   /// The name the household's row for [intakeId] is known by.
   ///
@@ -32,6 +35,21 @@ class FoodLedger {
   /// front of it.
   static String nameFor(String intakeId, {int? forPerson}) =>
       forPerson == null ? intakeId : '$intakeId-p$forPerson';
+
+  /// Everything this row has been, newest first.
+  ///
+  /// A read, and deliberately not through the outbox. Everything that *changes*
+  /// the house is queued so it survives a train tunnel; asking what a row used
+  /// to say is not a change, and queuing a question would mean getting the
+  /// answer some time after the screen that asked it had gone.
+  ///
+  /// An unreachable house throws rather than answering with an empty list. The
+  /// difference between "this row has never been corrected" and "I could not
+  /// ask" matters here more than almost anywhere else: the first is a fact
+  /// about the row and the second is a fact about the network, and showing the
+  /// second as the first would tell somebody their correction was never made.
+  Future<List<WhatItWas>> historyOf(String intakeId) async =>
+      WhatItWas.allOf(await _api.entryHistory(nameFor(intakeId)));
 
   /// Take a logged food back off the day, at the household end.
   ///

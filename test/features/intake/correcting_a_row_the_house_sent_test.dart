@@ -53,7 +53,7 @@ void main() {
     mini = FakeHouseholdServer();
     final household = HouseholdRepository(ConfigDao(db), api());
     outbox = Outbox.of(db, api());
-    final ledger = FoodLedger(HouseholdLogger(household, outbox));
+    final ledger = FoodLedger(HouseholdLogger(household, outbox), api());
     intakes = IntakeRepository(LogEntryDao(db), FoodItemDao(db));
     correct = UpdateIntakeUsecase(intakes, ledger);
     takeOff = DeleteIntakeUsecase(intakes, ledger);
