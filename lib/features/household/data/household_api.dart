@@ -481,6 +481,48 @@ class HouseholdApi {
   Future<Map<String, dynamic>> mealParts(int mealId) =>
       get('/household/meal/$mealId/parts');
 
+  /// The four short lists a meal gets built from.
+  ///
+  /// With nothing named it answers the proteins alone, which is all the first
+  /// step of the builder can use. Naming what is being cooked — and then how —
+  /// narrows the vegetables and the carbohydrate to what has actually gone
+  /// with it in this house.
+  Future<Map<String, dynamic>> mealPartOptions({
+    String? protein,
+    String? prep,
+  }) {
+    final args = <String, String>{
+      if ((protein ?? '').trim().isNotEmpty) 'protein': protein!.trim(),
+      if ((prep ?? '').trim().isNotEmpty) 'prep': prep!.trim(),
+    };
+    final query = args.isEmpty ? '' : '?${Uri(queryParameters: args).query}';
+    return get('/household/meal-parts$query');
+  }
+
+  /// Build one meal out of its parts.
+  ///
+  /// A meal, not a meal on a day. Putting it on a day is [planAdd] and stays a
+  /// separate call, so a build that worked and a placement that failed can be
+  /// told apart — the meal exists and can be placed again rather than
+  /// vanishing with the error.
+  Future<Map<String, dynamic>> mealBuild({
+    required String protein,
+    String? prep,
+    List<String> veg = const [],
+    String? carb,
+    String? name,
+  }) async {
+    final body = await post('/household/meal', {
+      'components': {
+        'protein': {'name': protein, 'prep': prep ?? ''},
+        'veg': veg,
+        'carb': carb ?? '',
+      },
+      if (name != null && name.trim().isNotEmpty) 'name': name.trim(),
+    });
+    return body['meal'] as Map<String, dynamic>;
+  }
+
   /// Take one meal off the plan. Anything already logged against it stays
   /// logged — the plan is what is intended, the ledger is what happened.
   Future<void> planRemove(int planId) async {

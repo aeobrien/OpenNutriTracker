@@ -1,6 +1,7 @@
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
+import 'package:opennutritracker/features/plan/domain/meal_options.dart';
 import 'package:opennutritracker/features/plan/domain/meal_parts.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 
@@ -114,6 +115,23 @@ class PlanRepository {
   /// which is what makes re-doing this safe.
   Future<MealWorkedOut> workOut(int mealId) async =>
       MealWorkedOut.fromJson(await _api.mealWorkOut(mealId));
+
+  /// What the builder can offer, given what has been chosen so far.
+  Future<MealOptions> partOptions({String? protein, String? prep}) async =>
+      MealOptions.fromJson(
+          await _api.mealPartOptions(protein: protein, prep: prep));
+
+  /// Build a meal out of its parts. Returns it in the same shape the picker
+  /// reads every other meal in, so it can go straight onto a day.
+  Future<MealChoice> buildMeal({
+    required String protein,
+    String? prep,
+    List<String> veg = const [],
+    String? carb,
+    String? name,
+  }) async =>
+      MealChoice.fromJson(await _api.mealBuild(
+          protein: protein, prep: prep, veg: veg, carb: carb, name: name));
 
   /// Whoever this phone says it belongs to. Which of the two portions on a
   /// meal is *mine* — and therefore what the amount box opens on.

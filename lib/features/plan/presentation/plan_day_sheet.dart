@@ -3,6 +3,7 @@ import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
+import 'package:opennutritracker/features/plan/presentation/meal_builder.dart';
 import 'package:opennutritracker/features/plan/presentation/meal_screen.dart';
 
 /// Planning one day, opened by tapping that day on the week.
@@ -34,6 +35,7 @@ class PlanDaySheet extends StatefulWidget {
   const PlanDaySheet({super.key, required this.repository, required this.day});
 
   static const addLabel = 'Add a meal';
+  static const buildLabel = 'Build one from its parts';
   static const nothingPlanned = 'Nothing planned.';
   static const noMeals = 'No meals here by that name.';
   static const alreadyEaten =
@@ -131,6 +133,16 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
       await widget.repository.add(day: widget.day, mealId: chosen.id);
       _changed = true;
       await _load();
+      // A meal built a moment ago is a name and four component names: nobody
+      // has said which of the house's foods stands for the broccoli or how
+      // much goes in, so it has no figure and cannot have one. Its own screen
+      // is where that is said, and landing there is the difference between
+      // being told what is missing and having to go and find out.
+      if (mounted && chosen.kcal == null) {
+        final on = (_day?.planned ?? const [])
+            .where((p) => p.mealId == chosen.id);
+        if (on.isNotEmpty) await _openMeal(on.last);
+      }
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() => _problem = '${e.headline}, so that meal is not on the '
@@ -369,10 +381,31 @@ class _MealPickerState extends State<_MealPicker> {
                   ],
                 ),
               ),
+            const SizedBox(height: 8),
+            // Under the list rather than beside the search box, because this
+            // is where somebody arrives when what they wanted was not there.
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.add),
+                label: const Text(PlanDaySheet.buildLabel),
+                onPressed: _build,
+              ),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _build() async {
+    final navigator = Navigator.of(context);
+    final built = await MealBuilder.show(context,
+        repository: widget.repository);
+    if (built == null) return;
+    // Straight out of the picker with the new meal, so it goes onto the day
+    // by the one path every other meal goes onto a day by.
+    navigator.pop(built);
   }
 
   Widget? _kcalLine(BuildContext context, MealChoice meal) {

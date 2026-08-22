@@ -26,6 +26,8 @@ import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
+import 'package:opennutritracker/features/plan/presentation/meal_builder.dart';
+import 'package:opennutritracker/features/plan/presentation/meal_screen.dart';
 import 'package:opennutritracker/features/plan/presentation/plan_day_sheet.dart';
 import 'package:opennutritracker/features/week/data/week_repository.dart';
 import 'package:opennutritracker/features/week/presentation/week_ahead_section.dart';
@@ -213,6 +215,66 @@ void main() {
 
       expect(find.text('Chilli'), findsOneWidget);
       expect(find.textContaining('a portion'), findsNothing);
+    });
+  });
+
+  group('building one the house has never had', () {
+    testWidgets('the builder is reached from the picker, where it is missed',
+        (tester) async {
+      // Somebody looks for tonight's dinner, does not find it, and is
+      // standing exactly where the way to make it should be.
+      mini.addMeal(name: 'Chilli', kcal: 640);
+      mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
+
+      await openDay(tester, 'Fri');
+      await tester.tap(find.text(PlanDaySheet.addLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(PlanDaySheet.buildLabel));
+      await tester.pumpAndSettle();
+
+      expect(find.text(MealBuilder.proteinHeading), findsOneWidget);
+    });
+
+    testWidgets('a meal built here goes onto the day it was built from',
+        (tester) async {
+      // The builder makes a meal; it does not put it anywhere. Coming back
+      // through the picker is what puts it on the day, by the same one path
+      // every other meal takes.
+      mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
+
+      await openDay(tester, 'Fri');
+      await tester.tap(find.text(PlanDaySheet.addLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(PlanDaySheet.buildLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, 'salmon'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MealBuilder.buildIt));
+      await tester.pumpAndSettle();
+
+      expect(mini.plan.single['title'], 'salmon');
+      expect(mini.plan.single['day'], friday);
+    });
+
+    testWidgets('a meal just built lands on its own screen, gaps and all',
+        (tester) async {
+      // It is a name and some component names: nobody has said which of the
+      // house's foods stands for the asparagus or how much goes in, so it has
+      // no figure and cannot have one. Being shown what is missing is the
+      // difference between that and having to go and find out.
+      mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
+
+      await openDay(tester, 'Fri');
+      await tester.tap(find.text(PlanDaySheet.addLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(PlanDaySheet.buildLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, 'salmon'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MealBuilder.buildIt));
+      await tester.pumpAndSettle();
+
+      expect(find.text(MealScreen.madeOfHeading), findsOneWidget);
     });
   });
 

@@ -246,6 +246,30 @@ class FakeHouseholdServer {
     return row;
   }
 
+  /// What this house has cooked before, as the Mini's pairing graph would
+  /// answer it. Keyed (protein, prep) → {'veg': [...], 'carb': [...]}; a prep
+  /// of '' is the household's general habit with that protein, which is what
+  /// a cooking style nobody has used before falls back to.
+  final Map<String, Map<String, List<String>>> cooked = {};
+
+  /// Say this house has cooked something. The builder's lists are drawn from
+  /// exactly this and nothing else.
+  void hasCooked(String protein, String prep,
+      {List<String> veg = const [], String carb = ''}) {
+    final key = '${protein.trim().toLowerCase()}|${prep.trim().toLowerCase()}';
+    final slots = cooked.putIfAbsent(key, () => {'veg': [], 'carb': []});
+    for (final one in veg) {
+      if (!slots['veg']!.contains(one)) slots['veg']!.add(one);
+    }
+    if (carb.trim().isNotEmpty && !slots['carb']!.contains(carb)) {
+      slots['carb']!.add(carb);
+    }
+  }
+
+  /// Every modular meal built through this fake, in the order they were built,
+  /// so a test can say what was actually sent rather than what was displayed.
+  final List<Map<String, dynamic>> built = [];
+
   /// Put a meal on a day. [mealKcal] is one standard portion of it; null means
   /// the meal's own numbers are not known yet.
   int planMeal({
@@ -868,6 +892,62 @@ class FakeHouseholdServer {
                 if (p['why'] != null) p['component'],
             ],
           };
+        } else if (path == '/household/meal-parts') {
+          final protein =
+              (request.url.queryParameters['protein'] ?? '').trim().toLowerCase();
+          final prep =
+              (request.url.queryParameters['prep'] ?? '').trim().toLowerCase();
+          final proteins = <String>[];
+          final preps = <String>[];
+          for (final key in cooked.keys) {
+            final parts = key.split('|');
+            if (!proteins.contains(parts[0])) proteins.add(parts[0]);
+            if (parts[0] == protein && parts[1].isNotEmpty) preps.add(parts[1]);
+          }
+          List<String> slot(String which, String withPrep) =>
+              protein.isEmpty ? const [] : (cooked['$protein|$withPrep']?[which] ?? const []);
+          result = {
+            'ok': true,
+            'proteins': proteins,
+            'preps': preps,
+            for (final which in ['veg', 'carb'])
+              which: {
+                'recommended': slot(which, prep),
+                // A style nobody has used before falls back to what has gone
+                // with this protein when nobody said how it was cooked. This
+                // mirrors the Mini's two tiers; whether the tiers are right is
+                // the Mini's to prove, and it does.
+                'general': prep.isEmpty ? const [] : slot(which, ''),
+              },
+          };
+        } else if (path == '/household/meal' && request.method == 'POST') {
+          final sent = (body['components'] as Map).cast<String, dynamic>();
+          final protein = (sent['protein'] as Map).cast<String, dynamic>();
+          final name = (protein['name'] as String? ?? '').trim();
+          if (name.isEmpty) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'a meal has to start with '
+                    'something to cook'}),
+                400,
+                headers: {'content-type': 'application/json'});
+          }
+          built.add(sent);
+          final prep = (protein['prep'] as String? ?? '').trim();
+          final veg = [
+            for (final v in (sent['veg'] as List? ?? const [])) '$v',
+          ];
+          final carb = (sent['carb'] as String? ?? '').trim();
+          hasCooked(name, prep, veg: veg, carb: carb);
+          final tail = [...veg, if (carb.isNotEmpty) carb];
+          final head = prep.isEmpty ? name : '$prep $name';
+          // The Mini's own naming, mirrored. It is the panel's rule and there
+          // is a parity test there; this fake only has to be recognisable.
+          final made = addMeal(
+              name: tail.isEmpty
+                  ? head
+                  : '$head with ${tail.length == 1 ? tail.single : '${tail.sublist(0, tail.length - 1).join(', ')} and ${tail.last}'}');
+          made['kind'] = 'modular';
+          result = {'ok': true, 'meal': made};
         } else if (path == '/household/meals') {
           final needle =
               (request.url.queryParameters['q'] ?? '').trim().toLowerCase();
