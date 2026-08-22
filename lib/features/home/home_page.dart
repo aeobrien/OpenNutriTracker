@@ -205,10 +205,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             // food goes — into the slots below, through the mirror the app has had
             // all along — so there is one day on this screen and not two.
             //
-            // The planned-meals list and the week that used to sit here went with
-            // it, at his instruction: planning is what the kitchen panel is for,
-            // and a second copy of it on the phone was a second thing to keep in
-            // step for no gain.
+            // The week that used to sit here went with it, at his instruction:
+            // planning is what the kitchen panel is for, and a second copy of it
+            // on the phone was a second thing to keep in step for no gain.
+            //
+            // A planned meal is the one thing that did come back, on 22 August,
+            // and it came back as the opposite of a section. It is a ghost card
+            // inside the diary's own list — see the dinner slot below — because
+            // when he was asked where confirming a dinner should live he said:
+            // "a 'ghost' entry on the home screen of the phone app which looks
+            // just like a regular food entry, but says 'tap to confirm'.
             SayWhatYouAteSection(
               key: _said,
               said: locator<SaidRepository>(),
