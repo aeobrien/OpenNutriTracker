@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/data/repository/health_repository.dart';
@@ -230,12 +231,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// A row moved to the other person comes off this day entirely: it is
   /// somebody else's now, so all of it goes rather than a difference.
   Future<void> updateIntakeItem(
-      String intakeId, Map<String, dynamic> fields, {int? moveTo}) async {
+      String intakeId, Map<String, dynamic> fields,
+      {int? moveTo, MealEntity? nowItIs}) async {
     final dateTime = DateTime.now();
     final before = await _getIntakeUsecase.getIntakeById(intakeId);
     if (before == null) return;
     final after = await _updateIntakeUsecase.updateIntake(intakeId, fields,
-        moveTo: moveTo);
+        moveTo: moveTo, nowItIs: nowItIs);
 
     // Take the whole of what it was off the day, then put the whole of what it
     // now is back on. Two steps rather than a signed difference so that a

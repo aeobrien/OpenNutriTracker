@@ -98,6 +98,12 @@ class FoodLedger {
     num? fat,
     num? carbs,
     String? slot,
+    String? unit,
+
+    /// Say that the row is no longer the house's own food it was linked to.
+    /// See UpdateIntakeUsecase for why the phone can only ever unlink and
+    /// never relink.
+    bool unlinkFood = false,
   }) async {
     try {
       await _logger.amendFood(
@@ -110,6 +116,8 @@ class FoodLedger {
         fat: fat,
         carbs: carbs,
         slot: slot,
+        unit: unit,
+        unlinkFood: unlinkFood,
       );
     } catch (e) {
       _log.severe('[HOUSE] changed on this phone but not in the household: $e');

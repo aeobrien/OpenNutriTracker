@@ -797,4 +797,67 @@ void main() {
       expect(ledger.contains('slot:slot,'), isTrue);
     });
   });
+
+  group('saying it was the wrong food', () {
+    test('the dialog offers it, and only where there is a food to replace', () {
+      final dialog = _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('_whatItIs(context),'), isTrue,
+          reason: 'built but mounted nowhere');
+      // It sits inside the shape of the dialog that has a food behind it. On
+      // the other shape there is nothing to replace, and an offer that leads
+      // to a refusal is worse than no offer.
+      final withAFood = dialog.indexOf('Widget_rowWithAFoodBehindIt(');
+      final withoutOne = dialog.indexOf('Widget_foodlessRow(');
+      final offer = dialog.indexOf('_whatItIs(context),');
+      expect(offer > withoutOne && offer < withAFood, isFalse,
+          reason: 'the offer is inside the foodless shape');
+    });
+
+    test('it opens the picker rather than a second one of its own', () {
+      final dialog = _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('NavigationOptions.addMealRoute'), isTrue,
+          reason: 'a second picker is a second place for "our own foods come '
+              'first" to be true or not');
+      expect(dialog.contains('insteadOfWhatIsThere:true,'), isTrue);
+    });
+
+    test('the picker hands the food back instead of logging it', () {
+      final picker =
+          _calls('lib/features/add_meal/presentation/add_meal_screen.dart');
+      // Every place a food can be tapped has to know, not just the tab
+      // somebody happened to test.
+      expect('handBackInstead:_instead'.allMatches(picker).length, 4,
+          reason: 'a tab left out logs a second row instead of swapping one');
+      final card = _calls(
+          'lib/features/add_meal/presentation/widgets/meal_item_card.dart');
+      expect(card.contains('Navigator.of(context).pop(mealEntity);'), isTrue);
+    });
+
+    test('what the dialog was handed reaches the day', () {
+      final dialog = _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('nowItIs:_instead,'), isTrue);
+      final home = _calls('lib/features/home/home_page.dart');
+      expect(home.contains('nowItIs:edit.nowItIs,'), isTrue);
+      expect(home.contains('edit.nowItIs!=null'), isTrue,
+          reason: 'a swap with nothing else changed would be read as a tap '
+              'that changed nothing, and thrown away');
+    });
+
+    test('the phone writes it down and tells the house', () {
+      final usecase =
+          _calls('lib/core/domain/usecase/update_intake_usecase.dart');
+      expect(usecase.contains('_intakeRepository.changeTheFood(intakeId,nowItIs)'),
+          isTrue);
+      expect(usecase.contains('unlinkFood:nowItIs!=null,'), isTrue,
+          reason: "the house's link to its own food would go on claiming this "
+              'row is the food it no longer is');
+      final ledger = _calls('lib/features/household/data/food_ledger.dart');
+      expect(ledger.contains('unlinkFood:unlinkFood,'), isTrue);
+      final logger =
+          _calls('lib/features/household/data/household_logger.dart');
+      expect(logger.contains("if(unlinkFood)'food_id':null,"), isTrue,
+          reason: 'left out of the body it would mean "do not touch it", '
+              'which is the opposite of what is being said');
+    });
+  });
 }

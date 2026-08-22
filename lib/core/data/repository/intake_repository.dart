@@ -47,12 +47,18 @@ class IntakeRepository {
     return foodItemId;
   }
 
-  Future<void> addIntake(IntakeEntity intakeEntity) async {
-    _log.fine('Adding intake: ${intakeEntity.id}');
-    final meal = intakeEntity.meal;
-
-    // Upsert food item first
-    final foodItemId = meal.code ?? 'custom_${intakeEntity.id}';
+  /// Store a food the phone has just been handed, and answer with the name it
+  /// is filed under here.
+  ///
+  /// Called when a row is created and again when the food behind an existing
+  /// row is replaced. One place, because a food stored two slightly different
+  /// ways is a food that stops matching itself: the picker would offer two of
+  /// it and neither would carry what was last had.
+  Future<String> _keepTheFood(MealEntity meal,
+      {required String fallbackId,
+      required DateTime usedAt,
+      required double usedAmount}) async {
+    final foodItemId = meal.code ?? fallbackId;
     await _foodItemDao.upsertFoodItem(FoodItemsCompanion(
       id: Value(foodItemId),
       source: Value(meal.source.name),
@@ -74,9 +80,21 @@ class IntakeRepository {
       thumbnailImageUrl: Value(meal.thumbnailImageUrl),
       mainImageUrl: Value(meal.mainImageUrl),
       url: Value(meal.url),
-      lastUsedAt: Value(intakeEntity.dateTime.millisecondsSinceEpoch),
-      lastUsedGrams: Value(intakeEntity.amount),
+      lastUsedAt: Value(usedAt.millisecondsSinceEpoch),
+      lastUsedGrams: Value(usedAmount),
     ));
+    return foodItemId;
+  }
+
+  Future<void> addIntake(IntakeEntity intakeEntity) async {
+    _log.fine('Adding intake: ${intakeEntity.id}');
+    final meal = intakeEntity.meal;
+
+    // Upsert food item first
+    final foodItemId = await _keepTheFood(meal,
+        fallbackId: 'custom_${intakeEntity.id}',
+        usedAt: intakeEntity.dateTime,
+        usedAmount: intakeEntity.amount);
 
     // Insert log entry with snapshot values
     await _logEntryDao.insertEntry(LogEntriesCompanion(
@@ -311,6 +329,66 @@ class IntakeRepository {
       return updated != null ? IntakeEntity.fromLogEntry(updated) : null;
     }
     return null;
+  }
+
+  /// Replace the food behind a row, keeping the row.
+  ///
+  /// This is the correction for "I logged the wrong thing", as opposed to "I
+  /// logged the wrong amount of the right thing". It is the same row
+  /// throughout — same id, same day, same meal, same history — so what it used
+  /// to say is still there and can still be put back.
+  ///
+  /// **The amount is kept and every figure is worked out again from the new
+  /// food.** Somebody swapping brown bread for white had the same two slices;
+  /// what changes is what two slices of it come to. The unit follows the new
+  /// food, because a food measured in millilitres and a food measured in grams
+  /// are not the same kind of thing and the row must not claim otherwise.
+  ///
+  /// A row with no food behind it — anything spoken, anything quick-added — is
+  /// refused rather than quietly given one. Those are corrected by what they
+  /// were called and what they came to, and giving one a food would make its
+  /// figures start following a per-100g number nobody chose.
+  Future<IntakeEntity?> changeTheFood(String intakeId, MealEntity meal) async {
+    _log.fine('Changing the food behind $intakeId to ${meal.name}');
+    final row = await _logEntryDao.getById(intakeId);
+    if (row == null) return null;
+    // Neither a quick-add nor a recipe row has a food behind it to replace,
+    // and their amounts are not measured in anything a food knows about — a
+    // quick-add's is always 1, a recipe's is a number of servings of that
+    // recipe. Pointing either at a food would work its figures out as though
+    // '2 servings of shepherd's pie' meant two grams of bread. Both are
+    // refused rather than given a food they were never of.
+    final entryType = row.logEntry.entryType;
+    if (entryType == 'quickAdd' || entryType == 'recipe') return null;
+
+    final amount = row.logEntry.amount;
+    final foodItemId = await _keepTheFood(meal,
+        fallbackId: 'custom_$intakeId',
+        usedAt: DateTime.fromMillisecondsSinceEpoch(row.logEntry.timestamp),
+        usedAmount: amount);
+
+    final perUnit = (meal.nutriments.energyKcal100 ?? 0) / 100;
+    final proteinPerUnit = (meal.nutriments.proteins100 ?? 0) / 100;
+    final carbsPerUnit = (meal.nutriments.carbohydrates100 ?? 0) / 100;
+    final fatPerUnit = (meal.nutriments.fat100 ?? 0) / 100;
+
+    await _logEntryDao.updateEntry(
+      intakeId,
+      LogEntriesCompanion(
+        foodItemId: Value(foodItemId),
+        // A food that does not say how it is measured leaves the row's own
+        // unit where it is, rather than blanking it. "40 of something" is
+        // worse than "40 g" being slightly wrong.
+        unit: Value(meal.mealUnit ?? row.logEntry.unit),
+        snapshotKcal: Value(amount * perUnit),
+        snapshotProtein: Value(amount * proteinPerUnit),
+        snapshotCarbs: Value(amount * carbsPerUnit),
+        snapshotFat: Value(amount * fatPerUnit),
+      ),
+    );
+
+    final updated = await _logEntryDao.getById(intakeId);
+    return updated != null ? IntakeEntity.fromLogEntry(updated) : null;
   }
 
   Future<List<IntakeEntity>> getIntakeByDateAndType(

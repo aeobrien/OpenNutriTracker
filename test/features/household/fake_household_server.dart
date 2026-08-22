@@ -90,7 +90,7 @@ class FakeHouseholdServer {
   /// What a correction is allowed to touch, matching the real server.
   static const amendable = [
     'day', 'owner_id', 'label', 'qty', 'unit',
-    'kcal', 'protein', 'fat', 'carbs', 'slot',
+    'kcal', 'protein', 'fat', 'carbs', 'slot', 'food_id',
   ];
 
   /// What the Mac Mini will say a spoken sentence turned out to be.

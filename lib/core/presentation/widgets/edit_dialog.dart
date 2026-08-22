@@ -7,6 +7,9 @@ import 'package:opennutritracker/features/household/domain/what_it_was.dart';
 import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/utils/navigation_options.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
+import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -41,6 +44,13 @@ class IntakeEdit {
   /// Mac Mini uses, so nothing has to be translated on the way.
   final String? slot;
 
+  /// The food this row should be of instead, or null to leave it as it is.
+  ///
+  /// Not one of [fields] — it is not a figure to be written over one, it is
+  /// the thing every figure is worked out from. Everything else in this class
+  /// says what the row should say; this says what the row *is*.
+  final MealEntity? nowItIs;
+
   /// Whether what was asked for is that the row goes away entirely.
   ///
   /// Removing used to be a sideways swipe on the card. The strip of a meal's
@@ -55,6 +65,7 @@ class IntakeEdit {
     this.kcal,
     this.moveTo,
     this.slot,
+    this.nowItIs,
     this.remove = false,
   });
 
@@ -73,6 +84,9 @@ class EditDialog extends StatefulWidget {
   /// What the meal-of-the-day control is called on screen. Named here so the
   /// test that finds it and the dialog that draws it cannot drift apart.
   static const whichMealLabel = 'Which meal';
+
+  /// What the offer to swap the food is called on screen.
+  static const changeTheFoodLabel = 'Change the food';
 
   final IntakeEntity intakeEntity;
   final bool usesImperialUnits;
@@ -107,6 +121,11 @@ class _EditDialogState extends State<EditDialog> {
   late double _currentKcalEstimate;
   HouseholdPerson? _moveTo;
 
+  /// The food to put behind the row instead, once one has been chosen. Null
+  /// for the overwhelmingly common case, where the row is of the right thing
+  /// and only the amount was wrong.
+  MealEntity? _instead;
+
   /// Which meal of the day the row is under, as the control currently shows
   /// it. Starts on the one it is already under, so opening the dialog and
   /// saving without touching this changes nothing — see [_save].
@@ -119,6 +138,13 @@ class _EditDialogState extends State<EditDialog> {
   /// per-100g number, so "300g" of it is not a fact about anything. Those get
   /// asked what they should be called and what they came to instead.
   bool get _hasNoFoodBehindIt => widget.intakeEntity.isQuickAdd;
+
+  /// A recipe row takes the shape above — it has an amount and a unit — but
+  /// what it is *of* is a recipe, not a food, and its amount is a number of
+  /// servings of that recipe. There is no food there to replace, so it is not
+  /// offered: an offer that can only end in a refusal is worse than no offer.
+  bool get _theFoodCanBeChanged =>
+      !widget.intakeEntity.isQuickAdd && !widget.intakeEntity.isRecipe;
 
   @override
   void initState() {
@@ -173,47 +199,45 @@ class _EditDialogState extends State<EditDialog> {
   void _onAmountChanged() {
     final parsed = double.tryParse(amountEditingController.text);
     if (parsed != null) {
-      final metricAmount = _convertBackToMetricValue(
-        parsed,
-        widget.intakeEntity.meal.mealUnit,
-      );
+      final metricAmount = _convertBackToMetricValue(parsed, _food.mealUnit);
       setState(() {
         _currentKcalEstimate = _calculateKcal(metricAmount);
       });
     }
   }
 
+  /// What the row is of, as the dialog currently stands — which is not
+  /// necessarily what it arrived as. Every figure and every unit on this
+  /// screen comes from here, so choosing a different food changes the
+  /// calories under the amount box before anything is saved.
+  MealEntity get _food => _instead ?? widget.intakeEntity.meal;
+
   double _calculateKcal(double metricAmount) {
-    return metricAmount *
-        (widget.intakeEntity.meal.nutriments.energyPerUnit ?? 0);
+    return metricAmount * (_food.nutriments.energyPerUnit ?? 0);
   }
 
   void _changeAmount(double delta) {
     final current = double.tryParse(amountEditingController.text) ?? 0.0;
     final displayDelta = widget.usesImperialUnits
-        ? _convertValue(delta, widget.intakeEntity.meal.mealUnit) -
-              _convertValue(0, widget.intakeEntity.meal.mealUnit)
+        ? _convertValue(delta, _food.mealUnit) -
+              _convertValue(0, _food.mealUnit)
         : delta;
     final newVal = (current + displayDelta).clamp(0.0, double.infinity);
     amountEditingController.text = newVal.toStringAsFixed(2);
   }
 
   void _setAmount(double metricValue) {
-    final displayValue = _convertValue(
-      metricValue,
-      widget.intakeEntity.meal.mealUnit,
-    );
+    final displayValue = _convertValue(metricValue, _food.mealUnit);
     amountEditingController.text = displayValue.toStringAsFixed(2);
   }
 
   @override
   Widget build(BuildContext context) {
-    final unitStr = _convertUnit(widget.intakeEntity.meal.mealUnit ?? '');
-    final isLiquid = widget.intakeEntity.meal.isLiquid;
+    final unitStr = _convertUnit(_food.mealUnit ?? '');
+    final isLiquid = _food.isLiquid;
     final unitLabel = isLiquid ? 'ml' : 'g';
     final hasServing =
-        widget.intakeEntity.meal.hasServingValues &&
-        widget.intakeEntity.meal.servingQuantity != null;
+        _food.hasServingValues && _food.servingQuantity != null;
 
     return AlertDialog(
       title: Text(S.of(context).editItemDialogTitle),
@@ -307,6 +331,65 @@ class _EditDialogState extends State<EditDialog> {
   String? get _slotIfMoved =>
       _slot == widget.intakeEntity.type ? null : _slot.name;
 
+  /// What the row is of, and the way to say it was something else.
+  ///
+  /// Only on the shape of the dialog that has a food behind it. A spoken or
+  /// quick-added row has no food to replace — it is corrected by what it was
+  /// called and what it came to, which is what that shape already asks.
+  ///
+  /// Choosing here does not save anything. The amount stays where it is and
+  /// every figure on this screen is worked out again from the new food, so the
+  /// calories under the box move before OK is pressed — which is the only way
+  /// somebody can tell whether the food they picked is the one they meant.
+  Widget _whatItIs(BuildContext context) {
+    final quieter = Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        );
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            _instead == null
+                ? (_food.name ?? '')
+                : 'Now: ${_food.name ?? ''}',
+            style: quieter,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        TextButton(
+          onPressed: _chooseAnotherFood,
+          child: const Text(EditDialog.changeTheFoodLabel),
+        ),
+      ],
+    );
+  }
+
+  /// Open the picker, and take back whatever was chosen.
+  ///
+  /// The same picker that adds a food to the day, in a mode where tapping a
+  /// food hands it back rather than going on to log it. A second picker would
+  /// be a second place for "the household's own foods come first" to be true
+  /// or not.
+  Future<void> _chooseAnotherFood() async {
+    final chosen = await Navigator.of(context).pushNamed(
+      NavigationOptions.addMealRoute,
+      arguments: AddMealScreenArguments(
+        // No meal of the day, on purpose: nothing here is being logged, so
+        // there is nothing for it to be logged under. The picker names itself
+        // after what it was opened to do instead.
+        null,
+        widget.intakeEntity.dateTime,
+        insteadOfWhatIsThere: true,
+      ),
+    );
+    if (chosen is! MealEntity) return;
+    if (!mounted) return;
+    setState(() => _instead = chosen);
+    // The amount has not moved, but what it comes to has.
+    _onAmountChanged();
+  }
+
   /// Put an older version back.
   ///
   /// It leaves as an ordinary correction, down the same path as anything typed
@@ -345,9 +428,10 @@ class _EditDialogState extends State<EditDialog> {
     if (newAmount == null) return;
     Navigator.of(context).pop(
       IntakeEdit(
-        _convertBackToMetricValue(newAmount, widget.intakeEntity.meal.mealUnit),
+        _convertBackToMetricValue(newAmount, _food.mealUnit),
         moveTo: _moveTo?.id,
         slot: _slotIfMoved,
+        nowItIs: _instead,
       ),
     );
   }
@@ -443,17 +527,19 @@ class _EditDialogState extends State<EditDialog> {
             if (hasServing) ...[
               ActionChip(
                 label: const Text('\u00BD srv'),
-                onPressed: () =>
-                    _setAmount(widget.intakeEntity.meal.servingQuantity! * 0.5),
+                onPressed: () => _setAmount(_food.servingQuantity! * 0.5),
               ),
               ActionChip(
                 label: const Text('1 srv'),
-                onPressed: () =>
-                    _setAmount(widget.intakeEntity.meal.servingQuantity!),
+                onPressed: () => _setAmount(_food.servingQuantity!),
               ),
             ],
           ],
         ),
+        if (_theFoodCanBeChanged) ...[
+          const SizedBox(height: 8.0),
+          _whatItIs(context),
+        ],
         const SizedBox(height: 8.0),
         WhoseDayIsIt(onChanged: (person) => _moveTo = person),
         const SizedBox(height: 8.0),

@@ -400,7 +400,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // A tap that changed nothing is not a correction, and must not travel to
     // the household as one — an amend with an empty body still bumps the row's
     // version there and discards anything still on the wire for it.
-    if (edit != null && (edit.fields.isNotEmpty || edit.moveTo != null)) {
+    if (edit != null &&
+        (edit.fields.isNotEmpty ||
+            edit.moveTo != null ||
+            edit.nowItIs != null)) {
       // Awaited, then redrawn. Redrawing without waiting reads the day back
       // out of the database before the correction has been written to it, and
       // the ring keeps showing the figure the person just changed.
@@ -408,6 +411,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         intakeEntity.id,
         edit.fields,
         moveTo: edit.moveTo,
+        nowItIs: edit.nowItIs,
       );
       _reload();
       messenger.showSnackBar(

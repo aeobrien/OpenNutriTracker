@@ -17,6 +17,16 @@ class MealItemCard extends StatelessWidget {
   final Function(MealEntity meal)? onToggleFavourite;
   final Function(MealEntity meal)? onQuickAdd;
 
+  /// Hand this food back to whoever opened the picker, instead of going on to
+  /// log it.
+  ///
+  /// Set when the picker was opened to replace the food behind a row that
+  /// already exists. Everything after the choosing — how much, which meal,
+  /// whose day — is already on the screen that opened it, so carrying on into
+  /// the amount screen would ask all of it a second time and then log a second
+  /// row.
+  final bool handBackInstead;
+
   const MealItemCard(
       {super.key,
       required this.day,
@@ -24,7 +34,8 @@ class MealItemCard extends StatelessWidget {
       required this.addMealType,
       required this.usesImperialUnits,
       this.onToggleFavourite,
-      this.onQuickAdd});
+      this.onQuickAdd,
+      this.handBackInstead = false});
 
   @override
   Widget build(BuildContext context) {
@@ -130,7 +141,10 @@ class MealItemCard extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
           ),
-        if (onQuickAdd != null &&
+        // Quick-add is logging, so it is not offered to somebody who came
+        // here to swap a food rather than to log one.
+        if (!handBackInstead &&
+            onQuickAdd != null &&
             mealEntity.lastUsedGrams != null &&
             mealEntity.lastUsedGrams! > 0)
           IconButton(
@@ -152,6 +166,10 @@ class MealItemCard extends StatelessWidget {
   }
 
   void _onItemPressed(BuildContext context) {
+    if (handBackInstead) {
+      Navigator.of(context).pop(mealEntity);
+      return;
+    }
     Navigator.of(context).pushNamed(NavigationOptions.mealDetailRoute,
         arguments: MealDetailScreenArguments(
             mealEntity, addMealType.getIntakeType(), day, usesImperialUnits));

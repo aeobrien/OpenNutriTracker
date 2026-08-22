@@ -33,6 +33,10 @@ class AddMealScreen extends StatefulWidget {
   /// one house, and the strings it added are written the way they are spoken.
   static const ourFoodsLabel = 'Foods you already have';
 
+  /// What the screen calls itself when it was opened to swap a food rather
+  /// than to log one. Named here so the test holds the words the screen shows.
+  static const insteadLabel = 'Choose what it really was';
+
   const AddMealScreen({super.key});
 
   @override
@@ -45,6 +49,9 @@ class _AddMealScreenState extends State<AddMealScreen>
 
   late AddMealType _mealType;
   late DateTime _day;
+
+  /// See [AddMealScreenArguments.insteadOfWhatIsThere].
+  bool _instead = false;
 
   late ProductsBloc _productsBloc;
   late FoodBloc _foodBloc;
@@ -78,6 +85,7 @@ class _AddMealScreenState extends State<AddMealScreen>
         ModalRoute.of(context)?.settings.arguments as AddMealScreenArguments;
     _mealType = args.mealType ?? _suggestMealType();
     _day = args.day;
+    _instead = args.insteadOfWhatIsThere;
     super.didChangeDependencies();
   }
 
@@ -105,7 +113,9 @@ class _AddMealScreenState extends State<AddMealScreen>
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text(_mealType.getTypeName(context)),
+          title: Text(_instead
+              ? AddMealScreen.insteadLabel
+              : _mealType.getTypeName(context)),
           actions: [
             BlocBuilder<AddMealBloc, AddMealState>(
               bloc: locator<AddMealBloc>()..add(InitializeAddMealEvent()),
@@ -213,6 +223,7 @@ class _AddMealScreenState extends State<AddMealScreen>
                                             addMealType: _mealType,
                                             usesImperialUnits:
                                                 state.usesImperialUnits,
+                                            handBackInstead: _instead,
                                           );
                                         }))
                                 : const NoResultsWidget();
@@ -257,6 +268,7 @@ class _AddMealScreenState extends State<AddMealScreen>
                       mealEntity: state.products[index],
                       addMealType: _mealType,
                       usesImperialUnits: state.usesImperialUnits,
+                      handBackInstead: _instead,
                     );
                   }))
           : const NoResultsWidget();
@@ -309,6 +321,7 @@ class _AddMealScreenState extends State<AddMealScreen>
                           usesImperialUnits: state.usesImperialUnits,
                           onToggleFavourite: _onToggleFavourite,
                           onQuickAdd: _onQuickAdd,
+                          handBackInstead: _instead,
                         )),
                     const Divider(),
                   ],
@@ -327,6 +340,7 @@ class _AddMealScreenState extends State<AddMealScreen>
                           usesImperialUnits: state.usesImperialUnits,
                           onToggleFavourite: _onToggleFavourite,
                           onQuickAdd: _onQuickAdd,
+                          handBackInstead: _instead,
                         )),
                   ],
                 ],
@@ -437,5 +451,11 @@ class AddMealScreenArguments {
   final AddMealType? mealType;
   final DateTime day;
 
-  AddMealScreenArguments(this.mealType, this.day);
+  /// Opened to replace the food behind a row that already exists, rather than
+  /// to log a new one. Tapping a food hands it straight back to whoever pushed
+  /// this screen; nothing here logs anything. See [MealItemCard.handBackInstead].
+  final bool insteadOfWhatIsThere;
+
+  AddMealScreenArguments(this.mealType, this.day,
+      {this.insteadOfWhatIsThere = false});
 }

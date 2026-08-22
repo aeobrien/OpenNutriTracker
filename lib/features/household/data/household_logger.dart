@@ -270,6 +270,12 @@ class HouseholdLogger {
     num? carbs,
     String? slot,
     String? day,
+
+    /// Whether to say the row is no longer the household food it was linked
+    /// to. Sent as an explicit null rather than left out, because leaving a
+    /// field out means "do not touch it" and that is the opposite of what is
+    /// being said.
+    bool unlinkFood = false,
   }) async {
     final holder = await _whoseDay();
     return _outbox.enqueue(
@@ -288,6 +294,7 @@ class HouseholdLogger {
         if (carbs != null) 'carbs': carbs,
         if (slot != null) 'slot': slot,
         if (day != null) 'day': day,
+        if (unlinkFood) 'food_id': null,
       },
       ownerId: owner ?? holder,
       authorId: holder,
