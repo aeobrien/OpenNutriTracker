@@ -14,6 +14,16 @@ class FoodDraft {
   final num? fat100;
   final num? carbs100;
   final num? packGrams;
+
+  /// How many separate things are in a pack, when the pack says so — six fish
+  /// cakes, twelve biscuits. Null for anything sold by weight alone, which is
+  /// most food, and null is not a gap in the reading: it is what most packets
+  /// are like.
+  ///
+  /// It is only useful beside [packGrams]. The two together are what let
+  /// somebody add one of something later without knowing what one weighs.
+  final int? perPack;
+
   final num? servingG;
 
   /// 'photo' when the numbers arrived from a photograph and were accepted as
@@ -38,6 +48,7 @@ class FoodDraft {
     this.fat100,
     this.carbs100,
     this.packGrams,
+    this.perPack,
     this.servingG,
     this.trust = 'typed',
     this.source = 'typed',
@@ -57,6 +68,7 @@ class FoodDraft {
         fat100: reading['fat_100'] as num?,
         carbs100: reading['carbs_100'] as num?,
         packGrams: reading['pack_grams'] as num?,
+        perPack: reading['per_pack'] as int?,
         servingG: reading['serving_g'] as num?,
         trust: 'photo',
         source: 'photo',
@@ -101,6 +113,7 @@ class FoodDraft {
       fat100: at('fat_100'),
       carbs100: at('carbs_100'),
       packGrams: at('pack_grams'),
+      perPack: at('per_pack')?.toInt(),
       servingG: at('serving_g'),
       trust: 'web',
       source: text('source') ?? 'web',
@@ -120,6 +133,7 @@ class FoodDraft {
     num? fat100,
     num? carbs100,
     num? packGrams,
+    int? perPack,
     num? servingG,
   }) =>
       FoodDraft(
@@ -131,6 +145,7 @@ class FoodDraft {
         fat100: fat100 ?? this.fat100,
         carbs100: carbs100 ?? this.carbs100,
         packGrams: packGrams ?? this.packGrams,
+        perPack: perPack ?? this.perPack,
         servingG: servingG ?? this.servingG,
         trust: 'typed',
         source: source,
@@ -140,6 +155,17 @@ class FoodDraft {
   /// Whether this is worth saving. A name is the floor: a food with no name is
   /// not findable and so is not in the list in any useful sense.
   bool get isSaveable => name.trim().isNotEmpty;
+
+  /// What one of them weighs, when both numbers are there.
+  ///
+  /// Shown back on the confirmation screen rather than only stored, because a
+  /// pack weight and a count are each easy to mistype and neither looks wrong
+  /// on its own. 400g and 6 is a 67g fish cake; 400g and 60 is a 6.7g one, and
+  /// only the third number says which of those somebody meant.
+  double? get itemGrams =>
+      (packGrams != null && perPack != null && perPack! > 0)
+          ? packGrams!.toDouble() / perPack!
+          : null;
 
   /// True when the numbers are missing. Allowed — a named food with no numbers
   /// is still better than nothing, and the list says so — but worth surfacing.

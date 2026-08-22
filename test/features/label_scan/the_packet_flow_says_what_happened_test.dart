@@ -145,6 +145,10 @@ void main() {
     expect(find.text('Check the numbers'), findsOneWidget,
         reason: 'the numbers should be shown before anything is saved');
 
+    // Scrolled to first, the way a person does: the form is longer than a
+    // phone screen, so Save is below the fold on any real device.
+    await tester.ensureVisible(find.text('Save to the household list'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save to the household list'));
     await tester.pumpAndSettle();
     await outbox.drain();
@@ -237,6 +241,10 @@ void main() {
     await takeAllThree(tester);
     await tester.tap(find.widgetWithText(FilledButton, 'Read the packet'));
     await tester.pumpAndSettle();
+    // Scrolled to first, the way a person does: the form is longer than a
+    // phone screen, so Save is below the fold on any real device.
+    await tester.ensureVisible(find.text('Save to the household list'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save to the household list'));
     await tester.pumpAndSettle();
     await outbox.drain();
@@ -260,6 +268,10 @@ void main() {
     ));
     await tester.enterText(
         find.widgetWithText(TextField, 'Name').first, 'Marmite');
+    await tester.pumpAndSettle();
+    // Scrolled to first, the way a person does: the form is longer than a
+    // phone screen, so Save is below the fold on any real device.
+    await tester.ensureVisible(find.text('Save to the household list'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Save to the household list'));
     await tester.pumpAndSettle();

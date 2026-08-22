@@ -80,6 +80,10 @@ void main() {
       );
 
   Future<void> save(WidgetTester tester) async {
+    // Scrolled to first, the way a person does: the form is longer than a
+    // phone screen, so Save is below the fold on any real device.
+    await tester.ensureVisible(find.text('Save to the household list'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Save to the household list'));
     await tester.pumpAndSettle();
   }

@@ -57,6 +57,25 @@ class ConfirmFoodScreen extends StatefulWidget {
   /// thing.
   static const pageDidNotSay = "The page didn't say — check the packet";
 
+  /// Under the count box, always. Most packets have no count, so an empty box
+  /// here means "sold by weight" rather than "you missed one" — and this is the
+  /// only field on the form where leaving it blank is the ordinary answer.
+  static const countHelper =
+      'Only if the pack says — six fish cakes, twelve biscuits';
+
+  /// The third number, said back.
+  ///
+  /// A pack weight and a count are each easy to mistype and neither looks wrong
+  /// on its own; 400 and 6 is a 67g fish cake and 400 and 60 is a 6.7g one.
+  /// Showing what the two come to is the cheapest check there is, and it
+  /// happens while the packet is still in the person's hand.
+  static String oneOfThemSentence(double grams) {
+    final tidy = grams == grams.roundToDouble()
+        ? grams.round().toString()
+        : grams.toStringAsFixed(1);
+    return 'That makes one of them $tidy g.';
+  }
+
   final HouseholdLogger logger;
 
   /// What to open with. Null starts an empty form, which is the hand-typed
@@ -102,6 +121,8 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
   late final TextEditingController _fat;
   late final TextEditingController _carbs;
   late final TextEditingController _serving;
+  late final TextEditingController _packGrams;
+  late final TextEditingController _perPack;
 
   late FoodDraft _draft;
   bool _touched = false;
@@ -119,14 +140,28 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
     _fat = TextEditingController(text: _numText(_draft.fat100));
     _carbs = TextEditingController(text: _numText(_draft.carbs100));
     _serving = TextEditingController(text: _numText(_draft.servingG));
-    for (final c in [_name, _brand, _kcal, _protein, _fat, _carbs, _serving]) {
+    _packGrams = TextEditingController(text: _numText(_draft.packGrams));
+    _perPack = TextEditingController(text: _numText(_draft.perPack));
+    for (final c in _boxes) {
       c.addListener(_noteAnEdit);
     }
   }
 
+  List<TextEditingController> get _boxes => [
+        _name,
+        _brand,
+        _kcal,
+        _protein,
+        _fat,
+        _carbs,
+        _serving,
+        _packGrams,
+        _perPack,
+      ];
+
   @override
   void dispose() {
-    for (final c in [_name, _brand, _kcal, _protein, _fat, _carbs, _serving]) {
+    for (final c in _boxes) {
       c.dispose();
     }
     super.dispose();
@@ -162,7 +197,8 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
       protein100: _read(_protein),
       fat100: _read(_fat),
       carbs100: _read(_carbs),
-      packGrams: _draft.packGrams,
+      packGrams: _read(_packGrams),
+      perPack: _read(_perPack)?.toInt(),
       servingG: _read(_serving),
       trust: _draft.trust,
       source: _draft.source,
@@ -216,6 +252,7 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
         fat100: food.fat100,
         carbs100: food.carbs100,
         packGrams: food.packGrams,
+        perPack: food.perPack,
         servingG: food.servingG,
       );
       // Said before the screen is dismissed, not after: onSaved is what closes
@@ -263,6 +300,7 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
     TextEditingController controller, {
     bool number = false,
     String? readingKey,
+    String? helper,
   }) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     child: TextField(
@@ -274,7 +312,7 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
             ? (_draft.trust == 'web'
                   ? ConfirmFoodScreen.pageDidNotSay
                   : ConfirmFoodScreen.couldNotRead)
-            : null,
+            : helper,
         helperMaxLines: 2,
       ),
     ),
@@ -313,6 +351,23 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
           number: true,
           readingKey: 'serving_g',
         ),
+        _field(
+          'What the whole pack weighs in grams',
+          _packGrams,
+          number: true,
+          readingKey: 'pack_grams',
+        ),
+        _field(
+          'How many are in a pack',
+          _perPack,
+          number: true,
+          helper: ConfirmFoodScreen.countHelper,
+        ),
+        if (food.itemGrams != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(ConfirmFoodScreen.oneOfThemSentence(food.itemGrams!)),
+          ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Text(trustSentence(food)),
