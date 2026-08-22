@@ -12,6 +12,8 @@
 /// total, so the parts on a screen and the total above them cannot disagree.
 library;
 
+import 'package:opennutritracker/features/household/domain/household_food.dart';
+
 /// One component of a meal, and the food the house uses for it.
 class MealPart {
   /// What the meal calls this slot — 'protein', 'carbohydrate', and so on.
@@ -46,6 +48,13 @@ class MealPart {
   /// it can be. This is the sentence the screen shows instead of a figure.
   final String? why;
 
+  /// The house's food itself, whole — its pack weight, its count, its numbers
+  /// — so that opening this part to log it opens the food the meal actually
+  /// uses. Looking it back up by name would find the wrong tin the first time
+  /// two of them are named alike. Null for a component nobody has chosen a
+  /// food for.
+  final HouseholdFood? food;
+
   const MealPart({
     required this.component,
     this.foodName,
@@ -55,6 +64,7 @@ class MealPart {
     this.kcal,
     this.trust,
     this.why,
+    this.food,
   });
 
   /// Whether this part is one of the ones holding the meal's total up.
@@ -81,6 +91,9 @@ class MealPart {
         kcal: json['kcal'] as num?,
         trust: json['trust'] as String?,
         why: json['why'] as String?,
+        food: json['food'] == null
+            ? null
+            : HouseholdFood.fromJson(json['food'] as Map<String, dynamic>),
       );
 }
 

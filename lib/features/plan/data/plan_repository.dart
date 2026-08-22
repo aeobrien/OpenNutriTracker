@@ -85,6 +85,10 @@ class PlanRepository {
   /// Take one meal off the plan.
   Future<void> remove(int planId) => _api.planRemove(planId);
 
+  /// Whoever this phone says it belongs to. Which of the two portions on a
+  /// meal is *mine* — and therefore what the amount box opens on.
+  Future<int?> owner() => _household.storedOwner();
+
   /// The house, for putting a name beside each person's share. Cached, because
   /// a meal's screen opening should not wait on the network to say two names
   /// it already knows.

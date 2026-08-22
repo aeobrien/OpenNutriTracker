@@ -47,6 +47,10 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
   final quantityTextController = TextEditingController();
   late bool _usesImperialUnits;
 
+  /// This person's share of the meal this food came out of, in grams, or null
+  /// when it did not come out of one.
+  double? _householdPortion;
+
   String _initialUnit = "";
   String _initialQuantity = "";
 
@@ -69,6 +73,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     _day = args.day;
     intakeTypeEntity = args.intakeTypeEntity;
     _usesImperialUnits = args.usesImperialUnits;
+    _householdPortion = args.householdPortion;
     _isFavourite = meal.favourite;
 
     // Set initial unit
@@ -107,6 +112,7 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
       _portion = defaultPortionFor(
         meal,
         usesImperialUnits: _usesImperialUnits,
+        householdPortion: _householdPortion,
         unit: _initialUnit,
         // What one of whatever the box is counting in weighs, asked of the same
         // ladder that converts the typed amount afterwards — so the figure put
@@ -337,6 +343,17 @@ class MealDetailScreenArguments {
   final DateTime day;
   final bool usesImperialUnits;
 
+  /// This person's share of the meal this food came out of, in grams — set
+  /// when the food was opened from a meal's own screen, and null every other
+  /// way in. It is the first thing the amount box starts on when it is there,
+  /// because somebody in the house sat down and said how much of that dinner
+  /// is his, and that beats anything remembered or read off a packet.
+  ///
+  /// In grams, whatever the box ends up counting in. The screen divides it
+  /// through the same ladder that converts the typed amount afterwards.
+  final double? householdPortion;
+
   MealDetailScreenArguments(
-      this.mealEntity, this.intakeTypeEntity, this.day, this.usesImperialUnits);
+      this.mealEntity, this.intakeTypeEntity, this.day, this.usesImperialUnits,
+      {this.householdPortion});
 }

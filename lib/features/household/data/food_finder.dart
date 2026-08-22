@@ -93,6 +93,18 @@ class FoodFinder {
     }
   }
 
+  /// A household food somebody already has in hand, as the picker would have
+  /// handed it over.
+  ///
+  /// For the caller that did not search for it: a meal's own screen already
+  /// holds the food each of its parts uses, joined on by the house, and
+  /// looking it up again by name would find the wrong tin the first time two
+  /// of them are named alike. This puts that food through the same last-amount
+  /// join everything out of the picker goes through, so a food reached the
+  /// short way and a food reached the long way arrive identical.
+  Future<MealEntity> asThePickerHasIt(HouseholdFood food) =>
+      _withWhatHeHadLastTime(food);
+
   /// A household food, carrying what this phone last had of it if it ever has.
   ///
   /// The two are joined by the id the house gave the food: logging one writes

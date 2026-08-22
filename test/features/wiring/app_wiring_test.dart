@@ -513,6 +513,29 @@ void main() {
               'on top of a meal they were never shown');
     });
 
+    test("a meal's own screen is reachable from a planned meal", () {
+      final sheet = _calls('lib/features/plan/presentation/plan_day_sheet.dart');
+      expect(sheet.contains('MealScreen.show('), isTrue,
+          reason: 'the meal screen exists and nothing opens it, so a meal is '
+              'still a name and a number nobody can check');
+    });
+
+    test("the share a meal gives reaches the amount box's first rung", () {
+      // The one wire a widget test in this suite cannot see. The amount screen
+      // is stood in for everywhere — it needs half the app to build — so the
+      // two lines that carry a share from the route's arguments into the
+      // resolver are exactly the kind of call site this file exists for. The
+      // resolver's own behaviour has its own tests; what is checked here is
+      // that anything is handed to it at all.
+      final screen = _calls('lib/features/meal_detail/meal_detail_screen.dart');
+      expect(screen.contains('householdPortion:_householdPortion'), isTrue,
+          reason: "the share arrives at the amount screen and is dropped on "
+              'the floor, so the box still opens on what he had last time and '
+              'the order Aidan settled is still not what happens');
+      expect(screen.contains('_householdPortion=args.householdPortion'), isTrue,
+          reason: 'nothing reads the share off the route, so nothing could '
+              'have been passed on');
+    });
   });
 
   group('saying what you ate', () {

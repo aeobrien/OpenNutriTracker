@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:opennutritracker/core/data/repository/config_repository.dart';
+import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/utils/locator.dart';
+import 'package:opennutritracker/core/utils/navigation_options.dart';
+import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/plan/domain/meal_parts.dart';
+import 'package:opennutritracker/features/meal_detail/meal_detail_screen.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 
 /// A meal's own screen — what it is made of, and whose share is whose.
@@ -136,6 +142,10 @@ class _MealScreenState extends State<MealScreen> {
   /// off the server after every keystroke.
   late Map<int, num?> _portions;
 
+  /// Whoever this phone belongs to — which of the two shares on this screen
+  /// is the one that fills in an amount box.
+  int? _owner;
+
   @override
   void initState() {
     super.initState();
@@ -146,9 +156,11 @@ class _MealScreenState extends State<MealScreen> {
   Future<void> _load() async {
     try {
       final made = await widget.repository.madeOf(widget.mealId);
+      final owner = await widget.repository.owner();
       if (!mounted) return;
       setState(() {
         _made = made;
+        _owner = owner;
         _problem = null;
       });
     } on HouseholdUnreachable catch (e) {
@@ -273,6 +285,10 @@ class _MealScreenState extends State<MealScreen> {
           trailing: part.isAGap
               ? Icon(Icons.help_outline, color: theme.colorScheme.outline)
               : _partFigure(part),
+          // Tapping a part logs that food, opening on this person's share of
+          // it rather than on whatever they last had of it on its own. A
+          // component with no food behind it has nothing to open.
+          onTap: part.food == null ? null : () => _logPart(part),
         ),
       if (trust != null)
         Padding(
@@ -282,6 +298,59 @@ class _MealScreenState extends State<MealScreen> {
                   ?.copyWith(color: theme.colorScheme.outline)),
         ),
     ];
+  }
+
+  /// Open the amount box for one part of this meal.
+  ///
+  /// The starting amount is this person's share of the part: how much of it
+  /// goes in the pan, times how much of the finished meal is theirs. Half a
+  /// traybake made with 500 g of chicken thighs is 250 g of chicken thighs,
+  /// and that is a figure somebody in this house actually decided — which is
+  /// why it comes before what they happened to eat last time.
+  ///
+  /// In grams, which is what the box's own ladder divides through. A share
+  /// arriving as a count would read as two hundred and fifty fish cakes.
+  Future<void> _logPart(MealPart part) async {
+    final navigator = Navigator.of(context);
+    final food = await locator<FoodFinder>().asThePickerHasIt(part.food!);
+    final config = await locator<ConfigRepository>().getConfig();
+    if (!mounted) return;
+    final mine = _owner == null ? null : _portions[_owner];
+    final grams = part.grams;
+    navigator.pushNamed(
+      NavigationOptions.mealDetailRoute,
+      arguments: MealDetailScreenArguments(
+        food,
+        _slot(),
+        DateTime.now(),
+        config.usesImperialUnits,
+        householdPortion: (mine == null || grams == null)
+            ? null
+            : (grams * mine).toDouble(),
+      ),
+    );
+  }
+
+  /// Which meal of the day this goes under. The plan already says — it is the
+  /// slot the panel put this meal in — so it is read rather than guessed at,
+  /// and only a plan that does not say falls back to the time on the clock.
+  IntakeTypeEntity _slot() {
+    switch (widget.planned?.kind) {
+      case 'breakfast':
+        return IntakeTypeEntity.breakfast;
+      case 'lunch':
+        return IntakeTypeEntity.lunch;
+      case 'dinner':
+        return IntakeTypeEntity.dinner;
+      case 'snack':
+        return IntakeTypeEntity.snack;
+      default:
+        final hour = DateTime.now().hour;
+        if (hour < 11) return IntakeTypeEntity.breakfast;
+        if (hour < 15) return IntakeTypeEntity.lunch;
+        if (hour < 21) return IntakeTypeEntity.dinner;
+        return IntakeTypeEntity.snack;
+    }
   }
 
   Widget? _partFigure(MealPart part) {

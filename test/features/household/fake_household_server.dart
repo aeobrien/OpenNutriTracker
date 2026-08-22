@@ -199,7 +199,8 @@ class FakeHouseholdServer {
       num? grams,
       num? kcal,
       String? trust = 'typed',
-      String? why}) {
+      String? why,
+      Map<String, dynamic>? food}) {
     mealParts.putIfAbsent(mealId, () => []).add({
       'component': component,
       'food_name': foodName,
@@ -209,6 +210,10 @@ class FakeHouseholdServer {
       'kcal': kcal,
       'trust': trust,
       'why': why,
+      // The whole food, as the Mini hands it back joined onto the part — so a
+      // phone opening this part to log it opens the food the meal actually
+      // uses rather than looking one up by name.
+      'food': food,
     });
   }
 
