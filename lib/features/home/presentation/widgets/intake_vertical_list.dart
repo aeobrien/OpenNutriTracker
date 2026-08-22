@@ -15,6 +15,8 @@ import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_b
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
+import 'package:opennutritracker/features/today/domain/day_view.dart';
+import 'package:opennutritracker/features/today/presentation/planned_meal_card.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class IntakeVerticalList extends StatefulWidget {
@@ -37,6 +39,17 @@ class IntakeVerticalList extends StatefulWidget {
   onCopyIntakeCallback;
   final TrackedDayEntity? trackedDayEntity;
 
+  /// Meals the household has planned for this slot and nobody has answered
+  /// about yet. They are drawn as ghost cards among the real ones — see
+  /// [PlannedMealCard]. Empty on every slot but the one the plan belongs to.
+  final List<PlannedItem> planned;
+
+  /// Tapped on a ghost card: they ate it, and it becomes a real entry.
+  final void Function(PlannedItem)? onAtePlanned;
+
+  /// Held, then chosen, on a ghost card: they did not have it.
+  final void Function(PlannedItem)? onPlannedNotEaten;
+
   const IntakeVerticalList({
     super.key,
     required this.day,
@@ -51,6 +64,9 @@ class IntakeVerticalList extends StatefulWidget {
     this.onItemTappedCallback,
     this.onCopyIntakeCallback,
     this.trackedDayEntity,
+    this.planned = const [],
+    this.onAtePlanned,
+    this.onPlannedNotEaten,
   });
 
   @override
@@ -170,11 +186,30 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
               height: 120,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: widget.intakeList.length + 1,
-                // List length + placeholder card
+                itemCount: widget.intakeList.length + widget.planned.length + 1,
+                // List length + ghost cards + placeholder card
                 itemBuilder: (BuildContext context, int index) {
                   final firstListElement = index == 0 ? true : false;
-                  if (index == widget.intakeList.length) {
+                  // The ghosts sit after what has been eaten and before the
+                  // add button: the day reads in the order it happened, and
+                  // the thing that has not happened yet comes last.
+                  final ghostAt = index - widget.intakeList.length;
+                  if (ghostAt >= 0 && ghostAt < widget.planned.length) {
+                    final item = widget.planned[ghostAt];
+                    return PlannedMealCard(
+                      key: ValueKey('planned-${item.planId}'),
+                      item: item,
+                      firstListElement: firstListElement,
+                      onAte: widget.onAtePlanned == null
+                          ? null
+                          : () => widget.onAtePlanned!(item),
+                      onNotEaten: widget.onPlannedNotEaten == null
+                          ? null
+                          : () => widget.onPlannedNotEaten!(item),
+                    );
+                  }
+                  if (index ==
+                      widget.intakeList.length + widget.planned.length) {
                     return PlaceholderCard(
                       day: widget.day,
                       onTap: () => _onPlaceholderCardTapped(context),

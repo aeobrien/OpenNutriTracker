@@ -21,6 +21,9 @@ import 'package:opennutritracker/features/said/data/microphone.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/said/presentation/say_what_you_ate_section.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/today/domain/day_view.dart';
+import 'package:opennutritracker/features/today/domain/planned_today.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
 class HomePage extends StatefulWidget {
@@ -41,6 +44,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// because the section that asks it has not been built yet when the day's
   /// catch-up finds it.
   AQuestionStillWaiting? _stillWaiting;
+
+  /// What the household has planned for today that nobody has answered about.
+  /// Drawn as ghost cards in the dinner strip — see [PlannedMealCard].
+  late final PlannedToday _planned = PlannedToday(locator<HouseholdLogger>());
 
   /// Reload the day. Everything on Home that can go stale goes through here so
   /// that no future call site can reload half of it.
@@ -248,6 +255,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               addMealType: AddMealType.dinnerType,
               listIcon: IntakeTypeEntity.dinner.getIconData(),
               intakeList: dinnerIntakeList,
+              // The plan does not record which meal of the day it is for — it
+              // is one meal against a date — and every meal ever planned on
+              // this household's panel has been the evening one. So the ghosts
+              // sit in dinner. If breakfasts are ever planned, this is the line
+              // that has to learn about it.
+              planned: _planned.items,
+              onAtePlanned: (item) => _decidePlanned(item, true),
+              onPlannedNotEaten: (item) => _decidePlanned(item, false),
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
               onItemTappedCallback: onIntakeItemTapped,
@@ -476,9 +491,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       if (mounted && caught.waiting != _stillWaiting) {
         setState(() => _stillWaiting = caught.waiting);
       }
+      // The same read already carries what is planned, so the ghost cards cost
+      // no extra journey to the Mac Mini.
+      if (mounted) setState(() => _planned.takeFrom(day));
     } catch (e) {
       log.info('[SAID] nothing could be caught up this time: $e');
     }
+  }
+
+  /// Record what they did about a planned meal.
+  ///
+  /// The card goes as soon as they tap, before the Mac Mini has heard. The
+  /// answer is on the queue, which is where every other write on this phone
+  /// waits too. What would be dishonest is the opposite: leaving a meal on the
+  /// day looking undecided when the person has decided.
+  Future<void> _decidePlanned(PlannedItem item, bool ate) async {
+    setState(() {}); // the card goes now; PlannedToday decides what is left
+    final queued = await _planned.decide(item, ate: ate);
+    if (!mounted) return;
+    setState(() {});
+    if (!queued) {
+      await _catchUpOnWhatWasSaid();
+      return;
+    }
+    // Confirming a dinner puts it on the ledger, so the diary and the ring both
+    // have to catch up with what just happened.
+    _syncMantel();
   }
 
   void _syncMantel() {

@@ -52,7 +52,12 @@ import 'package:opennutritracker/features/household/data/exercise_sync.dart';
 import 'package:opennutritracker/features/intake/data/mantel_sync_service.dart';
 import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_detail_bloc.dart';
 import 'package:opennutritracker/features/said/data/microphone.dart';
+import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/data/outbox.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/said/data/said_repository.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
@@ -329,7 +334,16 @@ class ADrivableHome {
 
   /// Register everything Home reaches for out of the locator.
   void register() {
+    // A real logger over an in-memory database, not a stand-in. Home builds one
+    // the moment it draws the day, because the ghost entries in the diary need
+    // somewhere to send an answer. Nothing in these tests taps a ghost, so
+    // nothing is ever queued — but a Home that could not find its logger would
+    // throw while building, which is the wiring this harness exists to run.
+    final db = AppDatabase.createInMemory();
+    final api = HouseholdApi(baseUrl: 'http://mini');
     GetIt.instance
+      ..registerSingleton<HouseholdLogger>(HouseholdLogger(
+          HouseholdRepository(ConfigDao(db), api), Outbox.of(db, api)))
       ..registerSingleton<HomeBloc>(bloc)
       ..registerSingleton<DiaryBloc>(QuietDiaryBloc())
       ..registerSingleton<CalendarDayBloc>(QuietCalendarDayBloc())

@@ -4,7 +4,7 @@
 /// person can get to, and the queue is emptied by the running app.
 ///
 /// This file exists because of a real miss. Every other test in this suite
-/// builds its widget directly — `PlannedMealsSection(repository: …)` — which
+/// builds its widget directly — `PlannedMealCard(item: …)` — which
 /// proves the widget works and proves nothing at all about whether the app ever
 /// shows it. Seven promises passed their own tests while being unreachable: no
 /// tab, no route, no caller. A component test cannot see that, because the
@@ -52,14 +52,35 @@ void main() {
       final home = _read('lib/features/home/home_page.dart');
       expect('IntakeVerticalList('.allMatches(home).length, 4,
           reason: 'the diary\'s four meal slots are no longer all on Home');
-      for (final second in const [
-        'PlannedMealsSection(',
-        'WeekAheadSection(',
-      ]) {
-        expect(home.contains(second), isFalse,
-            reason: '$second is a second day on the screen that already has '
-                'one — planning belongs on the kitchen panel');
-      }
+      expect(home.contains('WeekAheadSection('), isFalse,
+          reason: 'WeekAheadSection( is a second day on the screen that '
+              'already has one — the week ahead belongs on the kitchen panel');
+    });
+
+    test('tonight\'s planned dinner is on the day as a ghost entry', () {
+      // Aidan, asked on 22 August where confirming a planned dinner should
+      // live: "a 'ghost' entry on the home screen of the phone app which looks
+      // just like a regular food entry, but says 'tap to confirm' - you tap to
+      // confirm you ate that thing and it becomes a real entry."
+      //
+      // This is the reverse of what this file asserted the day before, and the
+      // reversal is deliberate. The earlier version forbade a planned *section*
+      // on Home — a list of its own above the day, which is the fault it was
+      // written for. What he asked for is not a section: it is a card inside
+      // the diary's own list. So the check moved from "no planned anything on
+      // Home" to "the planned meals are handed to the diary list".
+      //
+      // And it is a wiring check, not a component one, because the card has its
+      // own tests and they cannot see whether Home ever passes it anything.
+      final wired = _calls('lib/features/home/home_page.dart');
+      expect(wired.contains('planned:_planned.items'), isTrue,
+          reason: 'nothing on Home hands the day\'s planned meals to the '
+              'diary, so a planned dinner can never be confirmed from the '
+              'phone');
+      expect(wired.contains('onAtePlanned:'), isTrue,
+          reason: 'the ghost entry is drawn but tapping it records nothing');
+      expect(wired.contains('onPlannedNotEaten:'), isTrue,
+          reason: 'there is no way to say you did not have it');
     });
 
     test('saying what you ate reaches the diary and not a list of its own', () {

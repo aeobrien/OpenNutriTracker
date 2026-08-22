@@ -1,25 +1,26 @@
 /// One tap to say you ate what was planned — and one to say you didn't.
 ///
-/// Behaviour under test (Release B, TM-0010 and TM-0012): a planned meal on
-/// Home carries two answers. "Ate it" puts it on this person's ledger with
-/// their own portion of it. "Didn't have it" puts nothing anywhere. Either
-/// answer takes the row off their day and neither touches the other person's.
+/// Behaviour under test (Release B, TM-0010 and TM-0012): tonight's planned
+/// dinner sits on Home as a ghost entry. Tapping it says you ate it and it
+/// becomes a real entry on this person's ledger, with their own portion of the
+/// meal. Holding it offers the other answer. Either answer takes it off the day
+/// and neither touches the other person's.
 ///
 /// What is proved here, and why each is worth a test:
 ///
-///  * the buttons are on the row Home already shows, not on a screen of their
-///    own — the whole release is about not building a second version of things;
-///  * the row goes as soon as they tap, before the Mac Mini has heard, because
-///    the answer is on the queue and being asked to confirm your dinner twice
-///    is worse than a moment's optimism;
-///  * a sleeping Mini loses nothing — the tap survives and lands on the ledger
-///    when the queue next drains;
-///  * "didn't have it" is a real answer and not just a dismissal, so nothing
-///    appears on the day afterwards;
+///  * the ghost goes as soon as they answer, before the Mac Mini has heard,
+///    because the answer is on the queue and being asked to confirm your dinner
+///    twice is worse than a moment's optimism;
+///  * and it does not come back when the day is read again before the queue has
+///    drained — the server still calls the meal planned at that point, and that
+///    is exactly the moment a person would be asked a second time;
+///  * a sleeping Mini loses nothing — the tap survives and lands when the queue
+///    next drains;
+///  * "didn't have it" is a real answer and not a dismissal, so nothing appears
+///    on the day afterwards and the household records the refusal;
 ///  * and the figure that lands is this person's share, not the meal's.
 library;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
@@ -28,8 +29,7 @@ import 'package:opennutritracker/features/household/data/household_logger.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/household/data/outbox.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
-import 'package:opennutritracker/features/today/presentation/planned_meal_row.dart';
-import 'package:opennutritracker/features/today/presentation/planned_meals_section.dart';
+import 'package:opennutritracker/features/today/domain/planned_today.dart';
 
 import '../household/fake_household_server.dart';
 
@@ -42,9 +42,11 @@ void main() {
   late Outbox outbox;
   late HouseholdLogger logger;
   late DayRepository days;
+  late PlannedToday planned;
   late int traybake;
 
-  HouseholdApi api() => HouseholdApi(baseUrl: 'http://mini', client: mini.client);
+  HouseholdApi api() =>
+      HouseholdApi(baseUrl: 'http://mini', client: mini.client);
 
   setUp(() async {
     db = AppDatabase.createInMemory();
@@ -53,6 +55,7 @@ void main() {
     outbox = Outbox.of(db, api());
     logger = HouseholdLogger(household, outbox);
     days = DayRepository(api(), household);
+    planned = PlannedToday(logger);
     await household.setOwner(mini.aidan);
     traybake = mini.planMeal(
       day: today,
@@ -64,52 +67,32 @@ void main() {
 
   tearDown(() async => db.close());
 
-  Widget screen() => MaterialApp(
-        home: Scaffold(
-          body: PlannedMealsSection(
-            repository: days,
-            day: today,
-            logger: logger,
-          ),
-        ),
-      );
+  /// Read the day the way Home does, and hand it to the ghost list.
+  Future<void> readTheDay() async => planned.takeFrom(await days.today(today));
 
-  /// What is on a person's ledger, as the Mini has it.
-  List<Map<String, dynamic>> ledgerOf(int person) => mini.entries.values
-      .where((e) => e['owner_id'] == person)
-      .toList();
+  List<Map<String, dynamic>> ledgerOf(int person) =>
+      mini.entries.values.where((e) => e['owner_id'] == person).toList();
 
-  group('the buttons are on the day Home already shows', () {
-    testWidgets('a planned meal offers both answers', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
+  List<String> titlesOnTheDay() => [for (final p in planned.items) p.title];
 
-      expect(find.text('Chicken traybake'), findsOneWidget);
-      expect(find.text(PlannedMealRow.ateLabel), findsOneWidget);
-      expect(find.text(PlannedMealRow.notEatenLabel), findsOneWidget);
+  group('what is waiting on the day', () {
+    test('tonight\'s dinner is there to answer', () async {
+      await readTheDay();
+      expect(titlesOnTheDay(), ['Chicken traybake']);
     });
 
-    testWidgets('a section with no way to answer shows no buttons',
-        (tester) async {
-      await tester.pumpWidget(MaterialApp(
-        home: Scaffold(
-          body: PlannedMealsSection(repository: days, day: today),
-        ),
-      ));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Chicken traybake'), findsOneWidget);
-      expect(find.text(PlannedMealRow.ateLabel), findsNothing);
+    test('with this person\'s share of it, not the meal\'s', () async {
+      await readTheDay();
+      // 640 a portion, and he is down for one and a half of them.
+      expect(planned.items.single.kcal, 960);
+      expect(planned.items.single.portions, 1.5);
     });
   });
 
   group('ate it', () {
-    testWidgets('puts the meal on this person\'s ledger', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+    test('puts the meal on this person\'s ledger', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true);
       await outbox.drain();
 
       final mine = ledgerOf(mini.aidan);
@@ -117,68 +100,53 @@ void main() {
       expect(mine.first['label'], 'Chicken traybake');
     });
 
-    testWidgets('with this person\'s share of it, not the meal\'s',
-        (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+    test('with this person\'s share of it, not the meal\'s', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true);
       await outbox.drain();
 
-      // 640 a portion, and he is down for one and a half of them.
       expect(ledgerOf(mini.aidan).first['kcal'], 960);
       expect(ledgerOf(mini.aidan).first['qty'], 1.5);
     });
 
-    testWidgets('and the row goes straight away, before the Mini has heard',
-        (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
+    test(
+      'and the ghost goes straight away, before the Mini has heard',
+      () async {
+        await readTheDay();
+        await planned.decide(planned.items.single, ate: true);
 
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+        // Nothing has been sent yet — the queue has not been drained.
+        expect(mini.entries, isEmpty);
+        expect(
+          titlesOnTheDay(),
+          isEmpty,
+          reason: 'a meal they have answered must not keep asking',
+        );
+      },
+    );
 
-      // Nothing has been sent yet — the queue has not been drained.
-      expect(mini.entries, isEmpty);
-      expect(find.text('Chicken traybake'), findsNothing,
-          reason: 'a meal they have answered must not keep asking');
+    test('it does not come back when the day is asked again', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true);
+
+      // Home re-reads the day for all sorts of reasons before the queue
+      // drains, and at that moment the Mac Mini still calls this planned.
+      await readTheDay();
+
+      expect(titlesOnTheDay(), isEmpty);
     });
 
-    testWidgets('it does not come back when the day is asked again',
-        (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
-
-      // Home reloads for all sorts of reasons before the queue drains.
-      final section = tester.state<PlannedMealsSectionState>(
-          find.byType(PlannedMealsSection));
-      await section.reload();
-      await tester.pumpAndSettle();
-
-      expect(find.text('Chicken traybake'), findsNothing);
-    });
-
-    testWidgets('nothing lands on the other person\'s ledger', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+    test('nothing lands on the other person\'s ledger', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true);
       await outbox.drain();
 
       expect(ledgerOf(mini.emily), isEmpty);
     });
 
-    testWidgets('and the other person still has it to decide', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+    test('and the other person still has it to decide', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true);
       await outbox.drain();
 
       expect(mini.plannedFor(mini.emily, today), hasLength(1));
@@ -187,22 +155,15 @@ void main() {
   });
 
   group("didn't have it", () {
-    testWidgets('takes it off the day', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.notEatenLabel));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Chicken traybake'), findsNothing);
+    test('takes it off the day', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: false);
+      expect(titlesOnTheDay(), isEmpty);
     });
 
-    testWidgets('and puts nothing at all on the ledger', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.notEatenLabel));
-      await tester.pumpAndSettle();
+    test('and puts nothing at all on the ledger', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: false);
       await outbox.drain();
 
       expect(ledgerOf(mini.aidan), isEmpty);
@@ -211,13 +172,11 @@ void main() {
   });
 
   group('a Mini that is asleep', () {
-    testWidgets('does not lose the answer', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
+    test('does not lose the answer', () async {
+      await readTheDay();
       mini.reachable = false;
 
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+      await planned.decide(planned.items.single, ate: true);
       expect(await outbox.pendingCount(), 1);
 
       mini.reachable = true;
@@ -227,26 +186,18 @@ void main() {
       expect(await outbox.pendingCount(), 0);
     });
 
-    testWidgets('and the row still goes, because the answer was given',
-        (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
+    test('and the ghost still goes, because the answer was given', () async {
+      await readTheDay();
       mini.reachable = false;
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Chicken traybake'), findsNothing);
+      await planned.decide(planned.items.single, ate: true);
+      expect(titlesOnTheDay(), isEmpty);
     });
   });
 
   group('a phone that sends twice', () {
-    testWidgets('still only eats it once', (tester) async {
-      await tester.pumpWidget(screen());
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text(PlannedMealRow.ateLabel));
-      await tester.pumpAndSettle();
+    test('still only eats it once', () async {
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true);
       await outbox.drain();
       await outbox.drain();
 
