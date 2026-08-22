@@ -84,7 +84,8 @@ class FoodLedger {
   }
 
   /// Correct a logged food at the household end — what it is called, its
-  /// amount, its figures, and whose day it counts against.
+  /// amount, its figures, whose day it counts against, and which meal of the
+  /// day it sits under.
   ///
   /// One call. See HouseholdLogger.amendFood for why moving is not separate.
   Future<void> amend(
@@ -96,6 +97,7 @@ class FoodLedger {
     num? protein,
     num? fat,
     num? carbs,
+    String? slot,
   }) async {
     try {
       await _logger.amendFood(
@@ -107,6 +109,7 @@ class FoodLedger {
         protein: protein,
         fat: fat,
         carbs: carbs,
+        slot: slot,
       );
     } catch (e) {
       _log.severe('[HOUSE] changed on this phone but not in the household: $e');

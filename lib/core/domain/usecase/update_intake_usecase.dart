@@ -51,6 +51,11 @@ class UpdateIntakeUsecase {
       protein: row.totalProteinsGram,
       fat: row.totalFatsGram,
       carbs: row.totalCarbsGram,
+      // Only when it was actually corrected. The house falls back to the
+      // clock for a row nobody gave a slot, so sending this phone's idea of
+      // the slot on every correction would quietly pin rows that were never
+      // meant to be pinned.
+      slot: intakeFields['slot'] as String?,
     );
 
     if (moveTo != null) {

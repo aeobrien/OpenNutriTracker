@@ -6,6 +6,7 @@ import 'package:opennutritracker/features/household/presentation/whose_day_is_it
 import 'package:opennutritracker/features/household/domain/what_it_was.dart';
 import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
+import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/utils/calc/unit_calc.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -35,6 +36,11 @@ class IntakeEdit {
   /// Who to move it to, or null to leave it where it is.
   final int? moveTo;
 
+  /// Which meal of the day it should be under, or null to leave it where it
+  /// is. One of breakfast / lunch / dinner / snack — the same four names the
+  /// Mac Mini uses, so nothing has to be translated on the way.
+  final String? slot;
+
   /// Whether what was asked for is that the row goes away entirely.
   ///
   /// Removing used to be a sideways swipe on the card. The strip of a meal's
@@ -48,6 +54,7 @@ class IntakeEdit {
     this.label,
     this.kcal,
     this.moveTo,
+    this.slot,
     this.remove = false,
   });
 
@@ -58,10 +65,15 @@ class IntakeEdit {
     if (amount != null) 'amount': amount,
     if (label != null) 'label': label,
     if (kcal != null) 'kcal': kcal,
+    if (slot != null) 'slot': slot,
   };
 }
 
 class EditDialog extends StatefulWidget {
+  /// What the meal-of-the-day control is called on screen. Named here so the
+  /// test that finds it and the dialog that draws it cannot drift apart.
+  static const whichMealLabel = 'Which meal';
+
   final IntakeEntity intakeEntity;
   final bool usesImperialUnits;
 
@@ -95,6 +107,11 @@ class _EditDialogState extends State<EditDialog> {
   late double _currentKcalEstimate;
   HouseholdPerson? _moveTo;
 
+  /// Which meal of the day the row is under, as the control currently shows
+  /// it. Starts on the one it is already under, so opening the dialog and
+  /// saving without touching this changes nothing — see [_save].
+  late IntakeTypeEntity _slot;
+
   /// Whether this is a row the amount cannot speak for.
   ///
   /// A spoken row and a quick-added row both arrive as a name and a set of
@@ -119,6 +136,7 @@ class _EditDialogState extends State<EditDialog> {
     kcalEditingController = TextEditingController(
       text: widget.intakeEntity.totalKcal.round().toString(),
     );
+    _slot = widget.intakeEntity.type;
     _currentKcalEstimate = _hasNoFoodBehindIt
         ? widget.intakeEntity.totalKcal
         : _calculateKcal(widget.intakeEntity.amount);
@@ -207,6 +225,10 @@ class _EditDialogState extends State<EditDialog> {
                 ? _foodlessRow(context)
                 : _rowWithAFoodBehindIt(
                     context, unitStr, unitLabel, hasServing),
+            // Under both shapes, for the same reason: a breakfast eaten late
+            // and a snack that was really lunch are the same mistake whether
+            // or not there is a food behind the row.
+            _whichMealOfTheDay(context),
             // Under both shapes of the dialog, because a row with a food
             // behind it and a row without one are corrected just as often and
             // wrongly just as often.
@@ -238,6 +260,53 @@ class _EditDialogState extends State<EditDialog> {
     );
   }
 
+  /// Which meal of the day this row is under.
+  ///
+  /// The Mac Mini has accepted a corrected slot since the day it could accept
+  /// a correction at all; this is the control that was missing, not the
+  /// ability. Until now a lunch logged under dinner could only be removed and
+  /// logged again, which loses when it was eaten and who entered it.
+  ///
+  /// It starts on the slot the row already has rather than on nothing, so it
+  /// reads as a statement of where the row is — and saving without touching it
+  /// sends no slot at all.
+  Widget _whichMealOfTheDay(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: DropdownButtonFormField<IntakeTypeEntity>(
+        initialValue: _slot,
+        decoration: const InputDecoration(labelText: EditDialog.whichMealLabel),
+        items: [
+          for (final slot in IntakeTypeEntity.values)
+            DropdownMenuItem(value: slot, child: Text(_nameOf(slot))),
+        ],
+        onChanged: (chosen) {
+          if (chosen != null) setState(() => _slot = chosen);
+        },
+      ),
+    );
+  }
+
+  /// What each meal of the day is called on screen. Capitalised here rather
+  /// than shown as the enum spells it, because 'breakfast' in a dropdown reads
+  /// like a value out of a database.
+  static String _nameOf(IntakeTypeEntity slot) {
+    switch (slot) {
+      case IntakeTypeEntity.breakfast:
+        return 'Breakfast';
+      case IntakeTypeEntity.lunch:
+        return 'Lunch';
+      case IntakeTypeEntity.dinner:
+        return 'Dinner';
+      case IntakeTypeEntity.snack:
+        return 'Snack';
+    }
+  }
+
+  /// Only sent when it actually changed. See [_save].
+  String? get _slotIfMoved =>
+      _slot == widget.intakeEntity.type ? null : _slot.name;
+
   /// Put an older version back.
   ///
   /// It leaves as an ordinary correction, down the same path as anything typed
@@ -267,6 +336,7 @@ class _EditDialogState extends State<EditDialog> {
           label: name.isEmpty ? null : name,
           kcal: double.tryParse(kcalEditingController.text.trim()),
           moveTo: _moveTo?.id,
+          slot: _slotIfMoved,
         ),
       );
       return;
@@ -277,6 +347,7 @@ class _EditDialogState extends State<EditDialog> {
       IntakeEdit(
         _convertBackToMetricValue(newAmount, widget.intakeEntity.meal.mealUnit),
         moveTo: _moveTo?.id,
+        slot: _slotIfMoved,
       ),
     );
   }

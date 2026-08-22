@@ -762,4 +762,39 @@ void main() {
               'get wrong');
     });
   });
+
+  group('putting a row under another meal', () {
+    // Release 7's last audit gap. Four separate pieces, and three of the four
+    // are invisible on screen if the fourth is missing: the control can be on
+    // the dialog and the slot still never leave the phone.
+    test('the dialog offers the control', () {
+      final dialog = _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains('_whichMealOfTheDay(context),'), isTrue,
+          reason: 'built but mounted nowhere is release 6\'s lesson');
+    });
+
+    test('what the dialog was asked for reaches the day', () {
+      final dialog = _calls('lib/core/presentation/widgets/edit_dialog.dart');
+      expect(dialog.contains("if(slot!=null)'slot':slot,"), isTrue,
+          reason: 'a slot the correction does not carry is a slot Home never '
+              'sees');
+    });
+
+    test('the phone writes it down', () {
+      final repository =
+          _calls('lib/core/data/repository/intake_repository.dart');
+      expect(repository.contains("fields.containsKey('slot')"), isTrue);
+      expect(repository.contains('mealSlot:Value('), isTrue,
+          reason: 'the day is drawn from the slot column, not from the house');
+    });
+
+    test('and tells the house', () {
+      final usecase = _calls('lib/core/domain/usecase/update_intake_usecase.dart');
+      expect(usecase.contains("slot:intakeFields['slot']asString?,"), isTrue,
+          reason: 'corrected here and not there is the two machines '
+              'disagreeing with nothing to say so');
+      final ledger = _calls('lib/features/household/data/food_ledger.dart');
+      expect(ledger.contains('slot:slot,'), isTrue);
+    });
+  });
 }

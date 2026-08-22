@@ -230,6 +230,28 @@ class IntakeRepository {
   Future<IntakeEntity?> updateIntake(
       String intakeId, Map<String, dynamic> fields) async {
     _log.fine('Updating intake: $intakeId');
+    // Which meal of the day it sits under, written first and on its own.
+    // It touches nothing the other corrections touch — a row moved from lunch
+    // to dinner is the same food in the same amount — so it is applied here
+    // rather than folded into a branch that also recomputes figures.
+    if (fields.containsKey('slot')) {
+      final row = await _logEntryDao.getById(intakeId);
+      if (row == null) return null;
+      await _logEntryDao.updateEntry(
+        intakeId,
+        LogEntriesCompanion(mealSlot: Value(fields['slot'] as String)),
+      );
+      // A slot change on its own still has to hand the row back. The caller
+      // takes what the row was off the day's total and puts what it now is
+      // back on; answering null there would take the figures off and never
+      // return them, leaving the day short by a meal nobody removed.
+      if (!fields.containsKey('label') &&
+          !fields.containsKey('kcal') &&
+          !fields.containsKey('amount')) {
+        final updated = await _logEntryDao.getById(intakeId);
+        return updated != null ? IntakeEntity.fromLogEntry(updated) : null;
+      }
+    }
     if (fields.containsKey('label') || fields.containsKey('kcal')) {
       final row = await _logEntryDao.getById(intakeId);
       if (row == null) return null;
