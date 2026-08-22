@@ -104,8 +104,15 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     // the journey to the label instead of being lost the moment it is worked
     // out.
     if (_initialQuantity == "") {
-      _portion = defaultPortionFor(meal,
-          usesImperialUnits: _usesImperialUnits, unit: _initialUnit);
+      _portion = defaultPortionFor(
+        meal,
+        usesImperialUnits: _usesImperialUnits,
+        unit: _initialUnit,
+        // What one of whatever the box is counting in weighs, asked of the same
+        // ladder that converts the typed amount afterwards — so the figure put
+        // in and the figure read back out can never disagree.
+        gramsPerUnit: MealDetailBloc.convertQuantity(meal, 1, _initialUnit),
+      );
       _initialQuantity = _portion!.amount;
       quantityTextController.text = _portion!.amount;
       _mealDetailBloc.add(UpdateKcalEvent(

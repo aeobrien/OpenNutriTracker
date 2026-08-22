@@ -370,6 +370,9 @@ void main() {
       expect(screen.contains('portion: _portion'), isTrue,
           reason: 'the reason is worked out and then thrown away before the '
               'sheet can say it');
+      expect(screen.contains('gramsPerUnit:'), isTrue,
+          reason: 'without it the starting figure arrives in grams in a box '
+              'counting pies — 96 g of pie reads as ninety-six pies');
     });
 
     test('the sheet says where the figure came from', () {

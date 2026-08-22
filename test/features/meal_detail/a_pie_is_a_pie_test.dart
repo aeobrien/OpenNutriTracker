@@ -134,6 +134,12 @@ void main() {
     test('never a gram figure dropped into a box that counts things', () {
       // The failure this stops: 96 grams last time, unit "item", box reads 96.
       // Ninety-six pies.
+      //
+      // It used to stop it by throwing the 96 away and opening on one whole
+      // pie. That was the wrong half to give up. Aidan settled the order on
+      // 22 August 2026 — the household's portion, then what he had last time,
+      // then the packet — so what he actually ate stays and is said in the
+      // words the box is using: 96 g of a 125 g pie is eight tenths of one.
       final lastTime = MealEntity(
         code: 'pies',
         name: 'Chicken and stuffing pie',
@@ -150,10 +156,10 @@ void main() {
         source: MealSourceEntity.custom,
       );
 
-      expect(
-          defaultPortionFor(lastTime, usesImperialUnits: false, unit: 'item')
-              .amount,
-          '1');
+      final portion = defaultPortionFor(lastTime,
+          usesImperialUnits: false, unit: 'item', gramsPerUnit: 125);
+      expect(portion.amount, '0.8');
+      expect(portion.source, PortionSource.lastTime);
     });
 
     test('and nothing changes for a food with no pack at all', () {
