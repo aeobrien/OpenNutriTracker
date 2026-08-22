@@ -6,13 +6,13 @@
 > the phone for half an hour, you never opened it, and 56 is 55 plus one more
 > thing.
 
-**Date:** 2026-08-22 22:58, last added to 2026-08-23 00:52 (clocks read in the
+**Date:** 2026-08-22 22:58, last added to 2026-08-23 00:58 (clocks read in the
 turns they were written)
 
-Six things. None of them is being chased and none has been decided for him.
+Eight things. None of them is being chased and none has been decided for him.
 The first two are the ones that change what he can do on his phone; the rest
-are smaller and can be answered in a sentence each. The sixth was found later
-in the night, while auditing release 7.
+are smaller and can be answered in a sentence each. The sixth was found while
+auditing release 7, and the last two while auditing release 8 afterwards.
 
 ---
 
@@ -83,12 +83,51 @@ shared.
 built and will not be until he confirms it — a rule that refuses something a
 person deliberately asked for is not a thing to invent on his behalf.
 
+## 7. Whether release 8 is finished, given that its card stops short of what the release promises
+
+Found while auditing release 8, which turned out to be already built.
+
+Release 8's exit criterion is that this becomes usable: *"Fourteen jars in the
+fridge, one shopping line per ingredient, and seven mornings where logging
+breakfast takes one tap each."* Its only card, BC-0027, ends with *"Nothing is
+recorded as having been made, and nothing is counted afterwards."*
+
+So the jars and the shopping line are built and tested. The seven mornings are
+not in this release, and not in any other.
+
+**What he has to say.** Which of three it is: the mornings were describing the
+logging that already works, so the release is done; or a batch that has been
+made should become something loggable in one tap, which is new behaviour and
+wants a card; or the exit criterion overreached and should be narrowed.
+
+The difference between the first two is whether he expects to search for the
+porridge every morning or tap it. That is a question about his kitchen rather
+than about the code, which is why it is here. Full working in
+`~/Dev/Mantel/ledger/plans/2026-08-23-release-8-what-is-already-built.md`.
+
+## 8. A kitchen-panel change is committed and not deployed
+
+**What it is.** The batch-cooking sheet on the kitchen panel had no tests, alone
+among that panel's four screens. It has them now, and closing the gap turned up
+one thing that drew a finished-looking screen and said something untrue: a meal
+the server did not answer for was drawn with an empty ingredient list, which
+reads as "this takes nothing to make". It is marked instead.
+
+**What he has to do.** Say whether to put it on the Mini, or just do it. It was
+not deployed because the panel is what he opens in the morning and he was
+asleep, not because there is any doubt about it. One command.
+
 ---
 
 ## Which build, and which walkthrough
 
-**Build 54 is on his phone.** The walkthrough to open is
-`walkthrough-runs/2026-08-22-build-54-packets-amounts-and-the-list/input.json`.
-Written, not launched. It replaces the thirteen-step panel from last night, which
-described build 53. Starting from the top loses him nothing: the one step he had
-marked was reading the version number, and that number has changed.
+**Build 56 is on his phone**, installed 00:49:45 BST on 23 August and confirmed
+on the device at 00:49:58. The panel to open is
+`walkthrough-runs/2026-08-23-build-56-corrections-and-the-wrong-food/input.json`
+— thirty steps.
+
+Two earlier panels are dead and should be ignored: the build 54 one and the
+build 55 one. Build 55 was on the phone for half an hour, unopened, and 56 is 55
+plus the food swap. Starting the new one from the top loses him nothing — the
+only step ever marked on any of them was reading the version number, and that
+number has moved three times since.
