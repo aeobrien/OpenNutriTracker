@@ -22,7 +22,9 @@ import 'package:opennutritracker/features/said/data/said_repository.dart';
 import 'package:opennutritracker/features/today/data/day_repository.dart';
 import 'package:opennutritracker/features/said/presentation/say_what_you_ate_section.dart';
 import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/today/domain/day_view.dart';
+import 'package:opennutritracker/features/today/presentation/planned_meal_card.dart';
 import 'package:opennutritracker/features/today/domain/planned_today.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -47,7 +49,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   /// What the household has planned for today that nobody has answered about.
   /// Drawn as ghost cards in the dinner strip — see [PlannedMealCard].
-  late final PlannedToday _planned = PlannedToday(locator<HouseholdLogger>());
+  late final PlannedToday _planned =
+      PlannedToday(locator<HouseholdLogger>(), locator<HouseholdRepository>());
 
   /// Reload the day. Everything on Home that can go stale goes through here so
   /// that no future call site can reload half of it.
@@ -270,6 +273,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               onAtePlanned: (item, slot) => _decidePlanned(item, slot, true),
               onPlannedNotEaten: (item, slot) =>
                   _decidePlanned(item, slot, false),
+              onAtePlannedForBoth: (item, slot) =>
+                  _decidePlanned(item, slot, true, forBoth: true),
+              otherPersonName: _planned.theOther?.name,
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
               onItemTappedCallback: onIntakeItemTapped,
@@ -501,6 +507,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       // The same read already carries what is planned, so the ghost cards cost
       // no extra journey to the Mac Mini.
       if (mounted) setState(() => _planned.takeFrom(day));
+      // Who the other person is, asked alongside the day rather than when the
+      // card is held: a sheet that had to wait for the network before it could
+      // offer its second answer would sometimes not offer it at all.
+      await _planned.findTheOtherPerson();
+      if (mounted) setState(() {});
     } catch (e) {
       log.info('[SAID] nothing could be caught up this time: $e');
     }
@@ -512,14 +523,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// answer is on the queue, which is where every other write on this phone
   /// waits too. What would be dishonest is the opposite: leaving a meal on the
   /// day looking undecided when the person has decided.
-  Future<void> _decidePlanned(PlannedItem item, String slot, bool ate) async {
+  Future<void> _decidePlanned(PlannedItem item, String slot, bool ate,
+      {bool forBoth = false}) async {
     setState(() {}); // the card goes now; PlannedToday decides what is left
-    final queued = await _planned.decide(item, ate: ate, slot: slot);
+    final answer = await _planned.decide(item,
+        ate: ate, slot: slot, alsoForTheOther: forBoth);
     if (!mounted) return;
     setState(() {});
-    if (!queued) {
+    if (answer == PlanAnswer.notRecorded) {
       await _catchUpOnWhatWasSaid();
       return;
+    }
+    final other = _planned.theOther?.name;
+    if (forBoth && other != null) {
+      // Said either way. "It went on their day too" is the thing the person
+      // tapping cannot see for themselves — the other person's day is on the
+      // other person's phone — and so is the news that it did not.
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(answer == PlanAnswer.onlyMine
+            ? "Yours is recorded. $other's could not be — try again"
+            : PlannedMealCard.alsoForText(other)),
+      ));
     }
     // Confirming a dinner puts it on the ledger, so the diary and the ring both
     // have to catch up with what just happened.

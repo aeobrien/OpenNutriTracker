@@ -56,6 +56,13 @@ class IntakeVerticalList extends StatefulWidget {
   /// Held, then chosen, on a ghost card: they did not have it.
   final void Function(PlannedItem item, String slot)? onPlannedNotEaten;
 
+  /// Held, then chosen, on a ghost card: it was both of their dinners.
+  final void Function(PlannedItem item, String slot)? onAtePlannedForBoth;
+
+  /// The other person's name, so the ghost card can offer to answer for them
+  /// by name. Null when there is nobody the phone can name.
+  final String? otherPersonName;
+
   const IntakeVerticalList({
     super.key,
     required this.day,
@@ -73,6 +80,8 @@ class IntakeVerticalList extends StatefulWidget {
     this.planned = const [],
     this.onAtePlanned,
     this.onPlannedNotEaten,
+    this.onAtePlannedForBoth,
+    this.otherPersonName,
   });
 
   @override
@@ -216,6 +225,10 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                       onNotEaten: widget.onPlannedNotEaten == null
                           ? null
                           : () => widget.onPlannedNotEaten!(item, _slot),
+                      onAteForBoth: widget.onAtePlannedForBoth == null
+                          ? null
+                          : () => widget.onAtePlannedForBoth!(item, _slot),
+                      otherName: widget.otherPersonName,
                     );
                   }
                   if (index ==

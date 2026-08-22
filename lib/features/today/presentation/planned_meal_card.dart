@@ -33,6 +33,23 @@ class PlannedMealCard extends StatelessWidget {
   /// on it would make both of them wrong to press.
   static const notEatenLabel = "Didn't have it";
 
+  /// The second way of saying you ate it: it was both your dinners.
+  ///
+  /// It sits beside "didn't have it" behind the same hold rather than on the
+  /// card, for the same reason: the card is 120 points wide and a third
+  /// control on it would make all three wrong to press. A plain tap stays the
+  /// answer for the ordinary case, which is one person answering for
+  /// themselves.
+  static const bothOfUsLabel = 'For both of us';
+
+  /// What the second answer promises, and deliberately no more.
+  ///
+  /// It does not name a figure. The household already recorded how much of
+  /// this meal is theirs and the Mac Mini reads that when the answer arrives;
+  /// a number invented on this phone would be a made-up calorie figure on
+  /// somebody else's day.
+  static String alsoForText(String name) => 'Also logged for $name';
+
   /// This person's share, in words. Deliberately says nothing when nobody has
   /// said what the portion is: "1 portion" would be a guess, and a guess here
   /// becomes a calorie figure that looks exactly as solid as a real one.
@@ -67,6 +84,15 @@ class PlannedMealCard extends StatelessWidget {
   /// Held, then chosen, when they did not.
   final VoidCallback? onNotEaten;
 
+  /// Held, then chosen, when it was both of their dinners. Absent when the
+  /// phone cannot name the other person, in which case the sheet offers what
+  /// it always did.
+  final VoidCallback? onAteForBoth;
+
+  /// The other person's name, for the sheet to say out loud. Null when there
+  /// is nobody to answer for.
+  final String? otherName;
+
   final bool firstListElement;
 
   const PlannedMealCard({
@@ -75,10 +101,17 @@ class PlannedMealCard extends StatelessWidget {
     required this.firstListElement,
     this.onAte,
     this.onNotEaten,
+    this.onAteForBoth,
+    this.otherName,
   });
 
-  Future<void> _offerNotEaten(BuildContext context) async {
-    final chosen = await showModalBottomSheet<bool>(
+  /// Whether holding the card has anything to offer.
+  bool get _holdOffersAnything =>
+      onNotEaten != null || (onAteForBoth != null && otherName != null);
+
+  Future<void> _offerTheOtherAnswers(BuildContext context) async {
+    final other = otherName;
+    final chosen = await showModalBottomSheet<VoidCallback>(
       context: context,
       builder: (sheet) => SafeArea(
         child: Column(
@@ -88,16 +121,29 @@ class PlannedMealCard extends StatelessWidget {
               title: Text(item.title),
               subtitle: Text(portionText(item)),
             ),
-            ListTile(
-              leading: const Icon(Icons.close),
-              title: const Text(notEatenLabel),
-              onTap: () => Navigator.of(sheet).pop(true),
-            ),
+            if (onAteForBoth != null && other != null)
+              ListTile(
+                leading: const Icon(Icons.people_outline),
+                title: const Text(bothOfUsLabel),
+                // Their portion is the household's, not this phone's — said
+                // here so the person tapping knows whose amount lands on the
+                // other person's day.
+                subtitle: Text("$other's own portion, as the household has it"),
+                onTap: () => Navigator.of(sheet).pop(onAteForBoth),
+              ),
+            if (onNotEaten != null)
+              ListTile(
+                leading: const Icon(Icons.close),
+                title: const Text(notEatenLabel),
+                onTap: () => Navigator.of(sheet).pop(onNotEaten),
+              ),
           ],
         ),
       ),
     );
-    if (chosen == true) onNotEaten?.call();
+    // Closing the sheet without choosing is not an answer, and neither is
+    // choosing while the card is on its way off the screen.
+    chosen?.call();
   }
 
   @override
@@ -124,9 +170,9 @@ class PlannedMealCard extends StatelessWidget {
               elevation: 0,
               child: InkWell(
                 onTap: onAte,
-                onLongPress: onNotEaten == null
+                onLongPress: !_holdOffersAnything
                     ? null
-                    : () => _offerNotEaten(context),
+                    : () => _offerTheOtherAnswers(context),
                 child: Stack(
                   children: [
                     Center(

@@ -341,9 +341,14 @@ class ADrivableHome {
     // throw while building, which is the wiring this harness exists to run.
     final db = AppDatabase.createInMemory();
     final api = HouseholdApi(baseUrl: 'http://mini');
+    // One repository, shared. Home asks it two different questions — whose
+    // phone this is, and who else lives here — and two copies would be two
+    // answers.
+    final household = HouseholdRepository(ConfigDao(db), api);
     GetIt.instance
-      ..registerSingleton<HouseholdLogger>(HouseholdLogger(
-          HouseholdRepository(ConfigDao(db), api), Outbox.of(db, api)))
+      ..registerSingleton<HouseholdRepository>(household)
+      ..registerSingleton<HouseholdLogger>(
+          HouseholdLogger(household, Outbox.of(db, api)))
       ..registerSingleton<HomeBloc>(bloc)
       ..registerSingleton<DiaryBloc>(QuietDiaryBloc())
       ..registerSingleton<CalendarDayBloc>(QuietCalendarDayBloc())
