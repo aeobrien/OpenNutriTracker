@@ -1,7 +1,7 @@
 # Build 53 — saving a packet, and the amount it opens on
 
 **Date:** 2026-08-22
-**Built:** 18:58 BST. **Not installed** — see the bottom of this file.
+**Built:** 18:58 BST. **Installed 20:02:52, launched 20:03:04, watched opening.**
 **Branch:** `household-release-1`. Nothing pushed; `main` untouched.
 
 ## What is in it
@@ -41,17 +41,31 @@ Commits: `843deba`, `750c392`, `1cd47ef`, and the version bump.
   simulator binaries. This is the check that build 50 failed.
 - `build/ios/iphoneos/Runner.app/Runner` sha256 begins `f380ac0ded06d573`.
 
-## What was NOT watched, and why
+## Installed and watched opening
 
-**It is not on his phone.** `xcrun devicectl` reports the device Mirador as
-`unavailable` — eight attempts between 18:59 and 19:02 all failed with
-`CoreDeviceError 1000`. The pairing is intact (`device info details` answers
-fine from cached data) but there is no live connection, which means the phone
-is locked, asleep, or off this network. Build 52 installed over the same link
-at 18:13, so nothing about the setup has changed.
+Installed at 20:02:52 and launched at 20:03:04. The phone reported eleven
+requests to the Mac Mini one second later, all answered 200 — register-device,
+the day, settings, people, and the pending queue — which is the same evidence
+build 52 was accepted on. `devicectl device info apps` reports
+`com.aeobrien.foodtracker  1.0.0  53` on the device, so the thing that opened
+is this build and not the one before it.
 
-So: **nothing here has been seen running on a phone.** It is tests and a
-verified bundle. The install needs the phone awake and on the network.
+The earlier failure was the phone being asleep and off the network, nothing
+more: the same command succeeded first time once it was awake.
+
+## What is still NOT watched
+
+**That saving a food actually offers to put it on today, and that saying yes
+brings up the amount screen.** Aidan has said the offer did not appear at all
+last time, and the diagnosis explains why — it was a bottom strip that wiped
+itself after ten seconds, so he never got to say yes. An explanation is not a
+check.
+
+It cannot be checked from here: it needs somebody's hands on the phone. Steps 5
+and 7 of the walkthrough are exactly that check. The signature to look for on
+the Mac Mini is a `GET /household/foods?q=…` — the lookup that only runs when
+the offer is taken up, and the request that was absent from the log at 18:21
+and 18:25 on build 52.
 
 ## The walkthrough
 
