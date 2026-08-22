@@ -97,6 +97,48 @@ class MealPart {
       );
 }
 
+/// What came of asking the house to add a meal up.
+///
+/// A refusal is an ordinary answer here, not a failure: a meal nobody has
+/// finished describing cannot be added up, and the useful thing to say is
+/// which part is missing. Treating that as an error would put a red message in
+/// front of somebody whose meal is simply half-written.
+class MealWorkedOut {
+  final bool ok;
+
+  /// One standard portion, when it could be worked out.
+  final num? kcal;
+  final String? trust;
+
+  /// Why not, in the house's own words, and which components are holding it
+  /// up — each with its own reason, because "no food chosen" and "the food
+  /// has no numbers" are fixed in different places.
+  final String? why;
+  final List<MealPart> awaiting;
+
+  const MealWorkedOut({
+    required this.ok,
+    this.kcal,
+    this.trust,
+    this.why,
+    this.awaiting = const [],
+  });
+
+  factory MealWorkedOut.fromJson(Map<String, dynamic> json) => MealWorkedOut(
+        ok: (json['ok'] as bool?) ?? false,
+        kcal: (json['nutrition'] as Map<String, dynamic>?)?['calories'] as num?,
+        trust: json['trust'] as String?,
+        why: json['why'] as String?,
+        awaiting: [
+          for (final a in (json['awaiting'] as List?) ?? const [])
+            MealPart(
+              component: (a as Map<String, dynamic>)['component'] as String,
+              why: a['why'] as String?,
+            ),
+        ],
+      );
+}
+
 /// Everything a meal is made of, in the order the house lists it.
 class MealMadeOf {
   final int mealId;

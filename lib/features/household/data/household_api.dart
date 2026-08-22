@@ -426,6 +426,15 @@ class HouseholdApi {
     return body['plan_id'] as int;
   }
 
+  /// Add a meal's parts up into one figure and store it on the meal.
+  ///
+  /// A meal that cannot be added up answers ok:false with what is missing,
+  /// not an error — nothing has gone wrong, the meal is simply not finished
+  /// being described, and the caller has to be able to name the part holding
+  /// it up rather than show a failure.
+  Future<Map<String, dynamic>> mealWorkOut(int mealId) =>
+      post('/household/meal/$mealId/work-out', const {});
+
   /// How much of a planned meal is one person's.
   ///
   /// Against the plan row rather than the meal, because two people eating the

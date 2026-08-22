@@ -70,6 +70,8 @@ class MealScreen extends StatefulWidget {
       'added up from anything.';
   static const noPortionsHere =
       'Portions are set on the day this is planned for.';
+  static const workItOut = 'Work out its calories';
+  static const doItAgain = 'Work them out again';
   static const nobodyHasSaid = 'Nobody has said';
 
   /// The trust line, in words. Null when there is no figure to qualify —
@@ -146,6 +148,8 @@ class _MealScreenState extends State<MealScreen> {
   /// is the one that fills in an amount box.
   int? _owner;
 
+  bool _busy = false;
+
   @override
   void initState() {
     super.initState();
@@ -168,6 +172,41 @@ class _MealScreenState extends State<MealScreen> {
       setState(() =>
           _problem = "${e.headline}, so what this is made of can't be shown.");
     }
+  }
+
+  /// Ask the house to add this meal up.
+  ///
+  /// A meal it cannot add up is not an error and is not shown as one: the
+  /// answer names the part holding it up, which is the thing somebody can go
+  /// and fix. Re-doing it is safe and is offered plainly, because days already
+  /// logged keep the numbers they were logged with.
+  Future<void> _workItOut() async {
+    setState(() {
+      _busy = true;
+      _problem = null;
+    });
+    String? said;
+    try {
+      final result = await widget.repository.workOut(widget.mealId);
+      if (!result.ok) {
+        final named = result.awaiting.map((p) => p.component).join(', ');
+        final why = result.why ?? 'Some of this meal has no numbers yet';
+        said = named.isEmpty ? '$why.' : '$why — $named.';
+      }
+    } on HouseholdUnreachable catch (e) {
+      said = "${e.headline}, so it can't be added up from here just now.";
+    }
+    // The re-read happens first and the message is put up after it, in that
+    // order. Reloading clears whatever was on screen — which is right, since
+    // the screen is being rebuilt — and a message set before it would be wiped
+    // by the very reload meant to show what the message is about. It was, and
+    // pressing the button looked like it did nothing at all.
+    await _load();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (said != null) _problem = said;
+    });
   }
 
   Future<void> _setPortion(HouseholdPerson person, num portions) async {
@@ -207,6 +246,20 @@ class _MealScreenState extends State<MealScreen> {
             _heading(theme, MealScreen.madeOfHeading),
             if (made == null && _problem == null) const Text('…'),
             if (made != null) ..._theParts(theme, made),
+            // Only offered for a meal that is made of parts. A packet's
+            // numbers are the packet's; there is nothing here to add up, and a
+            // button that cannot work should not be on the screen.
+            if (made != null && made.isMadeOfParts)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: TextButton.icon(
+                  onPressed: _busy ? null : _workItOut,
+                  icon: const Icon(Icons.calculate_outlined),
+                  label: Text(made.kcal == null
+                      ? MealScreen.workItOut
+                      : MealScreen.doItAgain),
+                ),
+              ),
           ],
         ),
       ),

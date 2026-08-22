@@ -168,6 +168,79 @@ void main() {
     });
   });
 
+  group('adding it up', () {
+    testWidgets('a meal with everything said gets its figure, from this screen',
+        (tester) async {
+      // The Mac Mini has been able to do this since it was built and no phone
+      // code had ever asked it to.
+      mini.addMeal(name: 'Chicken traybake');
+      mini.addMealPart(1, 'protein',
+          foodName: 'Chicken thighs', qty: 500, unit: 'g', grams: 500,
+          kcal: 885, trust: 'weighed');
+      mini.addMealPart(1, 'carbohydrate',
+          foodName: 'New potatoes', qty: 600, unit: 'g', grams: 600,
+          kcal: 450, trust: 'typed');
+      final planId = mini.planMeal(
+          day: mini.today, title: 'Chicken traybake', mealId: 1);
+      await openIt(tester, planned: await plannedRow(planId));
+
+      expect(find.text(MealScreen.workItOut), findsOneWidget);
+      await tester.tap(find.text(MealScreen.workItOut));
+      await tester.pumpAndSettle();
+
+      expect(mini.mealFigures[1]!['kcal'], 1335);
+      // And the screen now offers to do it again rather than to do it.
+      expect(find.text(MealScreen.doItAgain), findsOneWidget);
+    });
+
+    testWidgets('a meal it cannot add up names the part, and is not an error',
+        (tester) async {
+      // Nothing has gone wrong. The meal is half-written, and the useful thing
+      // to say is which half.
+      mini.addMeal(name: 'Chicken traybake');
+      mini.addMealPart(1, 'protein',
+          foodName: 'Chicken thighs', qty: 500, unit: 'g', grams: 500,
+          kcal: 885, trust: 'weighed');
+      mini.addMealPart(1, 'vegetables',
+          why: 'nobody has said what this is or how much of it goes in');
+      final planId = mini.planMeal(
+          day: mini.today, title: 'Chicken traybake', mealId: 1);
+      await openIt(tester, planned: await plannedRow(planId));
+
+      await tester.tap(find.text(MealScreen.workItOut));
+      await tester.pumpAndSettle();
+
+      // On the sentence, not on the word 'vegetables'. That word is already
+      // on this screen as a row of the meal, so a test looking for it passes
+      // whether the refusal was shown or silently swallowed — which is what
+      // happened when this guard was first broken deliberately and nothing
+      // went red.
+      expect(find.textContaining('some of this meal has no numbers yet'),
+          findsOneWidget,
+          reason: 'the refusal was swallowed, so pressing the button appears '
+              'to do nothing at all');
+      expect(find.textContaining('— vegetables.'), findsOneWidget,
+          reason: 'the part holding it up was not named, so there is nothing '
+              'on screen saying what to go and fix');
+      expect(mini.mealFigures[1], isNull,
+          reason: 'a figure was stored for a meal that is missing a part');
+    });
+
+    testWidgets('a meal out of a packet is not offered the button at all',
+        (tester) async {
+      // There is nothing to add up, and a control that cannot work should not
+      // be on the screen.
+      mini.addMeal(name: 'Fish and chips', kcal: 900);
+      final planId = mini.planMeal(
+          day: mini.today, title: 'Fish and chips', mealKcal: 900, mealId: 1);
+
+      await openIt(tester, planned: await plannedRow(planId));
+
+      expect(find.text(MealScreen.workItOut), findsNothing);
+      expect(find.text(MealScreen.doItAgain), findsNothing);
+    });
+  });
+
   group('whose share', () {
     testWidgets('each person is named with their own portion beside it',
         (tester) async {

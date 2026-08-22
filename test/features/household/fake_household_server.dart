@@ -897,6 +897,52 @@ class FakeHouseholdServer {
                   .substring(0, 10)),
             ],
           };
+        } else if (path.startsWith('/household/meal/') &&
+            path.endsWith('/work-out')) {
+          // The Mini's own shape: a meal it cannot add up answers 200 with
+          // what is missing, because nothing has gone wrong — the meal is
+          // simply not finished being described.
+          final id = int.parse(path.split('/')[3]);
+          final made = mealParts[id] ?? const <Map<String, dynamic>>[];
+          final gaps = [for (final p in made) if (p['why'] != null) p];
+          if (made.isEmpty) {
+            result = {
+              'ok': false,
+              'meal_id': id,
+              'why': 'this meal is not made of parts — its numbers come off '
+                  'the packet it was bought in',
+              'awaiting': const [],
+            };
+          } else if (gaps.isNotEmpty) {
+            result = {
+              'ok': false,
+              'meal_id': id,
+              'why': 'some of this meal has no numbers yet',
+              'awaiting': [
+                for (final g in gaps)
+                  {'component': g['component'], 'why': g['why']},
+              ],
+            };
+          } else {
+            final total = made.fold<num>(0, (sum, p) => sum + (p['kcal'] as num));
+            // The weakest trust of any part, not an average — a dinner mostly
+            // weighed and partly guessed is a guess.
+            const worst = ['guess', 'photo', 'typed', 'weighed'];
+            var trust = 'weighed';
+            for (final p in made) {
+              final t = (p['trust'] as String?) ?? 'guess';
+              if (worst.indexOf(t) < worst.indexOf(trust)) trust = t;
+            }
+            mealWorkedOut(id, kcal: total, trust: trust);
+            result = {
+              'ok': true,
+              'meal_id': id,
+              'nutrition': {'calories': total},
+              'trust': trust,
+              'from': 'parts',
+              'parts': made.length,
+            };
+          }
         } else if (path == '/household/plan/portion') {
           final planId = body['plan_id'] as int;
           if (!plan.any((p) => p['plan_id'] == planId)) {

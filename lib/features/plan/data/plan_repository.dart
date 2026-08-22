@@ -85,6 +85,15 @@ class PlanRepository {
   /// Take one meal off the plan.
   Future<void> remove(int planId) => _api.planRemove(planId);
 
+  /// Ask the house to add a meal up from its parts and remember the figure.
+  ///
+  /// Once, on purpose. The figure is stored on the meal, so every day it is
+  /// planned on afterwards reads it straight off rather than adding it up
+  /// again — and days already logged keep the numbers they were logged with,
+  /// which is what makes re-doing this safe.
+  Future<MealWorkedOut> workOut(int mealId) async =>
+      MealWorkedOut.fromJson(await _api.mealWorkOut(mealId));
+
   /// Whoever this phone says it belongs to. Which of the two portions on a
   /// meal is *mine* — and therefore what the amount box opens on.
   Future<int?> owner() => _household.storedOwner();
