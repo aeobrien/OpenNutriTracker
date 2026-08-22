@@ -1,12 +1,12 @@
 # What is waiting on Aidan
 
-> **Build 55 is on your phone, and the panel to open is**
-> `~/Dev/FoodTracker/OpenNutriTracker/walkthrough-runs/2026-08-23-build-55-corrections-and-what-a-row-used-to-say/input.json`
-> — twenty-eight steps, replacing last night's twenty-two-step one. Start it
-> from the top; the only step you had marked was reading the version number,
-> and that has changed again.
+> **Build 56 is on your phone, and the panel to open is**
+> `~/Dev/FoodTracker/OpenNutriTracker/walkthrough-runs/2026-08-23-build-56-corrections-and-the-wrong-food/input.json`
+> — thirty steps. Start it from the top. Ignore the build 55 panel: 55 was on
+> the phone for half an hour, you never opened it, and 56 is 55 plus one more
+> thing.
 
-**Date:** 2026-08-22 22:58, last added to 2026-08-23 00:18 (clocks read in the
+**Date:** 2026-08-22 22:58, last added to 2026-08-23 00:52 (clocks read in the
 turns they were written)
 
 Six things. None of them is being chased and none has been decided for him.
@@ -35,12 +35,15 @@ which is what its own card asks for; that is not a precedent for the rest.
 
 ## 2. The build on his phone has not been watched opening
 
-**What it is.** Build 55 went on at 00:17:02 and the device reports `1.0.0 55`,
-but the launch is refused for the same reason build 54's was between 22:27 and
-22:46 — his phone is on the network, it is locked, and iOS will not open an app
-on a locked phone. For build 54 the Mac Mini saw no requests from the phone in
-that window either, so the gap was confirmed from both ends rather than
+**What it is.** Build 56 went on at 00:49:45 and the device reports `1.0.0 56`
+(read at 00:49:58), but the launch is refused for the same reason builds 54 and
+55 were — his phone is on the network, it is locked, and iOS will not open an
+app on a locked phone. For build 54 the Mac Mini saw no requests from the phone
+in that window either, so the gap was confirmed from both ends rather than
 assumed.
+
+Build 55 went on at 00:17:02 and was replaced half an hour later, unopened.
+Nothing was lost by that: 56 is 55 plus the food swap.
 
 **What he has to do.** Nothing separate. Step 1 of the morning's walkthrough is
 exactly this check.
