@@ -1,5 +1,6 @@
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
+import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/plan/domain/meal_parts.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
 
@@ -30,6 +31,18 @@ class PlanRepository {
   /// handsets and the panel cannot disagree about where a week starts.
   Future<PlanWeek> week({String? start}) async =>
       PlanWeek.fromJson(await _api.plan(start: start));
+
+  /// Say how much of a planned meal is one person's.
+  ///
+  /// Not queued, for the same reason nothing else in this class is: a portion
+  /// is a decision made in front of a screen showing what is already there.
+  Future<void> setPortion({
+    required int planId,
+    required int personId,
+    required num portions,
+  }) =>
+      _api.planPortion(
+          planId: planId, personId: personId, portions: portions);
 
   /// What one of the house's meals is made of.
   ///
@@ -71,6 +84,11 @@ class PlanRepository {
 
   /// Take one meal off the plan.
   Future<void> remove(int planId) => _api.planRemove(planId);
+
+  /// The house, for putting a name beside each person's share. Cached, because
+  /// a meal's screen opening should not wait on the network to say two names
+  /// it already knows.
+  Future<List<HouseholdPerson>> people() => _household.cachedPeople();
 
   Future<String?> _actor() async {
     final owner = await _household.storedOwner();

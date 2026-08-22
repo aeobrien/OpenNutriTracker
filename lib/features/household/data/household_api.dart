@@ -426,6 +426,23 @@ class HouseholdApi {
     return body['plan_id'] as int;
   }
 
+  /// How much of a planned meal is one person's.
+  ///
+  /// Against the plan row rather than the meal, because two people eating the
+  /// same dinner are not eating the same amount of it, and the same meal next
+  /// Tuesday might be a different amount again.
+  Future<void> planPortion({
+    required int planId,
+    required int personId,
+    required num portions,
+  }) async {
+    await post('/household/plan/portion', {
+      'plan_id': planId,
+      'person_id': personId,
+      'portions': portions,
+    });
+  }
+
   /// What one of the house's meals is made of.
   ///
   /// The Mac Mini has answered this since it was built and nothing on a phone

@@ -175,27 +175,47 @@ class FakeHouseholdServer {
   int get aidan => 1;
   int get emily => 2;
 
-  /// What each meal is made of, keyed by meal id then by component — the
-  /// shape the Mac Mini answers `/household/meal/<id>/parts` in.
-  final Map<int, Map<String, Map<String, dynamic>>> mealParts = {};
+  /// What each meal is made of, keyed by meal id, in reading order — the shape
+  /// the Mac Mini answers `/household/meal/<id>/parts` in.
+  ///
+  /// The grams and the calories are given here already worked out, because
+  /// that is how they arrive: the pack -> item -> gram ladder lives on the
+  /// Mini beside the arithmetic that produces the meal's total. A stand-in
+  /// that did the ladder itself would be a second implementation of the one
+  /// thing these tests are not testing.
+  final Map<int, List<Map<String, dynamic>>> mealParts = {};
 
-  /// Say what one component of a meal is. [kcal100] left null is a food the
-  /// house has but has no numbers for; [qty] left null is a part nobody has
-  /// said the amount of. Both are gaps a meal's screen has to name.
+  /// What each meal's own stored figure is, keyed by meal id.
+  final Map<int, Map<String, dynamic>> mealFigures = {};
+
+  /// Say what one component of a meal is. [why] left set is a part that cannot
+  /// be counted — no food chosen, no weight for a pack, or a food the house
+  /// has but has no numbers for. Every one of those is a gap a meal's screen
+  /// has to name rather than skip.
   void addMealPart(int mealId, String component,
-      {required String foodName,
+      {String? foodName,
       num? qty,
       String? unit,
-      num? kcal100,
-      String trust = 'typed'}) {
-    mealParts.putIfAbsent(mealId, () => {})[component] = {
+      num? grams,
+      num? kcal,
+      String? trust = 'typed',
+      String? why}) {
+    mealParts.putIfAbsent(mealId, () => []).add({
       'component': component,
       'food_name': foodName,
       'qty': qty,
       'unit': unit,
-      'kcal_100': kcal100,
+      'grams': grams,
+      'kcal': kcal,
       'trust': trust,
-    };
+      'why': why,
+    });
+  }
+
+  /// Say that a meal has been worked out, and to what.
+  void mealWorkedOut(int mealId,
+      {required num kcal, String trust = 'typed', String from = 'parts'}) {
+    mealFigures[mealId] = {'kcal': kcal, 'trust': trust, 'from': from};
   }
 
   /// The house's own meals, the list the phone's planner picks from. Kept
@@ -227,10 +247,19 @@ class FakeHouseholdServer {
     required String day,
     required String title,
     num? mealKcal,
+    int? mealId,
+    String? trust,
     Map<int, num> forPeople = const {},
   }) {
     final planId = plan.length + 1;
-    plan.add({'plan_id': planId, 'day': day, 'title': title, 'meal_kcal': mealKcal});
+    plan.add({
+      'plan_id': planId,
+      'day': day,
+      'title': title,
+      'meal_kcal': mealKcal,
+      'meal_id': mealId,
+      'trust': trust,
+    });
     portions[planId] = {...forPeople};
     return planId;
   }
@@ -372,9 +401,9 @@ class FakeHouseholdServer {
               'date': day,
               'title': p['title'],
               'kind': 'meal',
-              'meal_id': null,
+              'meal_id': p['meal_id'],
               'meal_kcal': p['meal_kcal'],
-              'meal_kcal_trust': null,
+              'meal_kcal_trust': p['trust'],
               'portions': {
                 for (final person in people)
                   '${person['id']}':
@@ -818,7 +847,22 @@ class FakeHouseholdServer {
         } else if (path.startsWith('/household/meal/') &&
             path.endsWith('/parts')) {
           final id = int.parse(path.split('/')[3]);
-          result = {'ok': true, 'parts': mealParts[id] ?? const {}};
+          final made = mealParts[id] ?? const <Map<String, dynamic>>[];
+          final figure = mealFigures[id] ?? const <String, dynamic>{};
+          result = {
+            'ok': true,
+            'meal_id': id,
+            'name': meals
+                .firstWhere((m) => m['id'] == id, orElse: () => const {})['name'],
+            'made_of': made,
+            'kcal': figure['kcal'],
+            'trust': figure['trust'],
+            'from': figure['from'],
+            'awaiting': [
+              for (final p in made)
+                if (p['why'] != null) p['component'],
+            ],
+          };
         } else if (path == '/household/meals') {
           final needle =
               (request.url.queryParameters['q'] ?? '').trim().toLowerCase();
@@ -848,6 +892,16 @@ class FakeHouseholdServer {
                   .substring(0, 10)),
             ],
           };
+        } else if (path == '/household/plan/portion') {
+          final planId = body['plan_id'] as int;
+          if (!plan.any((p) => p['plan_id'] == planId)) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': 'no planned meal $planId'}),
+                404,
+                headers: {'content-type': 'application/json'});
+          }
+          setPortion(planId, body['person_id'] as int, body['portions'] as num);
+          result = {'ok': true, 'plan_id': planId};
         } else if (path == '/household/plan/add') {
           final day = (body['date'] as String?) ?? '';
           final mealId = body['meal_id'] as int?;
@@ -876,7 +930,7 @@ class FakeHouseholdServer {
                 headers: {'content-type': 'application/json'});
           }
           final planId =
-              planMeal(day: day, title: title, mealKcal: kcal);
+              planMeal(day: day, title: title, mealKcal: kcal, mealId: mealId);
           plannedBy.add(body['actor'] as String?);
           result = {'ok': true, 'plan_id': planId};
         } else if (path.startsWith('/household/plan/') &&

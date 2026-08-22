@@ -6,6 +6,10 @@
 /// like the one that is right. The Mac Mini has recorded what each meal is made
 /// of since it was built — which component, which of the house's own foods
 /// stands for it, and how much goes in — and no phone code has ever asked.
+///
+/// Nothing here works out a weight or a calorie figure. Both arrive already
+/// worked out, from the same arithmetic on the Mini that produces the meal's
+/// total, so the parts on a screen and the total above them cannot disagree.
 library;
 
 /// One component of a meal, and the food the house uses for it.
@@ -14,31 +18,47 @@ class MealPart {
   /// The panel's own words, not a second vocabulary invented here.
   final String component;
 
-  /// The house's food standing in that slot.
-  final String foodName;
+  /// The house's food standing in that slot, or null when nobody has chosen
+  /// one. A component with no food is still a part of the meal — it is the
+  /// commonest reason a meal has no total, and it is listed rather than
+  /// skipped so that a screen can say so.
+  final String? foodName;
 
-  /// How much of it goes in, in [unit]. Null when nobody has said, which is
-  /// not the same as none — a part with no quantity is why a meal's figure is
-  /// still awaiting rather than wrong.
+  /// How much of it goes in, in [unit], as it was written down.
   final num? quantity;
   final String? unit;
 
-  /// Calories per 100g of the food itself, or null when the house has the food
-  /// but not its numbers.
-  final num? kcal100;
+  /// What that amount weighs, worked out on the Mini. Null when it could not
+  /// be — a pack of something nobody has weighed.
+  final num? grams;
+
+  /// What this part contributes. Null when the weight is unknown, or when the
+  /// house has the food but not its numbers. Never zero standing in for
+  /// either: a part contributing nothing and a part nobody can count are
+  /// different facts and a person fixes them in different places.
+  final num? kcal;
 
   /// How much the food's own numbers can be trusted: 'weighed', 'typed',
   /// 'photo', 'guess'. A meal is only ever as good as its worst part.
   final String? trust;
 
+  /// Why this part cannot be counted, in the house's own words, or null when
+  /// it can be. This is the sentence the screen shows instead of a figure.
+  final String? why;
+
   const MealPart({
     required this.component,
-    required this.foodName,
+    this.foodName,
     this.quantity,
     this.unit,
-    this.kcal100,
+    this.grams,
+    this.kcal,
     this.trust,
+    this.why,
   });
+
+  /// Whether this part is one of the ones holding the meal's total up.
+  bool get isAGap => why != null;
 
   /// How much of it goes in, said the way it is written on the plan.
   ///
@@ -52,43 +72,75 @@ class MealPart {
     return unit == null || unit!.isEmpty ? tidy : '$tidy $unit';
   }
 
-  factory MealPart.fromJson(String component, Map<String, dynamic> json) =>
-      MealPart(
-        component: component,
-        foodName: (json['food_name'] as String?) ?? '',
+  factory MealPart.fromJson(Map<String, dynamic> json) => MealPart(
+        component: (json['component'] as String?) ?? '',
+        foodName: json['food_name'] as String?,
         quantity: json['qty'] as num?,
         unit: json['unit'] as String?,
-        kcal100: json['kcal_100'] as num?,
+        grams: json['grams'] as num?,
+        kcal: json['kcal'] as num?,
         trust: json['trust'] as String?,
+        why: json['why'] as String?,
       );
 }
 
 /// Everything a meal is made of, in the order the house lists it.
 class MealMadeOf {
   final int mealId;
+  final String? name;
   final List<MealPart> parts;
 
-  const MealMadeOf({required this.mealId, this.parts = const []});
+  /// The meal's own stored figure for one standard portion, or null when it
+  /// has never been worked out. Null all the way through rather than zero.
+  final num? kcal;
+
+  /// The weakest trust of any part it was built from, as the Mini recorded it
+  /// when the figure was stored.
+  final String? trust;
+
+  /// Where the figure came from — 'parts' when it was added up from these.
+  final String? from;
+
+  const MealMadeOf({
+    required this.mealId,
+    this.name,
+    this.parts = const [],
+    this.kcal,
+    this.trust,
+    this.from,
+  });
 
   /// Whether this meal is described by parts at all. A ready meal bought in a
   /// box has none, and that is an ordinary fact about it rather than a gap —
   /// its numbers come off the packet.
   bool get isMadeOfParts => parts.isNotEmpty;
 
-  /// The parts nobody has said a quantity for. These are exactly the ones
-  /// holding a meal's figure up, so the screen can name them rather than
-  /// leaving somebody to work out which one is missing.
-  List<MealPart> get awaiting =>
-      [for (final p in parts) if (p.quantity == null || p.kcal100 == null) p];
+  /// The parts holding the meal's figure up. These are named on the screen,
+  /// rather than leaving somebody to work out which one is missing.
+  List<MealPart> get awaiting => [for (final p in parts) if (p.isAGap) p];
 
-  factory MealMadeOf.fromJson(int mealId, Map<String, dynamic> json) {
-    final raw = (json['parts'] as Map<String, dynamic>?) ?? const {};
-    return MealMadeOf(
-      mealId: mealId,
-      parts: [
-        for (final entry in raw.entries)
-          MealPart.fromJson(entry.key, entry.value as Map<String, dynamic>),
-      ],
-    );
+  /// What the parts come to, added up here. Deliberately separate from [kcal],
+  /// which is what the house last stored: they agree only when the meal has
+  /// been worked out since its parts last changed, and the one screen showing
+  /// both is where somebody would notice that it has not been.
+  ///
+  /// Null when any part cannot be counted, because a total that quietly omits
+  /// the broccoli is a total somebody will believe.
+  num? get partsComeTo {
+    if (!isMadeOfParts || awaiting.isNotEmpty) return null;
+    return parts.fold<num>(0, (sum, p) => sum + (p.kcal ?? 0));
   }
+
+  factory MealMadeOf.fromJson(int mealId, Map<String, dynamic> json) =>
+      MealMadeOf(
+        mealId: mealId,
+        name: json['name'] as String?,
+        parts: [
+          for (final e in (json['made_of'] as List?) ?? const [])
+            MealPart.fromJson(e as Map<String, dynamic>),
+        ],
+        kcal: json['kcal'] as num?,
+        trust: json['trust'] as String?,
+        from: json['from'] as String?,
+      );
 }

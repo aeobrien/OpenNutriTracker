@@ -41,10 +41,18 @@ void main() {
   void aTraybake() {
     mini.addMeal(name: 'Chicken traybake', kcal: 620);
     mini.addMealPart(1, 'protein',
-        foodName: 'Chicken thighs', qty: 500, unit: 'g', kcal100: 177,
+        foodName: 'Chicken thighs',
+        qty: 500,
+        unit: 'g',
+        grams: 500,
+        kcal: 885,
         trust: 'weighed');
     mini.addMealPart(1, 'carbohydrate',
-        foodName: 'New potatoes', qty: 600, unit: 'g', kcal100: 75,
+        foodName: 'New potatoes',
+        qty: 600,
+        unit: 'g',
+        grams: 600,
+        kcal: 450,
         trust: 'typed');
   }
 
@@ -76,7 +84,9 @@ void main() {
     test('a part nobody has said the amount of is named, not dropped',
         () async {
       aTraybake();
-      mini.addMealPart(1, 'vegetables', foodName: 'Tenderstem', kcal100: 35);
+      mini.addMealPart(1, 'vegetables',
+          foodName: 'Tenderstem',
+          why: 'nobody has said what this is or how much of it goes in');
 
       final made = await plan.madeOf(1);
 
@@ -95,7 +105,11 @@ void main() {
       // A different gap with the same consequence: the meal cannot be added up.
       aTraybake();
       mini.addMealPart(1, 'vegetables',
-          foodName: 'Tenderstem', qty: 200, unit: 'g');
+          foodName: 'Tenderstem',
+          qty: 200,
+          unit: 'g',
+          grams: 200,
+          why: "Tenderstem is in the house's list but its calories are not");
 
       final made = await plan.madeOf(1);
       expect(made.awaiting.map((p) => p.component), ['vegetables']);
@@ -107,6 +121,40 @@ void main() {
       aTraybake();
       final made = await plan.madeOf(1);
       expect(made.awaiting, isEmpty);
+      expect(made.partsComeTo, 1335);
+    });
+
+    test('what the parts come to is withheld while one cannot be counted',
+        () async {
+      // Not the sum of the ones that can be. A total that quietly leaves the
+      // broccoli out is a total somebody will believe.
+      aTraybake();
+      mini.addMealPart(1, 'vegetables',
+          foodName: 'Tenderstem',
+          why: 'nobody has said what this is or how much of it goes in');
+
+      expect((await plan.madeOf(1)).partsComeTo, isNull);
+    });
+
+    test("the meal's own stored figure is separate from what its parts add to",
+        () async {
+      // They agree only when the meal has been worked out since its parts last
+      // changed. This screen is the one place somebody could notice it has not.
+      aTraybake();
+      mini.mealWorkedOut(1, kcal: 620, trust: 'typed');
+
+      final made = await plan.madeOf(1);
+      expect(made.kcal, 620);
+      expect(made.trust, 'typed');
+      expect(made.partsComeTo, 1335);
+    });
+
+    test('a meal never worked out carries no figure rather than a zero',
+        () async {
+      aTraybake();
+      final made = await plan.madeOf(1);
+      expect(made.kcal, isNull);
+      expect(made.name, 'Chicken traybake');
     });
   });
 }

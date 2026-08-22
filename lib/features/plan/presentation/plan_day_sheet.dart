@@ -3,6 +3,7 @@ import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/plan/data/plan_repository.dart';
 import 'package:opennutritracker/features/plan/domain/plan_week.dart';
+import 'package:opennutritracker/features/plan/presentation/meal_screen.dart';
 
 /// Planning one day, opened by tapping that day on the week.
 ///
@@ -239,6 +240,10 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
           contentPadding: EdgeInsets.zero,
           title: Text(meal.title),
           subtitle: _mealSubtitle(context, meal),
+          // Tapping the name opens the meal itself. A typed-in name has no
+          // meal behind it — a night out is a real plan entry with nothing to
+          // look inside — so that row stays a row.
+          onTap: meal.mealId == null || _busy ? null : () => _openMeal(meal),
           trailing: IconButton(
             icon: const Icon(Icons.close),
             tooltip: 'Take it off',
@@ -246,6 +251,24 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
           ),
         ),
     ];
+  }
+
+  Future<void> _openMeal(PlannedMeal meal) async {
+    final people = await widget.repository.people();
+    if (!mounted) return;
+    await MealScreen.show(
+      context,
+      repository: widget.repository,
+      mealId: meal.mealId!,
+      title: meal.title,
+      people: people,
+      planned: meal,
+    );
+    // A portion changed on that screen changes what this day comes to, and
+    // the week behind this sheet is showing the same figures.
+    if (!mounted) return;
+    _changed = true;
+    await _load();
   }
 
   Widget? _mealSubtitle(BuildContext context, PlannedMeal meal) {
