@@ -98,8 +98,12 @@ void main() {
     testWidgets('and still says where the food itself went', (tester) async {
       await tester.pumpWidget(confirm(offer: (_, __) {}));
       await save(tester);
+      // Inside the question now rather than beside it. Somebody who has just
+      // pressed Save wants to know the save worked before being asked anything
+      // else, so the question says where the food is and then asks.
       expect(
-        find.text(ConfirmFoodScreen.savedWithOfferSentence(aPacket.name)),
+        find.widgetWithText(
+            AlertDialog, ConfirmFoodScreen.putItOnTodayQuestion(aPacket.name)),
         findsOneWidget,
       );
     });

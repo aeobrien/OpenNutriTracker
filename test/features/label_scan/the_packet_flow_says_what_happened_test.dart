@@ -159,17 +159,19 @@ void main() {
     // And the person is told so. This is the whole of Aidan's complaint: the
     // screen closes and he is back where he started with nothing said, so a
     // save that worked and a save that did nothing look identical.
+    // It is a question that waits, not a message that clears itself. The
+    // message version left Aidan on 22 August with ten seconds to decide and no
+    // answer at all once it went.
     expect(
-        find.widgetWithText(SnackBar,
-            ConfirmFoodScreen.savedWithOfferSentence('Peanut butter')),
+        find.widgetWithText(AlertDialog,
+            ConfirmFoodScreen.putItOnTodayQuestion('Peanut butter')),
         findsOneWidget,
         reason: 'the food was saved and nobody said so');
 
-    // The shorter of the two sentences, because this route also offers the day.
-    // Telling somebody to go and search for a food while offering to fetch it
-    // reads as though the button does something else.
     expect(find.text(ConfirmFoodScreen.putItOnToday), findsOneWidget,
         reason: 'photographing a packet should offer to put it on today');
+    expect(find.text(ConfirmFoodScreen.notNow), findsOneWidget,
+        reason: 'a question with only one answer is not a question');
   });
 
   testWidgets('the screen says it is reading rather than just greying out',

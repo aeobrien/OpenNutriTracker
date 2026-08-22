@@ -182,7 +182,10 @@ void main() {
     test('both routes are registered', () {
       final main = _read('lib/main.dart');
       expect(main.contains('GuidedCaptureScreen('), isTrue);
-      expect(main.contains('ConfirmFoodScreen('), isTrue);
+      // The hand-typed route was lifted out of the routes map on 22 August so
+      // that a test could actually drive it — see [the_by_hand_route_test].
+      // Registered by name here; built over there.
+      expect(main.contains('addFoodByHandScreen'), isTrue);
     });
 
     test('wherever the form is opened, it is opened as a page', () {
@@ -193,7 +196,7 @@ void main() {
       // back. Its own test supplies all three, which is exactly why the test
       // cannot notice when a route does not.
       for (final file in const [
-        'lib/main.dart',
+        'lib/features/label_scan/presentation/add_food_by_hand.dart',
         'lib/features/label_scan/presentation/guided_capture_screen.dart',
       ]) {
         final source = _read(file);

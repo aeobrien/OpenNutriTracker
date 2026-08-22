@@ -37,18 +37,29 @@ class ConfirmFoodScreen extends StatefulWidget {
       '$name is in the household food list. '
       'Search for it when you want to put it on a day.';
 
-  /// The shorter version, for when the offer is there to be taken.
-  ///
-  /// It drops "search for it when you want to put it on a day", because a
-  /// button offering to do exactly that is sitting beside the words. Telling
-  /// somebody to go and look for something while offering to fetch it reads as
-  /// though the button is for something else.
-  static String savedWithOfferSentence(String name) =>
-      '$name is in the household food list.';
-
   /// The offer itself. A verb, and it names the day rather than the list, so
   /// it cannot be misread as another way of saving.
+  ///
+  /// It used to be the action on a message that cleared itself after ten
+  /// seconds. Aidan met that on 22 August: he saved a packet, was left sitting
+  /// on the form as though nothing had happened, pressed the offer, and ended
+  /// up with the food in the list and nothing on his day. Ten seconds is enough
+  /// to read a confirmation and not enough to put a packet down and decide, and
+  /// a message that leaves by itself gives no answer at all when it goes. So
+  /// the question is now asked outright and waits.
   static const putItOnToday = 'Put it on today';
+
+  /// The other answer. Named rather than "Cancel" because there is nothing to
+  /// cancel — the food is already saved, and the only thing being declined is
+  /// today.
+  static const notNow = 'Not now';
+
+  /// The question, asked as a question. It says where the food already is
+  /// first, because that is what somebody who just pressed Save wants to know,
+  /// and a question on its own would leave them answering it while still
+  /// wondering whether the save worked.
+  static String putItOnTodayQuestion(String name) =>
+      '$name is in the household food list.\n\nPut some of it on today?';
 
   /// The same message for a food that came off a web page rather than a
   /// photograph. Different words because it is a different situation: nothing
@@ -255,30 +266,51 @@ class _ConfirmFoodScreenState extends State<ConfirmFoodScreen> {
         perPack: food.perPack,
         servingG: food.servingG,
       );
-      // Said before the screen is dismissed, not after: onSaved is what closes
-      // the form, and a message queued behind it would be shouted at a widget
-      // that no longer exists.
       final offer = widget.onPutOnDay;
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            offer == null
-                ? ConfirmFoodScreen.savedSentence(food.name)
-                : ConfirmFoodScreen.savedWithOfferSentence(food.name),
-          ),
-          // Longer when there is something to press. Five seconds is enough to
-          // read a confirmation and not enough to notice an offer, put the
-          // packet down and decide.
-          duration: Duration(seconds: offer == null ? 5 : 10),
-          action: offer == null
-              ? null
-              : SnackBarAction(
-                  label: ConfirmFoodScreen.putItOnToday,
-                  onPressed: () => offer(messenger.context, food),
-                ),
+      if (offer == null) {
+        // Nothing to decide, so nothing to stop for. Said before the screen is
+        // dismissed, not after: onSaved is what closes the form, and a message
+        // queued behind it would be shouted at a widget that no longer exists.
+        messenger.showSnackBar(SnackBar(
+          content: Text(ConfirmFoodScreen.savedSentence(food.name)),
+          duration: const Duration(seconds: 5),
+        ));
+        widget.onSaved?.call(clientId);
+        return;
+      }
+
+      // Asked outright and waited for. Whichever way it is answered the form
+      // closes, because a form that stays open after a successful save reads as
+      // a save that did not happen.
+      final yes = await showDialog<bool>(
+        context: context,
+        builder: (ask) => AlertDialog(
+          content: Text(ConfirmFoodScreen.putItOnTodayQuestion(food.name)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ask).pop(false),
+              child: const Text(ConfirmFoodScreen.notNow),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(ask).pop(true),
+              child: const Text(ConfirmFoodScreen.putItOnToday),
+            ),
+          ],
         ),
       );
+
+      // The form goes first either way, so that the amount screen opens over
+      // the screen he started from rather than on top of a finished form. It is
+      // what makes "add it and take me back" true: closing the amount screen
+      // afterwards leaves him where he began instead of back on this one.
+      // Held before the form is closed and used after, because closing it is
+      // what makes this screen's own context useless. The overlay is the one
+      // thing in reach that outlives a popped route and still sits *under* the
+      // navigator that has to push the amount screen — the messenger's own
+      // context sits above it, and asking that for a navigator throws.
+      final stillStanding = Navigator.of(context).overlay!.context;
       widget.onSaved?.call(clientId);
+      if (yes == true) offer(stillStanding, food);
     } on HouseholdRefused catch (e) {
       if (!mounted) return;
       setState(() => _problem = "That wasn't accepted: ${e.message}");

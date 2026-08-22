@@ -26,9 +26,8 @@ import 'package:opennutritracker/features/household/data/outbox_sender.dart';
 import 'package:opennutritracker/features/household/presentation/household_scope.dart';
 import 'package:opennutritracker/features/label_scan/data/guided_capture.dart';
 import 'package:opennutritracker/features/label_scan/data/household_label_reader.dart';
-import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
+import 'package:opennutritracker/features/label_scan/presentation/add_food_by_hand.dart';
 import 'package:opennutritracker/features/label_scan/presentation/guided_capture_screen.dart';
-import 'package:opennutritracker/features/label_scan/presentation/take_it_to_today.dart';
 import 'package:opennutritracker/features/household/data/profile_handover.dart';
 import 'package:opennutritracker/features/onboarding/onboarding_screen.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen.dart';
@@ -172,23 +171,7 @@ class _OpenNutriTrackerAppState extends State<OpenNutriTrackerApp> {
               logger: locator<HouseholdLogger>(),
             ),
         // The same form, opened empty — a packet typed in by hand.
-        //
-        // The form is a section, not a page: it is a bare Column so the guided
-        // capture flow can drop it into its own layout. A route has to supply
-        // what a page needs — a Material ancestor for the fields, somewhere to
-        // scroll, and a way back — or seven text fields land on nothing.
-        NavigationOptions.addFoodByHandRoute: (context) => Scaffold(
-              appBar: AppBar(title: const Text('Add a food by hand')),
-              body: SafeArea(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: ConfirmFoodScreen(
-                    logger: locator<HouseholdLogger>(),
-                    onPutOnDay: takeItToToday,
-                  ),
-                ),
-              ),
-            ),
+        NavigationOptions.addFoodByHandRoute: addFoodByHandScreen,
       },
     );
   }
