@@ -21,6 +21,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/features/household/data/food_finder.dart';
@@ -50,7 +51,7 @@ void main() {
     household = HouseholdRepository(ConfigDao(db), api);
     outbox = Outbox.of(db, api);
     logger = HouseholdLogger(household, outbox);
-    finder = FoodFinder(api, household);
+    finder = FoodFinder(api, household, FoodItemDao(db));
     await household.setOwner(mini.aidan);
   });
 

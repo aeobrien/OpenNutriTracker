@@ -246,6 +246,34 @@ class MealEntity extends Equatable {
     }
   }
 
+  /// The same food, now carrying what this phone last had of it.
+  ///
+  /// The two facts arrive from different places and only meet here. A pack
+  /// weight and a count come off the household's list, which knows what the
+  /// house buys; how much somebody last ate of it is in this phone's own log,
+  /// which the house never sees. Before this, a food with a count could never
+  /// carry a last amount, so the one order Aidan settled — his portion, then
+  /// last time, then the pack — could never reach its second step for exactly
+  /// the foods that count in items.
+  MealEntity rememberingLastAmount(double? grams) => MealEntity(
+      code: code,
+      name: name,
+      brands: brands,
+      thumbnailImageUrl: thumbnailImageUrl,
+      mainImageUrl: mainImageUrl,
+      url: url,
+      mealQuantity: mealQuantity,
+      mealUnit: mealUnit,
+      servingQuantity: servingQuantity,
+      servingUnit: servingUnit,
+      servingSize: servingSize,
+      nutriments: nutriments,
+      source: source,
+      packGrams: packGrams,
+      perPack: perPack,
+      lastUsedGrams: grams,
+      favourite: favourite);
+
   /// Returns a copy with the favourite flag toggled.
   MealEntity copyWithFavourite(bool value) => MealEntity(
       code: code,

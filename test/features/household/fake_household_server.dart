@@ -149,6 +149,8 @@ class FakeHouseholdServer {
     num? fat100,
     num? carbs100,
     num? servingG,
+    num? packGrams,
+    int? perPack,
   }) {
     final id = foods.length + 1;
     final row = <String, dynamic>{
@@ -161,6 +163,8 @@ class FakeHouseholdServer {
       'fat_100': fat100,
       'carbs_100': carbs100,
       'serving_g': servingG,
+      'pack_grams': packGrams,
+      'per_pack': perPack,
       'trust': 'typed',
       'source': 'typed',
     };

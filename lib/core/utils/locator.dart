@@ -177,7 +177,8 @@ Future<void> initLocator() async {
     () => HouseholdLogger(householdRepository, householdOutbox),
   );
   locator.registerLazySingleton<FoodFinder>(
-    () => FoodFinder(locator<HouseholdApi>(), locator<HouseholdRepository>()),
+    () => FoodFinder(locator<HouseholdApi>(), locator<HouseholdRepository>(),
+        locator<FoodItemDao>()),
   );
 
   // Carries the app's setup answers to the Mac Mini and back, so

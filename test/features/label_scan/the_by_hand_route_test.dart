@@ -36,6 +36,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get_it/get_it.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/repository/config_repository.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
@@ -82,7 +83,7 @@ void main() {
     GetIt.instance
       ..registerSingleton<HouseholdLogger>(HouseholdLogger(household, outbox))
       ..registerSingleton<Outbox>(outbox)
-      ..registerSingleton<FoodFinder>(FoodFinder(api, household))
+      ..registerSingleton<FoodFinder>(FoodFinder(api, household, FoodItemDao(db)))
       ..registerSingleton<ConfigRepository>(ConfigRepository(ConfigDao(db)));
   });
 

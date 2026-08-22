@@ -25,6 +25,7 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/look_it_up_widget.dart';
 import 'package:opennutritracker/features/household/data/food_finder.dart';
@@ -54,7 +55,7 @@ void main() {
     mini = FakeHouseholdServer();
     final theApi = api();
     household = HouseholdRepository(ConfigDao(db), theApi);
-    finder = FoodFinder(theApi, household);
+    finder = FoodFinder(theApi, household, FoodItemDao(db));
     outbox = Outbox.of(db, theApi);
     logger = HouseholdLogger(household, outbox);
     await household.setOwner(mini.aidan);

@@ -2,6 +2,7 @@
 library;
 
 import 'package:logging/logging.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/features/household/data/household_repository.dart';
@@ -25,9 +26,13 @@ import 'package:opennutritracker/features/label_scan/domain/food_draft.dart';
 class FoodFinder {
   final HouseholdApi _api;
   final HouseholdRepository _household;
+
+  /// This phone's own record of what it has eaten. Not the household's — the
+  /// house records what it buys and this records what somebody had of it.
+  final FoodItemDao _eaten;
   final _log = Logger('FoodFinder');
 
-  FoodFinder(this._api, this._household);
+  FoodFinder(this._api, this._household, this._eaten);
 
   /// This person's own foods, most-used first. What the picker opens with.
   Future<List<MealEntity>> theirs() => _ask(() async =>
@@ -88,12 +93,25 @@ class FoodFinder {
     }
   }
 
+  /// A household food, carrying what this phone last had of it if it ever has.
+  ///
+  /// The two are joined by the id the house gave the food: logging one writes
+  /// a row on this phone under that same id, so the last amount is one lookup
+  /// away and was never being made.
+  Future<MealEntity> _withWhatHeHadLastTime(HouseholdFood food) async {
+    final meal = MealEntity.fromHouseholdFood(food);
+    final code = meal.code;
+    if (code == null) return meal;
+    final eaten = await _eaten.getById(code);
+    return meal.rememberingLastAmount(eaten?.lastUsedGrams);
+  }
+
   Future<List<MealEntity>> _ask(
       Future<List<HouseholdFood>> Function() call) async {
     try {
       final foods = await call();
       return [
-        for (final f in foods) MealEntity.fromHouseholdFood(f),
+        for (final f in foods) await _withWhatHeHadLastTime(f),
       ];
     } catch (e) {
       // Not shown to anybody. The public search is about to run and will say

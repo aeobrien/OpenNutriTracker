@@ -24,6 +24,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:opennutritracker/core/data/drift/app_database.dart';
+import 'package:opennutritracker/core/data/drift/daos/food_item_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/config_dao.dart';
 import 'package:opennutritracker/core/data/drift/daos/label_capture_dao.dart';
 import 'package:opennutritracker/features/household/data/food_finder.dart';
@@ -251,7 +252,7 @@ void main() {
     await tester.pumpAndSettle();
     await outbox.drain();
 
-    final found = await FoodFinder(api, household).matching('peanut');
+    final found = await FoodFinder(api, household, FoodItemDao(db)).matching('peanut');
     expect(found.map((m) => m.name), contains('Peanut butter'),
         reason: 'the confirmation sends people to a search that cannot find it');
   });
