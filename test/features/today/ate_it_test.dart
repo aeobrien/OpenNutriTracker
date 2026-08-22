@@ -92,7 +92,7 @@ void main() {
   group('ate it', () {
     test('puts the meal on this person\'s ledger', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       await outbox.drain();
 
       final mine = ledgerOf(mini.aidan);
@@ -102,7 +102,7 @@ void main() {
 
     test('with this person\'s share of it, not the meal\'s', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       await outbox.drain();
 
       expect(ledgerOf(mini.aidan).first['kcal'], 960);
@@ -113,7 +113,7 @@ void main() {
       'and the ghost goes straight away, before the Mini has heard',
       () async {
         await readTheDay();
-        await planned.decide(planned.items.single, ate: true);
+        await planned.decide(planned.items.single, ate: true, slot: 'dinner');
 
         // Nothing has been sent yet — the queue has not been drained.
         expect(mini.entries, isEmpty);
@@ -127,7 +127,7 @@ void main() {
 
     test('it does not come back when the day is asked again', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
 
       // Home re-reads the day for all sorts of reasons before the queue
       // drains, and at that moment the Mac Mini still calls this planned.
@@ -138,15 +138,27 @@ void main() {
 
     test('nothing lands on the other person\'s ledger', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       await outbox.drain();
 
       expect(ledgerOf(mini.emily), isEmpty);
     });
 
+    test('under the meal of the day the card was sitting in', () async {
+      // The plan is one meal against a date and does not know it is dinner.
+      // The strip the ghost was drawn in does, and it has to say so, or the
+      // Mac Mini falls back to the clock — which put a confirmed dinner under
+      // Lunch on 22 August because that is when the tap happened.
+      await readTheDay();
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
+      await outbox.drain();
+
+      expect(ledgerOf(mini.aidan).first['slot'], 'dinner');
+    });
+
     test('and the other person still has it to decide', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       await outbox.drain();
 
       expect(mini.plannedFor(mini.emily, today), hasLength(1));
@@ -157,13 +169,13 @@ void main() {
   group("didn't have it", () {
     test('takes it off the day', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: false);
+      await planned.decide(planned.items.single, ate: false, slot: 'dinner');
       expect(titlesOnTheDay(), isEmpty);
     });
 
     test('and puts nothing at all on the ledger', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: false);
+      await planned.decide(planned.items.single, ate: false, slot: 'dinner');
       await outbox.drain();
 
       expect(ledgerOf(mini.aidan), isEmpty);
@@ -176,7 +188,7 @@ void main() {
       await readTheDay();
       mini.reachable = false;
 
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       expect(await outbox.pendingCount(), 1);
 
       mini.reachable = true;
@@ -189,7 +201,7 @@ void main() {
     test('and the ghost still goes, because the answer was given', () async {
       await readTheDay();
       mini.reachable = false;
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       expect(titlesOnTheDay(), isEmpty);
     });
   });
@@ -197,7 +209,7 @@ void main() {
   group('a phone that sends twice', () {
     test('still only eats it once', () async {
       await readTheDay();
-      await planned.decide(planned.items.single, ate: true);
+      await planned.decide(planned.items.single, ate: true, slot: 'dinner');
       await outbox.drain();
       await outbox.drain();
 

@@ -107,7 +107,7 @@ void main() {
 
     await readTheDay();
     final it = planned.items.first;
-    expect(await planned.decide(it, ate: true), isTrue);
+    expect(await planned.decide(it, ate: true, slot: 'dinner'), isTrue);
 
     // The card goes before the house has heard — nothing has been sent yet.
     expect(planned.items.any((p) => p.planId == it.planId), isFalse,
@@ -124,6 +124,9 @@ void main() {
         reason: 'it landed with the wrong share of the meal');
     expect(landed['owner_id'], _aidan,
         reason: 'it landed on the wrong person\'s day');
+    expect(landed['slot'], 'dinner',
+        reason: 'the meal of the day was left to the clock, so a dinner '
+            'confirmed at lunchtime lands under Lunch');
     expect(
         (after['planned'] as List)
             .cast<Map<String, dynamic>>()
@@ -141,7 +144,7 @@ void main() {
 
     await readTheDay();
     final it = planned.items.first;
-    expect(await planned.decide(it, ate: false), isTrue);
+    expect(await planned.decide(it, ate: false, slot: 'dinner'), isTrue);
     expect(planned.items.any((p) => p.planId == it.planId), isFalse);
 
     await outbox.drain();

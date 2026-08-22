@@ -267,8 +267,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               // sit in dinner. If breakfasts are ever planned, this is the line
               // that has to learn about it.
               planned: _planned.items,
-              onAtePlanned: (item) => _decidePlanned(item, true),
-              onPlannedNotEaten: (item) => _decidePlanned(item, false),
+              onAtePlanned: (item, slot) => _decidePlanned(item, slot, true),
+              onPlannedNotEaten: (item, slot) =>
+                  _decidePlanned(item, slot, false),
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
               onItemTappedCallback: onIntakeItemTapped,
@@ -511,9 +512,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   /// answer is on the queue, which is where every other write on this phone
   /// waits too. What would be dishonest is the opposite: leaving a meal on the
   /// day looking undecided when the person has decided.
-  Future<void> _decidePlanned(PlannedItem item, bool ate) async {
+  Future<void> _decidePlanned(PlannedItem item, String slot, bool ate) async {
     setState(() {}); // the card goes now; PlannedToday decides what is left
-    final queued = await _planned.decide(item, ate: ate);
+    final queued = await _planned.decide(item, ate: ate, slot: slot);
     if (!mounted) return;
     setState(() {});
     if (!queued) {

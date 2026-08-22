@@ -44,14 +44,21 @@ class PlannedToday {
   /// Returns true when the answer is safely on the queue. On the one failure
   /// that matters — a local write that somehow did not happen — the meal comes
   /// back, because a decision nothing recorded is worse than asking again.
-  Future<bool> decide(PlannedItem item, {required bool ate}) async {
+  /// [slot] is which meal of the day the confirmed row belongs to. It comes
+  /// from the strip the ghost card was drawn in, because that is the only thing
+  /// that knows — see [HouseholdLogger.decidePlan].
+  Future<bool> decide(
+    PlannedItem item, {
+    required bool ate,
+    required String slot,
+  }) async {
     _answered.add(item.planId);
     items = [
       for (final p in items)
         if (p.planId != item.planId) p,
     ];
     try {
-      await _logger.decidePlan(planId: item.planId, ate: ate);
+      await _logger.decidePlan(planId: item.planId, ate: ate, slot: slot);
       return true;
     } catch (e) {
       _log.warning('[PLAN] could not queue the answer for ${item.planId}: $e');

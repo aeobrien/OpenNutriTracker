@@ -45,10 +45,16 @@ class IntakeVerticalList extends StatefulWidget {
   final List<PlannedItem> planned;
 
   /// Tapped on a ghost card: they ate it, and it becomes a real entry.
-  final void Function(PlannedItem)? onAtePlanned;
+  ///
+  /// The slot handed back is this list's own — 'breakfast', 'lunch', 'dinner',
+  /// 'snack'. The plan does not record which meal of the day it is for, so the
+  /// strip the card was drawn in is the only thing that knows, and saying it
+  /// here rather than at the call site means it cannot drift if ghosts ever
+  /// appear in a second strip.
+  final void Function(PlannedItem item, String slot)? onAtePlanned;
 
   /// Held, then chosen, on a ghost card: they did not have it.
-  final void Function(PlannedItem)? onPlannedNotEaten;
+  final void Function(PlannedItem item, String slot)? onPlannedNotEaten;
 
   const IntakeVerticalList({
     super.key,
@@ -76,6 +82,10 @@ class IntakeVerticalList extends StatefulWidget {
 class _IntakeVerticalListState extends State<IntakeVerticalList> {
   late MealDetailBloc _mealDetailBloc;
   late HomeBloc _homeBloc;
+
+  /// Which meal of the day this strip is, in the word the household ledger
+  /// uses. Same source as the add button below, so the two cannot disagree.
+  String get _slot => widget.addMealType.getIntakeType().name;
 
   @override
   void initState() {
@@ -202,10 +212,10 @@ class _IntakeVerticalListState extends State<IntakeVerticalList> {
                       firstListElement: firstListElement,
                       onAte: widget.onAtePlanned == null
                           ? null
-                          : () => widget.onAtePlanned!(item),
+                          : () => widget.onAtePlanned!(item, _slot),
                       onNotEaten: widget.onPlannedNotEaten == null
                           ? null
-                          : () => widget.onPlannedNotEaten!(item),
+                          : () => widget.onPlannedNotEaten!(item, _slot),
                     );
                   }
                   if (index ==

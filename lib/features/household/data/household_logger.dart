@@ -23,7 +23,8 @@ class HouseholdLogger {
     final owner = await _repository.storedOwner();
     if (owner == null) {
       throw StateError(
-          'nobody has said whose phone this is, so there is no day to log to');
+        'nobody has said whose phone this is, so there is no day to log to',
+      );
     }
     return owner;
   }
@@ -46,6 +47,7 @@ class HouseholdLogger {
     int? owner,
     int? author,
     DateTime? at,
+
     /// The name this row already has on the phone.
     ///
     /// Passed in rather than minted here so that the phone's own diary row and
@@ -104,6 +106,15 @@ class HouseholdLogger {
   Future<String> decidePlan({
     required int planId,
     required bool ate,
+
+    /// Which meal of the day this was — 'breakfast', 'lunch', 'dinner',
+    /// 'snack'.
+    ///
+    /// The plan cannot answer this: it is one meal against a date. The phone
+    /// can, because it drew the card in a particular strip of the day. Left
+    /// out, the Mac Mini falls back to the clock — and a dinner confirmed at
+    /// lunchtime then lands under Lunch, which is what happened on 22 August.
+    String? slot,
     int? owner,
     int? author,
     DateTime? at,
@@ -114,6 +125,7 @@ class HouseholdLogger {
       body: {
         'plan_id': planId,
         'state': ate ? 'ate' : 'skipped',
+        if (slot != null) 'slot': slot,
       },
       ownerId: owner ?? holder,
       authorId: author ?? holder,

@@ -662,6 +662,11 @@ class FakeHouseholdServer {
                       'kcal': (mine == null || perPortion == null)
                           ? null
                           : perPortion * mine,
+                      // Which meal of the day, as the phone said it. The real
+                      // server falls back to the clock when nothing says, so
+                      // recording it verbatim here is what lets a test see the
+                      // difference between "the phone told it" and "it guessed".
+                      'slot': body['slot'],
                     });
           }
           result = {
