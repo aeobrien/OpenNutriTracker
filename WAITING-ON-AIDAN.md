@@ -1,6 +1,13 @@
 # What is waiting on Aidan
 
-**Date:** 2026-08-22 22:58 (clock read in the turn this was written)
+> **Build 55 is on your phone, and the panel to open is**
+> `~/Dev/FoodTracker/OpenNutriTracker/walkthrough-runs/2026-08-23-build-55-corrections-and-what-a-row-used-to-say/input.json`
+> — twenty-eight steps, replacing last night's twenty-two-step one. Start it
+> from the top; the only step you had marked was reading the version number,
+> and that has changed again.
+
+**Date:** 2026-08-22 22:58, last added to 2026-08-23 00:18 (clocks read in the
+turns they were written)
 
 Six things. None of them is being chased and none has been decided for him.
 The first two are the ones that change what he can do on his phone; the rest
@@ -26,13 +33,14 @@ if the week quietly comes back.
 phone at all, and if so where it hangs. The shopping list went on Home instead,
 which is what its own card asks for; that is not a precedent for the rest.
 
-## 2. Build 54 has not been watched opening
+## 2. The build on his phone has not been watched opening
 
-**What it is.** It is installed and the device reports `1.0.0 54`, but every
-launch attempt between 22:27 and 22:46 was refused — his phone is on the network,
-it is locked, and iOS will not open an app on a locked phone. The Mac Mini saw no
-requests from the phone in that window either, so the gap is confirmed from both
-ends rather than assumed.
+**What it is.** Build 55 went on at 00:17:02 and the device reports `1.0.0 55`,
+but the launch is refused for the same reason build 54's was between 22:27 and
+22:46 — his phone is on the network, it is locked, and iOS will not open an app
+on a locked phone. For build 54 the Mac Mini saw no requests from the phone in
+that window either, so the gap was confirmed from both ends rather than
+assumed.
 
 **What he has to do.** Nothing separate. Step 1 of the morning's walkthrough is
 exactly this check.
