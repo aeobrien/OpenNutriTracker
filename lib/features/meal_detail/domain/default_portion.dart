@@ -17,6 +17,13 @@ enum PortionSource {
   /// One serving, as the pack itself defines a serving.
   packServing,
 
+  /// One of them — one pie, one biscuit — because that is the unit the box
+  /// opened in.
+  oneOfThem,
+
+  /// One whole pack, because that is the unit the box opened in.
+  wholePack,
+
   /// Nobody has said. A round number, chosen so the box is not empty.
   aStandIn,
 }
@@ -39,6 +46,10 @@ class DefaultPortion {
         return 'The amount you had last time';
       case PortionSource.packServing:
         return "One serving, as the pack counts a serving";
+      case PortionSource.oneOfThem:
+        return 'One of them, worked out from what a pack weighs';
+      case PortionSource.wholePack:
+        return 'One whole pack, as the house has it weighed';
       case PortionSource.aStandIn:
         return 'A starting figure — nobody has said what a portion of this is';
     }
@@ -57,7 +68,22 @@ class DefaultPortion {
 DefaultPortion defaultPortionFor(
   MealEntity meal, {
   required bool usesImperialUnits,
+  String? unit,
 }) {
+  // When the box is counting things rather than weighing them, the only
+  // sensible opening amount is one of them. Everything below is in grams, and a
+  // gram figure dropped into a box labelled "pack" reads as ninety-six packs of
+  // biscuits — a number nobody would ever mean, sitting where a number they
+  // might mean is expected.
+  //
+  // Only the two counted units added here are handled this way. "Serving" has
+  // the same mismatch and is deliberately left alone: what the box opens on for
+  // an ordinary food is an open question Aidan has been asked and has not yet
+  // answered, and quietly settling half of it here would be answering it for
+  // him.
+  if (unit == 'item') return const DefaultPortion('1', PortionSource.oneOfThem);
+  if (unit == 'pack') return const DefaultPortion('1', PortionSource.wholePack);
+
   final last = meal.lastUsedGrams;
   if (last != null && last > 0) {
     return DefaultPortion(_tidy(last), PortionSource.lastTime);

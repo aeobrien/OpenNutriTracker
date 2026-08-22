@@ -114,6 +114,18 @@ class MealDetailBloc extends Bloc<MealDetailEvent, MealDetailState> {
       }
       return quantity;
     }
+    // Packs and single items are both weights the house has recorded, so they
+    // multiply out here and reach the ledger in grams like everything else.
+    // Falling back to the raw number when the food does not know its pack is
+    // deliberate: the unit is never offered for such a food, so arriving here
+    // means something has gone wrong upstream, and treating the typed figure as
+    // grams is the smallest lie available. Guessing a pack weight would not be.
+    if (unit == UnitDropdownItem.pack.toString()) {
+      return meal.hasPackValues ? quantity * meal.packGrams! : quantity;
+    }
+    if (unit == UnitDropdownItem.item.toString()) {
+      return meal.hasItemValues ? quantity * meal.itemGrams! : quantity;
+    }
     if (unit == UnitDropdownItem.oz.toString()) return UnitCalc.ozToG(quantity);
     if (unit == UnitDropdownItem.flOz.toString()) {
       return UnitCalc.flOzToMl(quantity);
@@ -270,7 +282,12 @@ enum UnitDropdownItem {
   gml,
   oz,
   flOz,
-  serving;
+  serving,
+  /// A whole pack of it — one box of biscuits, one bag.
+  pack,
+  /// One of them — one biscuit, one pie. Only offered when the house knows
+  /// both what a pack weighs and how many are in it.
+  item;
 
   UnitDropdownItem fromString(String value) {
     switch (value) {
@@ -286,6 +303,10 @@ enum UnitDropdownItem {
         return UnitDropdownItem.flOz;
       case 'serving':
         return UnitDropdownItem.serving;
+      case 'pack':
+        return UnitDropdownItem.pack;
+      case 'item':
+        return UnitDropdownItem.item;
       default:
         return UnitDropdownItem.gml;
     }
@@ -306,6 +327,10 @@ enum UnitDropdownItem {
         return 'fl.oz';
       case UnitDropdownItem.serving:
         return 'serving';
+      case UnitDropdownItem.pack:
+        return 'pack';
+      case UnitDropdownItem.item:
+        return 'item';
     }
   }
 }

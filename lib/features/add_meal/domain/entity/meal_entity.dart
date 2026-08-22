@@ -39,6 +39,25 @@ class MealEntity extends Equatable {
 
   get hasServingValues => servingQuantity != null && servingUnit != null;
 
+  /// What one whole pack of this weighs, when the house has recorded it.
+  final double? packGrams;
+
+  /// How many of the thing are in a pack, when the thing is countable — six
+  /// hobnobs, four pies. Null for anything sold by weight alone.
+  final int? perPack;
+
+  /// What one of them weighs. Worked out rather than stored: a pack weight, a
+  /// count and a separately stored item weight are three numbers that can
+  /// disagree, where two cannot.
+  double? get itemGrams =>
+      (packGrams != null && perPack != null && perPack! > 0)
+          ? packGrams! / perPack!
+          : null;
+
+  bool get hasPackValues => packGrams != null && packGrams! > 0;
+
+  bool get hasItemValues => itemGrams != null && itemGrams! > 0;
+
   final double? lastUsedGrams;
   final bool favourite;
 
@@ -64,6 +83,8 @@ class MealEntity extends Equatable {
       required this.servingSize,
       required this.nutriments,
       required this.source,
+      this.packGrams,
+      this.perPack,
       this.lastUsedGrams,
       this.favourite = false});
 
@@ -137,6 +158,11 @@ class MealEntity extends Equatable {
         servingQuantity: food.servingG?.toDouble(),
         servingUnit: food.servingG == null ? null : 'g',
         servingSize: null,
+        // Carried through so the amount sheet can offer a whole pack or one of
+        // them. The house records both; until now they stopped here and a
+        // person picking a pie had to know what a pie weighs.
+        packGrams: food.packGrams?.toDouble(),
+        perPack: food.perPack,
         nutriments: MealNutrimentsEntity(
           energyKcal100: food.kcal100?.toDouble(),
           carbohydrates100: food.carbs100?.toDouble(),
@@ -235,6 +261,8 @@ class MealEntity extends Equatable {
       servingSize: servingSize,
       nutriments: nutriments,
       source: source,
+      packGrams: packGrams,
+      perPack: perPack,
       lastUsedGrams: lastUsedGrams,
       favourite: value);
 

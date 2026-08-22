@@ -16,6 +16,17 @@ import 'package:opennutritracker/features/meal_detail/presentation/bloc/meal_det
 import 'package:opennutritracker/generated/l10n.dart';
 
 class MealDetailBottomSheet extends StatefulWidget {
+  /// The words for a whole pack and for one of them, and the weight beside
+  /// each. The weight is part of the label rather than a caption underneath
+  /// because "1 pack" on its own is not an amount anybody can check — a person
+  /// picking it deserves to see what they are agreeing to before they add it.
+  static String packLabel(double grams) => 'pack (${_grams(grams)})';
+
+  static String itemLabel(double grams) => 'one (${_grams(grams)})';
+
+  static String _grams(double g) =>
+      g == g.roundToDouble() ? '${g.toInt()} g' : '${g.toStringAsFixed(1)} g';
+
   final MealEntity product;
   final DateTime day;
   final IntakeTypeEntity intakeTypeEntity;
@@ -138,6 +149,13 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                                   items: <DropdownMenuItem<String>>[
                                     if (product.hasServingValues)
                                       _getServingDropdownItem(context),
+                                    // Above the weights on purpose: the way a
+                                    // person thinks of a pie is "a pie", and
+                                    // the grams are what they fall back to.
+                                    if (product.hasItemValues)
+                                      _getItemDropdownItem(),
+                                    if (product.hasPackValues)
+                                      _getPackDropdownItem(),
                                     if (product.isSolid ||
                                         !product.isLiquid && !product.isSolid)
                                       ..._getSolidUnitDropdownItems(context),
@@ -270,6 +288,18 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
     );
   }
 
+  DropdownMenuItem<String> _getPackDropdownItem() => DropdownMenuItem(
+        value: UnitDropdownItem.pack.toString(),
+        child: Text(MealDetailBottomSheet.packLabel(product.packGrams!),
+            overflow: TextOverflow.ellipsis, maxLines: 1),
+      );
+
+  DropdownMenuItem<String> _getItemDropdownItem() => DropdownMenuItem(
+        value: UnitDropdownItem.item.toString(),
+        child: Text(MealDetailBottomSheet.itemLabel(product.itemGrams!),
+            overflow: TextOverflow.ellipsis, maxLines: 1),
+      );
+
   List<DropdownMenuItem<String>> _getSolidUnitDropdownItems(
       BuildContext context) {
     return [
@@ -346,6 +376,13 @@ class _IncrementChips extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isServing = selectedUnit == UnitDropdownItem.serving.toString();
+    // Packs and single items are counted, not weighed. A "+50" chip beside a
+    // box holding "1 pack" would offer to add fifty packs of biscuits, so the
+    // counted units take the same small steps a serving does.
+    final isCounted = isServing ||
+        selectedUnit == UnitDropdownItem.pack.toString() ||
+        selectedUnit == UnitDropdownItem.item.toString();
+    final stepSuffix = isServing ? ' srv' : '';
     final isLiquid = product.isLiquid;
     final unitLabel = isLiquid ? 'ml' : 'g';
     final hasServing = product.hasServingValues && product.servingQuantity != null;
@@ -354,7 +391,7 @@ class _IncrementChips extends StatelessWidget {
       spacing: 8.0,
       runSpacing: 4.0,
       children: [
-        if (!isServing) ...[
+        if (!isCounted) ...[
           ActionChip(
             label: Text('+10$unitLabel'),
             onPressed: () => _changeAmount(10),
@@ -375,13 +412,13 @@ class _IncrementChips extends StatelessWidget {
             ),
           ],
         ],
-        if (isServing) ...[
+        if (isCounted) ...[
           ActionChip(
-            label: const Text('+0.5 srv'),
+            label: Text('+0.5$stepSuffix'),
             onPressed: () => _changeAmount(0.5),
           ),
           ActionChip(
-            label: const Text('+1 srv'),
+            label: Text('+1$stepSuffix'),
             onPressed: () => _changeAmount(1),
           ),
         ],

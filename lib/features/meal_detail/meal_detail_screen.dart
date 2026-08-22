@@ -75,6 +75,13 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     if (_initialUnit == "") {
       if (meal.hasServingValues) {
         _initialUnit = UnitDropdownItem.serving.toString();
+      } else if (meal.hasItemValues) {
+        // A pie is a pie before it is 125 grams. When the house knows how many
+        // are in a pack, the box opens on "one of them" — the amount the person
+        // was already thinking in — and the grams stay one tap away.
+        _initialUnit = UnitDropdownItem.item.toString();
+      } else if (meal.hasPackValues) {
+        _initialUnit = UnitDropdownItem.pack.toString();
       } else if (meal.isLiquid) {
         _initialUnit = _usesImperialUnits
             ? UnitDropdownItem.flOz.toString()
@@ -97,7 +104,8 @@ class _MealDetailScreenState extends State<MealDetailScreen> {
     // the journey to the label instead of being lost the moment it is worked
     // out.
     if (_initialQuantity == "") {
-      _portion = defaultPortionFor(meal, usesImperialUnits: _usesImperialUnits);
+      _portion = defaultPortionFor(meal,
+          usesImperialUnits: _usesImperialUnits, unit: _initialUnit);
       _initialQuantity = _portion!.amount;
       quantityTextController.text = _portion!.amount;
       _mealDetailBloc.add(UpdateKcalEvent(
