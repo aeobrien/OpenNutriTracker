@@ -5,6 +5,7 @@ import 'package:opennutritracker/features/household/presentation/this_entrys_his
 import 'package:opennutritracker/features/household/presentation/whose_day_is_it.dart';
 import 'package:opennutritracker/features/household/domain/what_it_was.dart';
 import 'package:opennutritracker/features/household/data/food_ledger.dart';
+import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
@@ -98,6 +99,15 @@ class EditDialog extends StatefulWidget {
   /// Only so a test can hand in a ledger for the history panel. The running
   /// app leaves it null and the panel fetches its own.
   final FoodLedger? ledger;
+
+  /// BC-0026's one refusal, in the person's own terms.
+  static String cannotMoveOnto(String name) =>
+      'The other half of this meal is already on $name\'s day. Moving this '
+      'half there would count one dinner twice against them and leave nobody '
+      'with the other half.';
+
+  static const notReallySharedLabel = 'Delete it instead';
+  static const leaveItLabel = 'Leave it as it is';
 
   const EditDialog({
     super.key,
@@ -409,8 +419,67 @@ class _EditDialogState extends State<EditDialog> {
     );
   }
 
+  /// Whether the move being asked for is the one BC-0026 refuses.
+  ///
+  /// Asked here, before anything moves, so the person hears it rather than
+  /// watching a row leave their day and come back. The Mac Mini refuses it too
+  /// — it is the only machine that can see both halves — but that answer
+  /// arrives through the queue, some time after the screen has gone.
+  ///
+  /// A house that cannot be reached is not treated as "nobody holds it". The
+  /// mistake this prevents is invisible once made, so the honest answer to
+  /// "I could not ask" is to say so and change nothing.
+  Future<String?> _whyTheMoveIsRefused(HouseholdPerson moveTo) async {
+    final ledger = widget.ledger;
+    if (ledger == null) return null;
+    try {
+      final held = await ledger.whoElseHolds(widget.intakeEntity.id);
+      if (!held.contains(moveTo.id)) return null;
+      return EditDialog.cannotMoveOnto(moveTo.name);
+    } on HouseholdUnreachable catch (e) {
+      return '${e.headline}, so this cannot be moved yet — it is the only '
+          'machine that knows whose day the other half of a shared meal is on.';
+    }
+  }
+
+  /// The refusal, with the one thing it could still be: the meal was never
+  /// shared, and this half should not be on anybody's day.
+  Future<void> _sayItCannotMove(String why) async {
+    final chosen = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: Text(why),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text(EditDialog.notReallySharedLabel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text(EditDialog.leaveItLabel),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (chosen == true) {
+      Navigator.of(context).pop(const IntakeEdit(null, remove: true));
+    }
+    // Anything else leaves the person on the edit screen with the row exactly
+    // as it was. Nothing has moved, so there is nothing to put back.
+  }
+
   /// The correction, as one thing, once. See [IntakeEdit].
-  void _save() {
+  Future<void> _save() async {
+    final moveTo = _moveTo;
+    if (moveTo != null) {
+      final why = await _whyTheMoveIsRefused(moveTo);
+      if (!mounted) return;
+      if (why != null) return _sayItCannotMove(why);
+    }
     if (_hasNoFoodBehindIt) {
       final name = nameEditingController.text.trim();
       Navigator.of(context).pop(

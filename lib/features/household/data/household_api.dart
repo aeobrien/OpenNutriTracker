@@ -535,6 +535,15 @@ class HouseholdApi {
   Future<Map<String, dynamic>> entryHistory(String clientId) =>
       get('/household/entry/by-client/$clientId/history');
 
+  /// Whose days the other halves of this row are on.
+  ///
+  /// Nearly always nobody — nearly every row is one person's. It exists for
+  /// BC-0026's one refusal, and it is a read rather than a queued write for
+  /// the same reason [entryHistory] is: an answer that arrived after the
+  /// screen asking had gone would be no answer at all.
+  Future<Map<String, dynamic>> entrySharedWith(String clientId) =>
+      get('/household/entry/by-client/$clientId/shared-with');
+
   /// The house's shopping list, one line per thing, with the planned meals
   /// that put each line there.
   Future<Map<String, dynamic>> shopping() => get('/household/shopping');

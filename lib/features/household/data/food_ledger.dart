@@ -51,6 +51,25 @@ class FoodLedger {
   Future<List<WhatItWas>> historyOf(String intakeId) async =>
       WhatItWas.allOf(await _api.entryHistory(nameFor(intakeId)));
 
+  /// Whose days the other halves of this row are on.
+  ///
+  /// This phone cannot answer it: a share logged for the other person is on
+  /// their day and this phone has never seen it — see the note on [retire].
+  /// The Mac Mini is the only machine that can see both halves, so it is
+  /// asked, and it is asked *before* anything moves, so that the person hears
+  /// the refusal rather than watching a row leave and come back.
+  ///
+  /// An unreachable house throws rather than answering "nobody". Answering
+  /// "nobody" would let the move through on the strength of a question that
+  /// was never asked, and the whole point of the check is that the mistake it
+  /// prevents is invisible afterwards.
+  Future<List<int>> whoElseHolds(String intakeId) async {
+    final answer = await _api.entrySharedWith(nameFor(intakeId));
+    return [
+      for (final one in (answer['people'] as List? ?? const [])) one as int,
+    ];
+  }
+
   /// Take a logged food back off the day, at the household end.
   ///
   /// Only the row belonging to the person holding the phone. A share logged for
