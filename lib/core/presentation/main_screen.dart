@@ -6,6 +6,7 @@ import 'package:opennutritracker/features/diary/diary_page.dart';
 import 'package:opennutritracker/core/presentation/widgets/home_appbar.dart';
 import 'package:opennutritracker/features/home/home_page.dart';
 import 'package:opennutritracker/core/presentation/widgets/main_appbar.dart';
+import 'package:opennutritracker/features/plan/presentation/plan_page.dart';
 import 'package:opennutritracker/features/profile/profile_page.dart';
 import 'package:opennutritracker/features/recipes/recipes_page.dart';
 import 'package:opennutritracker/generated/l10n.dart';
@@ -28,12 +29,15 @@ class _MainScreenState extends State<MainScreen> {
     _bodyPages = [
       const HomePage(),
       const DiaryPage(),
+      const PlanPage(),
       const RecipesPage(),
       const ProfilePage(),
     ];
     _appbarPages = [
       const HomeAppbar(),
       MainAppbar(title: S.of(context).diaryLabel, iconData: Icons.book),
+      const MainAppbar(
+          title: PlanPage.label, iconData: Icons.calendar_month),
       MainAppbar(
           title: S.of(context).recipesLabel,
           iconData: Icons.restaurant_menu),
@@ -68,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ],
             )
-          : _selectedPageIndex == 2
+          : _selectedPageIndex == 3
               ? const RecipesPageFab()
               : null,
       bottomNavigationBar: NavigationBar(
@@ -87,11 +91,16 @@ class _MainScreenState extends State<MainScreen> {
               label: S.of(context).diaryLabel),
           NavigationDestination(
               icon: _selectedPageIndex == 2
+                  ? const Icon(Icons.calendar_month)
+                  : const Icon(Icons.calendar_month_outlined),
+              label: PlanPage.label),
+          NavigationDestination(
+              icon: _selectedPageIndex == 3
                   ? const Icon(Icons.restaurant_menu)
                   : const Icon(Icons.restaurant_menu_outlined),
               label: S.of(context).recipesLabel),
           NavigationDestination(
-              icon: _selectedPageIndex == 3
+              icon: _selectedPageIndex == 4
                   ? const Icon(Icons.account_circle)
                   : const Icon(Icons.account_circle_outlined),
               label: S.of(context).profileLabel),

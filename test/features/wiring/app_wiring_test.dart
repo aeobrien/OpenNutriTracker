@@ -860,4 +860,65 @@ void main() {
               'which is the opposite of what is being said');
     });
   });
+
+  group('a door into the week', () {
+    // Four things built in release 6 — a planned meal's own screen, building a
+    // meal out of its parts, its calories, and your own share — all open from a
+    // day on the week, and the week came off Home on 20 August. They sat on the
+    // phone, tested and installed, with nothing to tap. Aidan, 23 August: "Yes,
+    // give them their own menu item on the bottom of the screen."
+    test('the tab is on the bar and the week is what it shows', () {
+      final main = _calls('lib/core/presentation/main_screen.dart');
+      expect(main.contains('constPlanPage(),'), isTrue);
+      expect(main.contains('label:PlanPage.label'), isTrue,
+          reason: 'a tab nobody can see is the same as no tab');
+      final page = _calls('lib/features/plan/presentation/plan_page.dart');
+      expect(page.contains('WeekAheadSection('), isTrue,
+          reason: 'a second planner is the fault of 20 August coming back');
+    });
+
+    test('a day opens onto controls that work', () {
+      final page = _calls('lib/features/plan/presentation/plan_page.dart');
+      // The section leaves the way through out of the screen entirely when
+      // these are missing, so without them the tab is a week you cannot plan.
+      expect(page.contains('planner:locator<PlanRepository>()'), isTrue);
+      expect(page.contains('shopping:locator<ShoppingRepository>()'), isTrue);
+    });
+
+    test('the bar and the pages are in the same order', () {
+      // A destination list and a body list that drift apart mean tapping one
+      // tab shows another, and every test above still passes.
+      final main = _read('lib/core/presentation/main_screen.dart');
+      final bodies = RegExp(r'_bodyPages = \[(.*?)\];', dotAll: true)
+          .firstMatch(main)!
+          .group(1)!;
+      final pages = RegExp(r'const (\w+)\(\)')
+          .allMatches(bodies)
+          .map((m) => m.group(1))
+          .toList();
+      expect(pages,
+          ['HomePage', 'DiaryPage', 'PlanPage', 'RecipesPage', 'ProfilePage']);
+
+      final bar = main.substring(main.indexOf('destinations: ['));
+      final labels = RegExp(r'label: (.+)\),')
+          .allMatches(bar.substring(0, bar.indexOf('\n      ),')))
+          .map((m) => m.group(1)!.trim())
+          .toList();
+      expect(labels, [
+        'S.of(context).homeLabel',
+        'S.of(context).diaryLabel',
+        'PlanPage.label',
+        'S.of(context).recipesLabel',
+        'S.of(context).profileLabel',
+      ]);
+    });
+
+    test('the recipes button follows the recipes tab', () {
+      // The floating button is chosen by index, so a tab inserted before
+      // Recipes puts a recipe button on the Plan screen and none on Recipes.
+      final main = _calls('lib/core/presentation/main_screen.dart');
+      expect(main.contains('_selectedPageIndex==3?constRecipesPageFab()'),
+          isTrue);
+    });
+  });
 }

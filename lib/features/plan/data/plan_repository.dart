@@ -59,18 +59,54 @@ class PlanRepository {
     return [for (final row in rows) MealChoice.fromJson(row)];
   }
 
-  /// Put one of the house's meals on a day. Returns its new plan id.
+  /// Put one of the house's meals on a day.
+  ///
+  /// Returns its new plan id, and whether a share was guessed on the caller's
+  /// behalf — which the caller must then say out loud. See
+  /// [defaultedPortions].
   ///
   /// Who did it is recorded from whoever the app says this phone belongs to,
   /// not from the handset — a phone can be handed over, and the plan should
   /// name the person who made the decision.
-  Future<int> add({required String day, required int mealId}) async {
-    return _api.planAdd(
+  Future<({int planId, bool guessedShare})> add(
+      {required String day, required int mealId}) async {
+    final planId = await _api.planAdd(
       date: day,
       mealId: mealId,
       actor: await _actor(),
     );
+    // Aidan, 23 August 2026, asked what a newly planned meal's portions should
+    // start at: "100% of the meal, but prompts you to update it." So the whole
+    // of it goes down against whoever this phone belongs to. A meal's stored
+    // figure is one standard portion, so the whole of it *is* one portion —
+    // there is no separate idea of a meal's size to take a percentage of.
+    //
+    // Nobody else is given a share. Writing a zero for the other person would
+    // be a claim that they are not eating it, which nobody has said; leaving
+    // them unset says nobody has said, which is true.
+    //
+    // The prompt is the caller's half and is not optional — a silent 100% is
+    // not what he asked for. See [defaultedPortions].
+    final who = await owner();
+    if (who == null) return (planId: planId, guessedShare: false);
+    try {
+      await setPortion(planId: planId, personId: who, portions: 1);
+    } on HouseholdRefused {
+      // The meal is on the plan, which is the thing that was asked for. A
+      // share the house would not take is a worse reason to undo that than it
+      // is to leave the share unsaid — but nothing was guessed, so nothing is
+      // announced.
+      return (planId: planId, guessedShare: false);
+    }
+    return (planId: planId, guessedShare: true);
   }
+
+  /// What the caller must say when [add] has just guessed a share.
+  ///
+  /// Here rather than on the screen because the guess is made here: a second
+  /// screen adding a meal would otherwise have to know to say it too.
+  static const defaultedPortions =
+      'Put down as all yours. Open it to change whose share it is.';
 
   /// Put something on a day that is not one of the house's meals — a takeaway,
   /// a meal out, "at Mum's".

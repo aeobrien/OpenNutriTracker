@@ -79,6 +79,78 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  group('nothing arrives chosen', () {
+    /// Aidan, 23 August 2026, asked whether the builder should start with the
+    /// most likely parts already ticked:
+    ///
+    /// > "No default, I do it manually - the learning system is unproven."
+    ///
+    /// So the pairing graph orders what is offered and decides nothing. The
+    /// distinction matters and is the reason these tests do not check the
+    /// order: a list put in a helpful order is the graph making a suggestion,
+    /// which he did not object to; a part arriving ticked is the graph making
+    /// the choice, which he did.
+    List<FilterChip> chips(WidgetTester tester) =>
+        tester.widgetList<FilterChip>(find.byType(FilterChip)).toList();
+
+    testWidgets('the builder opens with nothing ticked', (tester) async {
+      habits();
+
+      await openIt(tester);
+
+      expect(chips(tester), isNotEmpty, reason: 'there is something to tick');
+      expect(chips(tester).where((c) => c.selected), isEmpty);
+    });
+
+    testWidgets('choosing what to cook does not tick anything under it',
+        (tester) async {
+      // The Mini answers with the parts that have gone with roast chicken
+      // before, best first. Best first is a suggestion; ticked is a decision.
+      habits();
+      await openIt(tester);
+
+      await choose(tester, 'chicken thighs');
+      await choose(tester, 'roast');
+
+      final ticked =
+          chips(tester).where((c) => c.selected).map((c) => c.label).toList();
+      expect(ticked.length, 2,
+          reason: 'only the two parts actually tapped are chosen');
+      expect(find.widgetWithText(FilterChip, 'tenderstem broccoli'),
+          findsOneWidget);
+      expect(
+          tester
+              .widget<FilterChip>(
+                  find.widgetWithText(FilterChip, 'tenderstem broccoli'))
+              .selected,
+          isFalse,
+          reason: 'the only vegetable this house has had with roast chicken '
+              'is still not chosen for him');
+      expect(
+          tester
+              .widget<FilterChip>(
+                  find.widgetWithText(FilterChip, 'new potatoes'))
+              .selected,
+          isFalse);
+    });
+
+    testWidgets('a meal built without touching the parts below has none',
+        (tester) async {
+      // If anything were quietly pre-filled, this is where it would show: the
+      // meal would arrive with a vegetable nobody chose.
+      habits();
+      await openIt(tester);
+      await choose(tester, 'chicken thighs');
+      await choose(tester, 'roast');
+
+      await tester.tap(find.text(MealBuilder.buildIt));
+      await tester.pumpAndSettle();
+
+      expect(mini.built.single['veg'], isEmpty);
+      expect(mini.built.single['carb'], '');
+    });
+  });
+
   group('what it offers', () {
     testWidgets('the lists are what this house has cooked', (tester) async {
       // The carrying test. Short lists drawn from habit are the only thing a

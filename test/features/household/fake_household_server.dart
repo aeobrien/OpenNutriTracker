@@ -56,6 +56,12 @@ class FakeHouseholdServer {
   /// plan id → person id → how many portions of it are theirs.
   final Map<int, Map<int, num>> portions = {};
 
+  /// Set to make the house refuse every attempt to write a share, with these
+  /// words. The real house does this when a phone reaches for a plan row that
+  /// is not its household's; there is no way through the app to provoke it,
+  /// which is exactly why a test needs a way to.
+  String? refusePortions;
+
   /// plan id → person id → 'ate' | 'skipped'. Kept per person exactly as the
   /// server keeps it, so a fake could not accidentally make one person's answer
   /// settle the meal for both — which is the mistake the tests are watching for.
@@ -1228,6 +1234,11 @@ class FakeHouseholdServer {
             return http.Response(
                 jsonEncode({'ok': false, 'error': 'no planned meal $planId'}),
                 404,
+                headers: {'content-type': 'application/json'});
+          }
+          if (refusePortions != null) {
+            return http.Response(
+                jsonEncode({'ok': false, 'error': refusePortions}), 403,
                 headers: {'content-type': 'application/json'});
           }
           setPortion(planId, body['person_id'] as int, body['portions'] as num);

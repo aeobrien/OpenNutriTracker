@@ -87,6 +87,11 @@ class PlanDaySheet extends StatefulWidget {
 class _PlanDaySheetState extends State<PlanDaySheet> {
   PlanDay? _day;
   String? _problem;
+
+  /// Something that happened rather than something that went wrong. Kept apart
+  /// from [_problem] because a problem hides the plan and this must not — it
+  /// is about a row that is now on it.
+  String? _said;
   bool _busy = false;
 
   /// Whether anything on the plan actually changed while this was open. The
@@ -130,8 +135,13 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
     if (chosen == null || !mounted) return;
     setState(() => _busy = true);
     try {
-      await widget.repository.add(day: widget.day, mealId: chosen.id);
+      final added =
+          await widget.repository.add(day: widget.day, mealId: chosen.id);
       _changed = true;
+      // Aidan asked for the whole meal to go down as his and to be prompted to
+      // change it. This is the prompt half; without it the guess is silent,
+      // which is the thing he ruled against.
+      _said = added.guessedShare ? PlanRepository.defaultedPortions : null;
       await _load();
       // A meal built a moment ago is a name and four component names: nobody
       // has said which of the house's foods stands for the broccoli or how
@@ -212,6 +222,11 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
                   child: Text(_problem!,
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: theme.colorScheme.error)),
+                ),
+              if (_problem == null && _said != null)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Text(_said!, style: theme.textTheme.bodySmall),
                 ),
               if (_problem == null) ..._planned(theme),
               const SizedBox(height: 8),
