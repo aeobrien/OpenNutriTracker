@@ -22,14 +22,34 @@ class SearchProductsUseCase {
   /// A sleeping Mac Mini costs nothing here: [FoodFinder] answers with
   /// an empty list rather than throwing, and the public search runs exactly as
   /// it always did. Searching for food away from home has to keep working.
+  ///
+  /// And the mirror of it, which was missing until 24 August 2026: a public
+  /// database that is down costs this household its own list nothing either.
+  /// Open Food Facts answered every search that morning with a 503 and a page
+  /// of HTML, from both of its search addresses, while its barcode lookup on
+  /// the same host went on answering — and Aidan got an error screen with
+  /// nothing on it, in a house whose own food list has twenty-one things in
+  /// it. One throw discarded results that had already arrived.
+  ///
+  /// It is deliberately quiet about the failure rather than saying so on the
+  /// screen: the shorter list is the only thing the person sees. Saying it out
+  /// loud would be better and is a change to the screen, not to this.
   Future<List<MealEntity>> searchOFFProductsByString(
     String searchString,
   ) async {
     final ours = await _ours?.matching(searchString) ?? const <MealEntity>[];
-    final theirs = await _productsRepository.getOFFProductsByString(
-      searchString,
-    );
-    return [...ours, ...theirs];
+    try {
+      final theirs = await _productsRepository.getOFFProductsByString(
+        searchString,
+      );
+      return [...ours, ...theirs];
+    } catch (_) {
+      // Nothing of ours either is the one case that still fails, because there
+      // genuinely is nothing to show and an empty list would read as "no such
+      // food" rather than "nobody could be asked".
+      if (ours.isEmpty) rethrow;
+      return ours;
+    }
   }
 
   /// The foods this household already has, most-used-by-this-person first.

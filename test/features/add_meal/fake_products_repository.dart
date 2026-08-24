@@ -14,12 +14,20 @@ class FakeProductsRepository implements ProductsRepository {
   List<MealEntity> willReturn = const [];
   MealEntity? willReturnForBarcode;
 
+  /// Set to make every search fail the way Open Food Facts was failing on
+  /// 24 August 2026: a 503 with a page of HTML saying "Page temporarily
+  /// unavailable", from both of its search addresses, while its barcode
+  /// lookup on the same host went on answering.
+  Object? searchesFailWith;
+
   final List<String> searchesMade = [];
   final List<String> barcodesLookedUp = [];
 
   @override
   Future<List<MealEntity>> getOFFProductsByString(String searchString) async {
     searchesMade.add(searchString);
+    final fault = searchesFailWith;
+    if (fault != null) throw fault;
     return willReturn;
   }
 

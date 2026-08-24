@@ -146,3 +146,49 @@ off the bottom — the box was simply small. The step was written as though both
 buttons were on the sheet, and I have not moved the second one there; where it
 sits now is where somebody arrives when the meal they wanted was not in the
 list.
+
+## Step 9 — nothing can be added except by barcode
+
+**Two separate things. One is fixed; the other is not ours and needs a decision
+from you.**
+
+### The search error — partly fixed
+
+**Open Food Facts is refusing searches.** I called it from here rather than
+guessing: its old search address and its newer one both answer 503 with a page
+of HTML saying "Page temporarily unavailable", while its barcode lookup on the
+same machine answers normally. That is why the barcode worked and nothing else
+did.
+
+**What I fixed:** one failed request was throwing away results that had already
+arrived. Your house has twenty-one foods of its own on the Mac Mini, and the
+app asks the house first and the internet second — but a failure from the
+internet discarded both. So you got an empty error screen while the answer was
+already in hand. Searching now keeps whatever the house found and only fails
+when neither could answer at all. Removing that one line turns the new test
+red.
+
+So from the next build, searching "chicken" will show the household's own
+chicken products even while Open Food Facts is down. It will not show anything
+new from the internet.
+
+**What needs you.** Open Food Facts has a third address — a separate search
+service — which answers correctly right now. Moving to it means reading a
+different shape of answer from a different machine, and it changes where the
+food in your app comes from. I have not done it, and there is a prior question
+underneath it: whether a public database going down should ever be able to
+empty your food search, or whether the house's own list plus the barcode
+scanner is the thing you actually rely on. **Say which and I will build it.**
+
+### "Recently" showing nothing — probably working as designed, and the design
+is probably wrong for you
+
+The recent list is built from your own past entries on the phone, and it
+**deliberately skips anything spoken or quick-added**, because those have no
+food behind them to add again. Speaking is how you log most things. So for you
+that list will usually be empty, and it is not obvious from looking at it that
+this is the reason.
+
+I cannot see your phone from here, so I am not claiming this *is* what you hit
+— only that it is the most likely explanation and it is a real design problem
+either way. **Written down as something to decide, not built.**

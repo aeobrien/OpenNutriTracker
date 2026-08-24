@@ -150,6 +150,38 @@ void main() {
     );
 
     test(
+      'a public database that is down leaves our own foods showing',
+      () async {
+        // The mirror of the test above it, and it was missing. On 24 August
+        // 2026 Open Food Facts answered every search with a 503 and a page of
+        // HTML, and this app showed Aidan an error screen with nothing on it —
+        // although the house had twenty-one foods of its own and could answer
+        // perfectly well. A public database going down must cost this
+        // household its own list no more than a sleeping Mac Mini costs it the
+        // internet.
+        mini.addFood(name: 'Oat biscuits', brand: 'Waitrose', kcal100: 450);
+        publicList.searchesFailWith = StateError('503 from the internet');
+
+        final results = await searching().searchOFFProductsByString('oat');
+
+        expect(results.map((m) => m.name), ['Oat biscuits']);
+      },
+    );
+
+    test(
+      'and when neither can answer, the screen may still say so',
+      () async {
+        // Nothing of ours and nothing of theirs is the one case that should
+        // still reach the error state — there is genuinely nothing to show,
+        // and a silent empty list would read as "no such food".
+        publicList.searchesFailWith = StateError('503 from the internet');
+
+        expect(searching().searchOFFProductsByString('oat'),
+            throwsA(isA<StateError>()));
+      },
+    );
+
+    test(
       'an out-of-date Mac Mini cannot put the wrong food in front of '
       'them',
       () async {
