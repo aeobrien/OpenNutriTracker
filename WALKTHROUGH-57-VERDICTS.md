@@ -83,3 +83,45 @@ down as all yours. Open it to change whose share it is." Step 5 passed, so the
 behaviour underneath it is right — the whole meal was against your name and
 Emily's share was not set. Whether you saw the sentence is not recorded either
 way.
+
+## Step 14 — the kitchen panel loads with nothing between the menus
+
+**Fixed and proved by loading it.** Not caused by the `?batchdemo=1` on the
+address; it happens on any cold load whose remembered tab is Recipes or Plan,
+and has done for as long as those two tabs have existed.
+
+The panel's main script boots and draws the remembered tab before the two files
+that know how to draw Recipes and Plan have loaded — they are the last two
+script tags on the page. So it drew nothing, and the refresh that follows
+deliberately leaves those two tabs alone because they fetch their own. Tapping
+another tab and coming back draws again, by which time the files are there,
+which is exactly the workaround you found.
+
+It now draws a second time once every script on the page has run.
+
+Proved by running a throwaway copy of the panel on a spare port with an empty
+database, seeding the remembered tab to Recipes, and loading it in a headless
+browser: before the fix the list was empty and the "nothing here" line was
+blank; after it, the recipes section's own line appears. The default tab still
+draws its own list. **It needs deploying to the Mini before you will see it.**
+
+## Step 13 — a removed meal stays on the plan
+
+**Not a separate fault. It is steps 10-12 seen from the other end, and it is
+already fixed** — no further change was needed.
+
+The meal you removed did come off; you said so. What stayed was the crunchy
+peanut butter, and that is a logged food, not a planned meal. The Plan tab
+draws each day straight from the Mac Mini, and Home and Diary draw from the
+phone's own copy. The move at step 10 took the row off the phone and the Mini
+refused it, so the two now disagree — the Plan tab is showing you the truthful
+one.
+
+I asked the Mini rather than reasoning about it. Its answer for your week:
+
+    2026-08-24 | entries: [('Crunchy Peanut Butter', 1)] | planned: []
+
+Person 1 is you. So the plan was right and your diary was wrong, which is the
+opposite of how it looked. With the move refused in front of you, this cannot
+happen again; the one row already split stays split until somebody puts it
+right, as above.
