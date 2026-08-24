@@ -8,6 +8,7 @@ import 'package:opennutritracker/features/household/data/food_ledger.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
 import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
+import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_screen.dart';
@@ -429,16 +430,36 @@ class _EditDialogState extends State<EditDialog> {
   /// A house that cannot be reached is not treated as "nobody holds it". The
   /// mistake this prevents is invisible once made, so the honest answer to
   /// "I could not ask" is to say so and change nothing.
+  ///
+  /// It finds its own ledger when none was handed in, the same way the history
+  /// panel does — and for a reason worth writing down. This used to read
+  /// `if (ledger == null) return null`, and [ledger] is null in every screen
+  /// of this app: the argument exists so a test can supply a fake. So the
+  /// refusal held in six tests and in nothing else, and the first time Aidan
+  /// asked for the move on the phone the row went straight onto Emily's day.
+  /// A guard that only the tests can reach is not a guard.
   Future<String?> _whyTheMoveIsRefused(HouseholdPerson moveTo) async {
-    final ledger = widget.ledger;
-    if (ledger == null) return null;
+    final ledger = widget.ledger ?? locator<FoodLedger>();
     try {
       final held = await ledger.whoElseHolds(widget.intakeEntity.id);
       if (!held.contains(moveTo.id)) return null;
       return EditDialog.cannotMoveOnto(moveTo.name);
+    } on HouseholdRefused {
+      // A row the house has never heard of — logged before the two machines
+      // shared a name for a row, or logged only here. It was reached and it
+      // answered: there is no other half, so there is nothing to refuse.
+      return null;
     } on HouseholdUnreachable catch (e) {
+      // Its own headline, so a Mini that is merely slow is not reported as a
+      // Mini that is not there.
       return '${e.headline}, so this cannot be moved yet — it is the only '
           'machine that knows whose day the other half of a shared meal is on.';
+    } catch (_) {
+      // Anything else that leaves the question unanswered. Refusing is the
+      // honest answer; letting it through on a failed question is the mistake
+      // nobody can see afterwards.
+      return 'This cannot be moved yet — the question of whose day the other '
+          'half of a shared meal is on could not be answered.';
     }
   }
 

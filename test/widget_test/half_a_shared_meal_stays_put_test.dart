@@ -117,6 +117,45 @@ Widget _aRowYouCanTap(_Ledger ledger, List<IntakeEdit> given) => MaterialApp(
       ),
     );
 
+/// The dialog built the way the app builds it.
+///
+/// [_aRowYouCanTap] hands the ledger in, which no screen in this app does —
+/// the `ledger:` argument exists so a test can supply a fake, and the running
+/// app leaves it null. Every test above passed on a code path production never
+/// took: the refusal read `if (ledger == null) return null` and let the move
+/// through. Aidan found it on the phone at the first attempt, on 24 August.
+///
+/// So this one takes the argument away and makes the dialog find its own
+/// ledger, which is the only arrangement the person holding the phone ever
+/// gets.
+Widget _theRowAsTheAppBuildsIt(List<IntakeEdit> given) => MaterialApp(
+      localizationsDelegates: const [
+        S.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+      ],
+      supportedLocales: S.delegate.supportedLocales,
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              final edit = await showDialog<IntakeEdit>(
+                context: context,
+                builder: (_) => EditDialog(
+                  intakeEntity: _row,
+                  usesImperialUnits: false,
+                  currentOwner: aidan.id,
+                ),
+              );
+              if (edit != null) given.add(edit);
+            },
+            child: const Text("Shepherd's pie"),
+          ),
+        ),
+      ),
+    );
+
 void main() {
   setUp(() {
     GetIt.instance
@@ -211,5 +250,42 @@ void main() {
         reason: 'a round trip on every save, for a question about a move '
             'nobody asked for');
     expect(given, hasLength(1));
+  });
+
+  testWidgets('the refusal happens on the dialog the app actually builds',
+      (tester) async {
+    // No `ledger:` anywhere here, because there is none anywhere in the app.
+    final ledger = _Ledger(held: [emily.id]);
+    GetIt.instance.registerSingleton<FoodLedger>(ledger);
+    final given = <IntakeEdit>[];
+
+    await tester.pumpWidget(_theRowAsTheAppBuildsIt(given));
+    await tester.tap(find.text("Shepherd's pie"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Emily's"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.current.dialogOKLabel));
+    await tester.pumpAndSettle();
+
+    expect(ledger.asked, ['intake-abc'],
+        reason: 'the dialog found its own ledger and asked');
+    expect(find.text(EditDialog.cannotMoveOnto('Emily')), findsOneWidget);
+    expect(given, isEmpty, reason: 'nothing moved');
+  });
+
+  testWidgets('and an ordinary row still moves, with no ledger handed in',
+      (tester) async {
+    GetIt.instance.registerSingleton<FoodLedger>(_Ledger());
+    final given = <IntakeEdit>[];
+
+    await tester.pumpWidget(_theRowAsTheAppBuildsIt(given));
+    await tester.tap(find.text("Shepherd's pie"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Emily's"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.current.dialogOKLabel));
+    await tester.pumpAndSettle();
+
+    expect(given.single.moveTo, emily.id);
   });
 }
