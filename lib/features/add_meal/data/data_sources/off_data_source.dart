@@ -11,16 +11,49 @@ import 'package:opennutritracker/features/scanner/data/product_not_found_excepti
 
 class OFFDataSource {
   static const _timeoutDuration = Duration(seconds: 20); // TODO lower timeout
+
+  /// How many times a refused search is asked, and how long is left between.
+  ///
+  /// Measured on 24 August 2026 rather than guessed. Thirty-nine searches
+  /// spread across an hour, against this exact address: fourteen came back
+  /// first time and twenty-five were refused. Of those twenty-five, thirteen
+  /// came back on a second ask a second later and five more on a third — so
+  /// three asks turn 36% into 82%, and the second ask alone does most of the
+  /// work. A fourth was not measured and is not claimed.
+  ///
+  /// It costs a second at worst, and only on a search that was going to show an
+  /// error anyway: their refusal is a page of HTML returned in about a fifth of
+  /// a second, carrying no instruction to wait.
+  static const _attempts = 3;
+  static const _betweenAttempts = Duration(seconds: 1);
+
   final log = Logger('OFFDataSource');
+
+  /// Only ever passed in by a test. The running app makes its own.
+  final http.Client? _client;
+
+  OFFDataSource({http.Client? client}) : _client = client;
 
   Future<OFFWordResponseDTO> fetchSearchWordResults(String searchString) async {
     try {
       final searchUrlString = OFFConst.getOffWordSearchUrl(searchString);
       final userAgentString = await AppConst.getUserAgentString();
-      final httpClient = ONTHttpClient(userAgentString, http.Client());
+      final httpClient = ONTHttpClient(userAgentString, _client ?? http.Client());
 
-      final response =
+      var response =
           await httpClient.get(searchUrlString).timeout(_timeoutDuration);
+      // Only their three "we are not answering" codes are worth asking again.
+      // A 404 or a wrong answer is not something a second ask would mend, and a
+      // request that timed out throws out of here rather than reaching this.
+      for (var asked = 1;
+          asked < _attempts &&
+              OFFConst.offHttpDownCodes.contains(response.statusCode);
+          asked++) {
+        log.warning('OFF refused with ${response.statusCode}, asking again');
+        await Future.delayed(_betweenAttempts);
+        response =
+            await httpClient.get(searchUrlString).timeout(_timeoutDuration);
+      }
       log.fine('Fetching OFF results from: $searchUrlString');
       if (response.statusCode == OFFConst.offHttpSuccessCode) {
         final wordResponse =
