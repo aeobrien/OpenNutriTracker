@@ -162,12 +162,23 @@ and they are verified live on it. The phone changes are committed and tested and
 are not on a device — including this afternoon's search fixes, which build 58 on
 your phone does not contain.
 
-**And a new one: I cannot run the app on this Mac to watch anything.** The
-simulator refuses to build it, because the barcode scanner package will not build
-for a simulator on an Apple Silicon Mac. It worked on 20 August, so something has
-changed. Until it is sorted, "watched running" means your phone — and putting a
-build on your phone is what emptied your diary this morning. **That is your call,
-not mine.**
+**And a new one, which is a decision for you.** I cannot run the app on this Mac
+to watch anything any more. The barcode scanner package we use is built on a
+Google library that has no build for a simulator on an Apple Silicon Mac, so the
+whole app refuses to build there. It worked on 20 August. Until it is sorted,
+"watched running" means your phone — and putting a build on your phone is what
+emptied your diary this morning.
+
+**The fix is a newer version of that scanner package**, which Apple's own
+barcode reader replaced the Google one in, and which does build for the
+simulator. Nothing this app uses is broken by the change — I checked all four of
+its breaking changes against the one screen we use it on. But the scanner itself
+would then need one real scan of a real packet on your phone to prove it still
+works, because a simulator has no camera.
+
+So: **one trip to your phone to get the simulator back, or a trip to your phone
+every time we want to watch something.** Written up in
+`WHY-THE-SIMULATOR-CANNOT-RUN-THIS-APP.md`. **Say which.**
 
 ## One thing that is not held by a test, said out loud
 
