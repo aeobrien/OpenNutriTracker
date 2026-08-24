@@ -17,23 +17,35 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
 
   String _searchString = "";
 
+  /// Whether the last search left an error on the screen.
+  ///
+  /// The words on their own are not enough to decide whether a search is worth
+  /// making. Searching the same thing straight after it worked is worth
+  /// nothing — the results are already there. Searching the same thing after it
+  /// failed is the most ordinary thing a person does, and until 24 August 2026
+  /// it sent nothing at all: no request, no spinner, no fresh error, forever,
+  /// even once the database behind it had come back up. Aidan spent about a
+  /// week pressing it.
+  bool _lastSearchFailed = false;
+
   ProductsBloc(this._searchProductUseCase, this._getConfigUsecase)
       : super(ProductsInitial()) {
     on<LoadProductsEvent>((event, emit) async {
-      if (event.searchString != _searchString) {
-        _searchString = event.searchString;
-        emit(ProductsLoadingState());
-        try {
-          final result = await _searchProductUseCase
-              .searchOFFProductsByString(_searchString);
-          final config = await _getConfigUsecase.getConfig();
+      if (event.searchString == _searchString && !_lastSearchFailed) return;
+      _searchString = event.searchString;
+      emit(ProductsLoadingState());
+      try {
+        final result =
+            await _searchProductUseCase.searchOFFProductsByString(_searchString);
+        final config = await _getConfigUsecase.getConfig();
 
-          emit(ProductsLoadedState(
-              products: result, usesImperialUnits: config.usesImperialUnits));
-        } catch (error) {
-          log.severe(error);
-          emit(ProductsFailedState());
-        }
+        _lastSearchFailed = false;
+        emit(ProductsLoadedState(
+            products: result, usesImperialUnits: config.usesImperialUnits));
+      } catch (error) {
+        log.severe(error);
+        _lastSearchFailed = true;
+        emit(ProductsFailedState());
       }
     });
     on<LoadOurFoodsEvent>((event, emit) async {
@@ -54,9 +66,11 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
       try {
         final result = await _searchProductUseCase
             .searchOFFProductsByString(_searchString);
+        _lastSearchFailed = false;
         emit(ProductsLoadedState(products: result));
       } catch (error) {
         log.severe(error);
+        _lastSearchFailed = true;
         emit(ProductsFailedState());
       }
     });

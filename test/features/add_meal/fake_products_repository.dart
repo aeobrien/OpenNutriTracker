@@ -34,6 +34,8 @@ class FakeProductsRepository implements ProductsRepository {
   @override
   Future<List<MealEntity>> getFDCFoodsByString(String searchString) async {
     searchesMade.add(searchString);
+    final fault = searchesFailWith;
+    if (fault != null) throw fault;
     return willReturn;
   }
 

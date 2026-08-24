@@ -17,23 +17,28 @@ class FoodBloc extends Bloc<FoodEvent, FoodState> {
 
   String _searchString = "";
 
+  /// See [ProductsBloc] for why the words alone are not enough to decide
+  /// whether a search is worth making. Same fault, same fix, 24 August 2026.
+  bool _lastSearchFailed = false;
+
   FoodBloc(this._searchProductUseCase, this._getConfigUsecase)
       : super(FoodInitial()) {
     on<LoadFoodEvent>((event, emit) async {
-      if (event.searchString != _searchString) {
-        _searchString = event.searchString;
-        emit(FoodLoadingState());
-        try {
-          final result =
-              await _searchProductUseCase.searchFDCFoodByString(_searchString);
-          final config = await _getConfigUsecase.getConfig();
+      if (event.searchString == _searchString && !_lastSearchFailed) return;
+      _searchString = event.searchString;
+      emit(FoodLoadingState());
+      try {
+        final result =
+            await _searchProductUseCase.searchFDCFoodByString(_searchString);
+        final config = await _getConfigUsecase.getConfig();
 
-          emit(FoodLoadedState(
-              food: result, usesImperialUnits: config.usesImperialUnits));
-        } catch (error) {
-          log.severe(error);
-          emit(FoodFailedState());
-        }
+        _lastSearchFailed = false;
+        emit(FoodLoadedState(
+            food: result, usesImperialUnits: config.usesImperialUnits));
+      } catch (error) {
+        log.severe(error);
+        _lastSearchFailed = true;
+        emit(FoodFailedState());
       }
     });
     on<RefreshFoodEvent>((event, emit) async {
@@ -41,9 +46,11 @@ class FoodBloc extends Bloc<FoodEvent, FoodState> {
       try {
         final result =
             await _searchProductUseCase.searchFDCFoodByString(_searchString);
+        _lastSearchFailed = false;
         emit(FoodLoadedState(food: result));
       } catch (error) {
         log.severe(error);
+        _lastSearchFailed = true;
         emit(FoodFailedState());
       }
     });
