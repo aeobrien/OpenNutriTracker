@@ -5,7 +5,7 @@
 > will not be put in front of you until there is a build worth walking, and you
 > will be told plainly what it covers.
 
-**Date:** 2026-08-24 12:31 (clock read in the turn this was written)
+**Date:** 2026-08-24 16:04 (clock read in the turn this was written)
 
 Everything you recorded on build 57 is either fixed and proved, or written down
 below with the reason it is not being fixed yet. The full step-by-step is in
@@ -75,18 +75,35 @@ insisting on all four before it will save anything. I took the first because a
 food you cannot log at all is worse than a macro figure that says it is
 incomplete. **Say if you would rather have the second.**
 
-## 4. Where your food search comes from
+## 4. Where your food search comes from — smaller than it was
 
-Open Food Facts' search has been down since Saturday — that is their machine,
-not ours. Barcodes still work. Their separate search service answers correctly
-right now and we could move to it, but it is a different machine and a different
-shape of answer, and there is a prior question: whether a public database going
-down should ever be able to empty your food search, or whether the house's own
-list plus the barcode scanner is what you actually rely on. **Say which and I
-will build it.**
+You asked whether we are talking about retrying now or retrying in the app, and
+said *"It hasn't worked any of the times I've retried manually"*. **You were
+right and the fault was ours.** Pressing search again on the same words sent
+nothing at all — no request, no spinner, no new error — and stayed that way even
+after Open Food Facts came back up. The Retry button under the error message was
+the only one of the two that ever did anything, and nothing on the screen told
+you which was which. That is fixed.
 
-The app's own share of that fault is fixed: it used to throw away household
-results it already had when the internet call failed. It does not any more.
+**Open Food Facts is refusing about two searches in three, at random.** Measured
+across an hour this afternoon: 39 searches, 14 answered first time. The refusals
+do not come in stretches — the longest run was about six minutes — and waiting
+does not clear them. Asking again straight away does: a second ask a second
+later rescued 13 of the 25 refusals and a third rescued 5 more, so **three asks
+take 36% to 82%**. The app now does that, and only on their "we are not
+answering" codes. About one search in five still fails, so the error screen and
+its Retry button stay.
+
+**On the pack sizes, your condition is not met, so nothing is lost.** You said
+losing them was acceptable *if* they cannot be recovered. They can. Their newer
+search does not carry them, but every result carries a barcode and the barcode
+address returns them in about a tenth of a second — and they are only needed when
+you open a food, not for every row in a list.
+
+**So the question left for you is smaller: is it worth moving the search at
+all?** With the retry in, 82% of searches answer; your own list already survives
+an outage. Moving would cost an extra lookup per food you open. **Say if you want
+it moved anyway, or leave it and we keep the address we have.**
 
 ## 5. Two smaller ones
 
@@ -142,7 +159,15 @@ be walked before because the Add button was dead. It has not been walked.
 
 **Nothing here has been on your phone.** The Mac Mini has today's panel changes
 and they are verified live on it. The phone changes are committed and tested and
-are not on a device.
+are not on a device — including this afternoon's search fixes, which build 58 on
+your phone does not contain.
+
+**And a new one: I cannot run the app on this Mac to watch anything.** The
+simulator refuses to build it, because the barcode scanner package will not build
+for a simulator on an Apple Silicon Mac. It worked on 20 August, so something has
+changed. Until it is sorted, "watched running" means your phone — and putting a
+build on your phone is what emptied your diary this morning. **That is your call,
+not mine.**
 
 ## One thing that is not held by a test, said out loud
 
