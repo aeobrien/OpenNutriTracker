@@ -125,3 +125,24 @@ Person 1 is you. So the plan was right and your diary was wrong, which is the
 opposite of how it looked. With the move refused in front of you, this cannot
 happen again; the one row already split stays split until somebody puts it
 right, as above.
+
+## Step 3 — the day's sheet renders as a small box at the bottom
+
+**Fixed and measured.** A bottom sheet hands its contents loose room, so a
+column of short text shrinks to fit its longest line rather than filling the
+screen. On a day with nothing on it the longest line is the date, so the sheet
+became a small box in the corner. A day with a meal on it was always fine,
+because a meal's row takes whatever width it is given — which is why nobody had
+seen this until you opened an empty day.
+
+Measured on a phone-sized screen in a test rather than guessed at: 290 points
+wide out of 390 before, the full 390 after. Setting it back to a fixed narrow
+width turns both new tests red.
+
+**Two corrections to the step, not to the app.** The sheet has one button, not
+two: 'Build one from its parts' lives inside the meal picker one tap further
+in, which is what you found yourself in your update. And nothing was being cut
+off the bottom — the box was simply small. The step was written as though both
+buttons were on the sheet, and I have not moved the second one there; where it
+sits now is where somebody arrives when the meal they wanted was not in the
+list.

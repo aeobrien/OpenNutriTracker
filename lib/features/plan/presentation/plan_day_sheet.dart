@@ -209,37 +209,49 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(PlanDaySheet.heading(widget.day),
-                  style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              if (_problem != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(_problem!,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.error)),
-                ),
-              if (_problem == null && _said != null)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(_said!, style: theme.textTheme.bodySmall),
-                ),
-              if (_problem == null) ..._planned(theme),
-              const SizedBox(height: 8),
-              // No add button when the house cannot be reached: a control that
-              // cannot work should not be offered, and this one would have
-              // nothing to check the day against.
-              if (_problem == null)
-                TextButton.icon(
-                  onPressed: _busy ? null : _add,
-                  icon: const Icon(Icons.add),
-                  label: const Text(PlanDaySheet.addLabel),
-                ),
-            ],
+          // Full width, said out loud rather than left to the content.
+          //
+          // A bottom sheet hands its child loose constraints, so a column of
+          // short text hugs its longest line. On an empty day the longest line
+          // here is the date, and Aidan got a small box in the corner of the
+          // bottom of his screen on 24 August. A day with a meal on it was
+          // always fine, because a ListTile takes what it is offered — which is
+          // why this survived every test and every use until he opened a day
+          // with nothing on it.
+          child: SizedBox(
+            width: double.infinity,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(PlanDaySheet.heading(widget.day),
+                    style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (_problem != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(_problem!,
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: theme.colorScheme.error)),
+                  ),
+                if (_problem == null && _said != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Text(_said!, style: theme.textTheme.bodySmall),
+                  ),
+                if (_problem == null) ..._planned(theme),
+                const SizedBox(height: 8),
+                // No add button when the house cannot be reached: a control that
+                // cannot work should not be offered, and this one would have
+                // nothing to check the day against.
+                if (_problem == null)
+                  TextButton.icon(
+                    onPressed: _busy ? null : _add,
+                    icon: const Icon(Icons.add),
+                    label: const Text(PlanDaySheet.addLabel),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
