@@ -245,3 +245,102 @@ phone's builder on purpose and ran the tests: two went red, in the two places
 that check a third vegetable survives. I put the cap back into the Mini's
 normaliser: two more went red there. Restored both, and the full runs are green
 — 1015 tests on the phone, 719 on the Mini, 21 on the kitchen panel.
+
+---
+
+# The build-53 panel — the one you walked by mistake on Saturday
+
+You walked a superseded panel at 10:32 this morning. That was not your error and
+the findings in it were not wasted: four of the thirteen steps recorded
+something real, and I checked every one of them against the build you are
+holding now before touching anything.
+
+## The two greyed-out boxes were one bug, and it is fixed
+
+You reported them as two things, at steps 11 and 12:
+
+> *"I'm not sure why the 'quantity' window is greyed out though, I can't define
+> the quantity manually, but only using the buttons."*
+
+> *"I can't add it, the 'add' button is greyed out and a red message says
+> 'product missing required kcal or macronutrients information'."*
+
+They came from the same line of code. The amount screen refused any food that
+did not have **all four** of calories, protein, fat and carbohydrate, and it
+switched off the amount box and the Add button together.
+
+You had typed those fish cakes in yourself. The form asked you for a name,
+calories per 100g, what the pack weighs and how many are in it — the four boxes
+the walkthrough named — and it never asked you for protein, fat or
+carbohydrate. So the app took a food in through its own front door and then
+refused to let you use it, using a sentence about three things it had never
+mentioned.
+
+**What it does now.** Calories are still required: a food with none would sit on
+your day looking like food and adding nothing, and your total would be wrong
+with nothing on screen saying so. Protein, fat and carbohydrate are not
+required. A food that has calories and nothing else goes on the day, and the
+screen says underneath:
+
+> Calories only — nothing is recorded here for protein, fat or carbohydrate, so
+> this will count as zero towards those for the day.
+
+**That sentence is the part worth arguing with, so I am putting it in front of
+you rather than burying it.** Accepting the food means your day's protein figure
+is short by whatever was actually in it, and the app cannot know by how much.
+The alternative is what you hit on Saturday — the food is unusable until
+somebody types three more numbers off the packet. I have taken the first because
+this house tracks calories and the macros are secondary, and because a food you
+cannot log at all is a worse outcome than a macro figure that says so. **If you
+would rather the form insisted on all four up front, say so and I will move it
+there instead.**
+
+**How I know it is fixed rather than think it is.** There is now a test that
+builds the real amount screen with your fish cakes on it and presses on the
+buttons. Put the old rule back and two tests go red, including the one driving
+the actual screen. That distinction matters this weekend: the refusal I built
+for the shared-meal move passed six tests while being unreachable in the running
+app, because every test handed it something the app never hands it. This one is
+driven through the same widget the app builds.
+
+## The caption that stopped mid-word — fixed
+
+At step 8 you said the figures were right and added:
+
+> *"The 'one of them' text is cut off. It reads 'one of them, worked out from
+> what a pac…'"*
+
+That line is the only thing on the screen saying where your number came from, so
+half of it is no use. It was attached to the amount box as its helper text,
+which pinned it to half the sheet's width and capped it at two lines. It now
+sits under the whole row, full width, uncapped.
+
+The one you hit was not the worst case — three of the six explanations are
+longer, and the longest ("A starting figure — nobody has said what a portion of
+this is") would have lost more. The test uses that one.
+
+## The "+10g / +50g" step — the app was right and the step was wrong
+
+At step 10 you marked a fail and said:
+
+> *"They do say +0.5 and +1, but they never said '+10g' or '+50g'."*
+
+The buttons were doing exactly the right thing. The step told you they "used to
+say +10g and +50g", meaning before that build — and you had never seen that
+version, so there was nothing for you to recognise. That is a badly written
+step, not a defect.
+
+For the record of what the buttons do: **+10g and +50g still exist**, and appear
+when the unit is a weight. When the unit counts things — one, a pack, a serving
+— you get +0.5 and +1 instead, which is what you saw and what you should see.
+Nothing changed here.
+
+## Step 13 is now walkable and has not been walked
+
+> *"Can't do this as it didn't add last time."*
+
+That step is the one that checks the amount box opens on what you ate last time
+rather than starting from scratch. It was untestable because the Add button was
+dead. The Add button now works, so the step can be walked — **but I have not
+walked it and cannot, and until somebody does, that fix is written and unproven
+on a real phone.**

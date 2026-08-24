@@ -27,6 +27,40 @@ class MealDetailBottomSheet extends StatefulWidget {
   static String _grams(double g) =>
       g == g.roundToDouble() ? '${g.toInt()} g' : '${g.toStringAsFixed(1)} g';
 
+  /// Why this food cannot go on a day at all, or null when it can.
+  ///
+  /// Calories are the one figure that cannot be missing: a food with none
+  /// would sit on the day contributing nothing while looking exactly like
+  /// food, and the day's total would be wrong with nothing on screen saying
+  /// so. Protein, fat and carbohydrate are a different case — see
+  /// [caloriesOnlyNote].
+  ///
+  /// This used to demand all four, which is how Aidan typed a packet of fish
+  /// cakes in by hand on 22 August with its calories on it, and then could not
+  /// put it on his day: the Add button was dead, the amount box was dead with
+  /// it, and the screen said "Product missing required kcal or macronutrients
+  /// information" — a sentence about three boxes the form had never asked him
+  /// to fill in.
+  static String? whyThisCannotGoOnADay(MealEntity product) =>
+      product.nutriments.energyKcal100 == null
+          ? 'This food has no calories recorded, so putting it on a day would '
+              'add nothing to it. Its calories per 100 g have to be filled in '
+              'first.'
+          : null;
+
+  /// Said out loud when a food has calories but no protein, fat or
+  /// carbohydrate, because those totals for the day will be quietly short by
+  /// whatever this food actually contained.
+  static String? caloriesOnlyNote(MealEntity product) {
+    final n = product.nutriments;
+    if (n.energyKcal100 == null) return null;
+    if (n.proteins100 != null && n.fat100 != null && n.carbohydrates100 != null) {
+      return null;
+    }
+    return 'Calories only \u2014 nothing is recorded here for protein, fat or '
+        'carbohydrate, so this will count as zero towards those for the day.';
+  }
+
   final MealEntity product;
   final DateTime day;
   final IntakeTypeEntity intakeTypeEntity;
@@ -80,7 +114,12 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final productMissingRequiredInfo = _hasRequiredProductInfoMissing();
+    final refusal = MealDetailBottomSheet.whyThisCannotGoOnADay(product);
+    final caloriesOnly = MealDetailBottomSheet.caloriesOnlyNote(product);
+    final portionNote =
+        quantityTextController.text == widget.portion?.amount
+            ? widget.portion?.explanation
+            : null;
     return BottomSheet(
         elevation: 10,
         onClosing: () {},
@@ -108,7 +147,7 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              enabled: !productMissingRequiredInfo,
+                              enabled: refusal == null,
                               controller: quantityTextController
                                 ..addListener(() {
                                   onQuantityOrUnitChanged(
@@ -124,17 +163,6 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                               decoration: InputDecoration(
                                 border: const OutlineInputBorder(),
                                 labelText: S.of(context).quantityLabel,
-                                // Only while the figure is still the one we
-                                // put there. The moment they type their own
-                                // amount the sentence would be describing a
-                                // number no longer on the screen, and a caption
-                                // that quietly stops being true is worse than
-                                // no caption at all.
-                                helperText: quantityTextController.text ==
-                                        widget.portion?.amount
-                                    ? widget.portion?.explanation
-                                    : null,
-                                helperMaxLines: 2,
                               ),
                             ),
                           ),
@@ -170,6 +198,36 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                                   }))
                         ],
                       ),
+                      // Under the whole row rather than under the box, and on
+                      // its own rather than as the field's helper text.
+                      //
+                      // As a helper it was pinned to the width of the amount
+                      // box, which is half the sheet, and capped at two lines
+                      // — so Aidan read "One of them, worked out from what a
+                      // pac..." and the sentence that was supposed to explain
+                      // where his number came from stopped mid-word. Three of
+                      // the six explanations are longer than that one.
+                      //
+                      // Still only shown while the figure is the one we put
+                      // there: the moment they type their own amount the
+                      // sentence would be describing a number no longer on the
+                      // screen, and a caption that quietly stops being true is
+                      // worse than no caption at all.
+                      if (portionNote != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: Text(portionNote,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant)),
+                          ),
+                        ),
                       const SizedBox(height: 8.0),
                       _IncrementChips(
                         product: product,
@@ -189,7 +247,7 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                       SizedBox(
                         width: double.infinity, // Make button full width
                         child: ElevatedButton.icon(
-                            onPressed: !productMissingRequiredInfo
+                            onPressed: refusal == null
                                 ? () {
                                     onAddButtonPressed(context);
                                   }
@@ -206,15 +264,26 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
                             icon: const Icon(Icons.add_outlined),
                             label: Text(S.of(context).addLabel)),
                       ),
-                      productMissingRequiredInfo
-                          ? Text(S.of(context).missingProductInfo,
+                      if (refusal != null)
+                        Text(refusal,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                    color:
+                                        Theme.of(context).colorScheme.error)),
+                      if (caloriesOnly != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(caloriesOnly,
                               style: Theme.of(context)
                                   .textTheme
-                                  .bodyMedium
+                                  .bodySmall
                                   ?.copyWith(
-                                      color:
-                                          Theme.of(context).colorScheme.error))
-                          : const SizedBox()
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant)),
+                        )
                     ],
                   ),
                 ),
@@ -241,17 +310,6 @@ class _MealDetailBottomSheetState extends State<MealDetailBottomSheet> {
     ];
   }
 
-  bool _hasRequiredProductInfoMissing() {
-    final productNutriments = product.nutriments;
-    if (productNutriments.energyKcal100 == null ||
-        productNutriments.carbohydrates100 == null ||
-        productNutriments.fat100 == null ||
-        productNutriments.proteins100 == null) {
-      return true;
-    } else {
-      return false;
-    }
-  }
 
   void onAddButtonPressed(BuildContext context) {
     mealDetailBloc.addIntake(
