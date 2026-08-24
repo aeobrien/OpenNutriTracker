@@ -2,6 +2,12 @@
 
 **Date:** 2026-08-24
 
+> **Resolved the same day, 24 August, 16:48.** Aidan's whole answer was
+> "Upgrade." The scanner is on version 7, and the app builds, installs,
+> launches and runs on the simulator on this Mac again — watched, not inferred
+> from a build going green. Commit `db89b36`. Everything below is what the
+> problem was and stays as the record of it; it no longer describes today.
+
 Since some time between 20 and 24 August, this app cannot be built for the iOS
 simulator on this Mac. It could on 20 August — the weight-correction fix was
 watched running there against a real Mantel. Three builds today failed

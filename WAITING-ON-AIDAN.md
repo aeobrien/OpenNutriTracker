@@ -162,23 +162,41 @@ and they are verified live on it. The phone changes are committed and tested and
 are not on a device — including this afternoon's search fixes, which build 58 on
 your phone does not contain.
 
-**And a new one, which is a decision for you.** I cannot run the app on this Mac
-to watch anything any more. The barcode scanner package we use is built on a
-Google library that has no build for a simulator on an Apple Silicon Mac, so the
-whole app refuses to build there. It worked on 20 August. Until it is sorted,
-"watched running" means your phone — and putting a build on your phone is what
-emptied your diary this morning.
+**The simulator is back, and you already ruled on it.** You said "Upgrade", so
+the barcode scanner now uses Apple's own barcode reader instead of the Google
+one that had no simulator build. The app builds, installs, launches and runs on
+the simulator on this Mac again — watched, at 16:48 on 24 August, not inferred
+from a build going green.
 
-**The fix is a newer version of that scanner package**, which Apple's own
-barcode reader replaced the Google one in, and which does build for the
-simulator. Nothing this app uses is broken by the change — I checked all four of
-its breaking changes against the one screen we use it on. But the scanner itself
-would then need one real scan of a real packet on your phone to prove it still
-works, because a simulator has no camera.
+**The first thing it showed was a fault nobody could have seen before.** The
+Products tab of the add-food screen was painting nothing at all — no heading, no
+results, no error, no "Look it up online" button. It has been like that since 21
+August. **Your phone is not affected**: the check that catches it only exists in
+the kind of build a simulator runs, and your phone runs the other kind, which
+lays the same screen out fine. It was invisible precisely because the one
+machine that would have shown it was the one machine that could not run the app.
+Fixed, and the tab now draws.
 
-So: **one trip to your phone to get the simulator back, or a trip to your phone
-every time we want to watch something.** Written up in
-`WHY-THE-SIMULATOR-CANNOT-RUN-THIS-APP.md`. **Say which.**
+## The one thing the simulator cannot prove — one step, for your next phone build
+
+A simulator has no camera, so nothing here can prove a real barcode scan still
+works after the scanner change. That is one check on a real packet, and these
+are the words for it. **It is not built into a panel and nothing has been put on
+your phone.**
+
+> **Scan the barcode on a real packet**
+>
+> Open the app, press the green **+**, choose **Add food**, and tap the small
+> barcode picture on the right-hand side of the search box. Point the camera at
+> the barcode on any packet in the kitchen — a jar, a tin, a cereal box, it does
+> not matter which.
+>
+> **What should happen:** the camera opens within about a second, and as soon as
+> the barcode is in frame the camera closes on its own and the food's own screen
+> opens with the product's name on it. If the packet is one Open Food Facts has
+> never heard of, it should say so plainly rather than sitting there. What would
+> mean it is broken: the camera not opening at all, a black rectangle, or the
+> barcode being in frame for several seconds with nothing happening.
 
 ## One thing that is not held by a test, said out loud
 
