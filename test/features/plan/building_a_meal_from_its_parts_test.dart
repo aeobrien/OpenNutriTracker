@@ -294,9 +294,13 @@ void main() {
       expect(built?.name, 'salmon');
     });
 
-    testWidgets('a third vegetable is refused out loud', (tester) async {
-      // The house's meals hold two. Silently dropping the third would make the
-      // built meal differ from the screen somebody was looking at.
+    testWidgets('a third vegetable goes on like the first two',
+        (tester) async {
+      // The house's meals used to hold two, and said so out loud when somebody
+      // reached for a third. Aidan, walking this screen on 24 August 2026:
+      // *"veg is currently limited to 2, that shouldn't be the case"*. The
+      // limit is gone from here, from the kitchen panel's builder, and from the
+      // Mac Mini that both of them write through.
       mini.hasCooked('chicken thighs', 'roast',
           veg: ['broccoli', 'carrots'], carb: 'rice');
       mini.hasCooked('chicken thighs', '', veg: ['peas']);
@@ -307,10 +311,34 @@ void main() {
       await choose(tester, 'carrots');
       await choose(tester, 'peas');
 
-      expect(find.text(MealBuilder.twoIsTheLimit), findsOneWidget);
       final peas =
           tester.widget<FilterChip>(find.widgetWithText(FilterChip, 'peas'));
-      expect(peas.selected, isFalse);
+      expect(peas.selected, isTrue);
+
+      await tester.tap(find.text(MealBuilder.buildIt));
+      await tester.pumpAndSettle();
+
+      expect(mini.built.single['veg'], ['broccoli', 'carrots', 'peas'],
+          reason: 'all three reach the house, in the order they were tapped');
+    });
+
+    testWidgets('and tapping one of them again still takes it off',
+        (tester) async {
+      mini.hasCooked('chicken thighs', 'roast',
+          veg: ['broccoli', 'carrots'], carb: 'rice');
+      mini.hasCooked('chicken thighs', '', veg: ['peas']);
+      await openIt(tester);
+      await choose(tester, 'chicken thighs');
+      await choose(tester, 'roast');
+      await choose(tester, 'broccoli');
+      await choose(tester, 'carrots');
+      await choose(tester, 'peas');
+      await choose(tester, 'carrots');
+
+      await tester.tap(find.text(MealBuilder.buildIt));
+      await tester.pumpAndSettle();
+
+      expect(mini.built.single['veg'], ['broccoli', 'peas']);
     });
 
     testWidgets('backing out builds nothing', (tester) async {

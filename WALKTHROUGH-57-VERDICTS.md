@@ -192,3 +192,56 @@ this is the reason.
 I cannot see your phone from here, so I am not claiming this *is* what you hit
 — only that it is the most likely explanation and it is a real design problem
 either way. **Written down as something to decide, not built.**
+
+---
+
+## Step 7 — two things that were not bugs
+
+You marked this a pass and raised two separate things inside it. One is a
+build we are not doing now; the other was three lines of code and is done.
+
+### "I can't select 'two chicken thighs', I can only select 'chicken'" — written down, not built
+
+Your words: *"for the protein choice we need to be able to define what it is -
+for chicken, breasts/thighs, for beef, is it mince, steak, etc. This is a
+bigger build than what we're doing now, but we should note it down as a future
+development."*
+
+Written down as future work in Mantel's roadmap under **Protein sub-types in
+the meal builder**. **Not built.**
+
+Why it is genuinely bigger than it looks: today a protein is one piece of text,
+and everything downstream keys on that exact text — which foods the app learns
+you pair together, what goes on the shopping list, and the meal's own name. So
+"chicken thighs" and "chicken breasts" would arrive as two unrelated proteins
+that share none of each other's habits, and plain "chicken" buys you nothing
+you can actually pick up in a shop. A cut is not a cooking style and it is not
+a separate protein either; it needs a place of its own, which means changing
+the builder on both the phone and the kitchen panel, the Mac Mini's normaliser,
+the meal-naming code in two languages, the shopping lines, and the pairing
+keys. That is a week's work sitting behind a dropdown.
+
+### "veg is currently limited to 2, that shouldn't be the case" — done
+
+The cap is gone. A meal now takes as many vegetables as you say it does. The
+carbohydrate is still one, which is what the card asked for and what you have
+not disputed.
+
+It was enforced in **three** places, not one, and all three are lifted:
+
+1. The phone's meal builder — refused the third tap out loud.
+2. The kitchen panel's meal builder — same refusal, its own copy of the rule.
+3. **The Mac Mini's own normaliser** — silently kept the first two and dropped
+   the rest, writing a warning to a log nobody reads.
+
+The third is the one that mattered. Had I only changed the two screens, a phone
+would have happily offered you a third vegetable, the Mini would have thrown it
+away on the way in, and the meal would have come back missing an ingredient
+with nothing on screen to say so. That is a worse bug than the one you
+reported.
+
+**How I know it is fixed rather than think it is.** I put the cap back into the
+phone's builder on purpose and ran the tests: two went red, in the two places
+that check a third vegetable survives. I put the cap back into the Mini's
+normaliser: two more went red there. Restored both, and the full runs are green
+— 1015 tests on the phone, 719 on the Mini, 21 on the kitchen panel.

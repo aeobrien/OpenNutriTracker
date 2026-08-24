@@ -42,8 +42,6 @@ class MealBuilder extends StatefulWidget {
   static const typeOne = 'Something else';
   static const buildIt = 'Build it';
   static const skipIt = 'Not this time';
-  static const twoIsTheLimit =
-      'Two vegetables is what a meal here holds. Tap one to swap it out.';
 
   /// Open the builder. Comes back with the meal it built, or nothing at all if
   /// it was backed out of — an abandoned builder creates nothing.
@@ -112,13 +110,15 @@ class _MealBuilderState extends State<MealBuilder> {
     _reload();
   }
 
+  /// No limit on how many. There was one — two — and Aidan ruled against it on
+  /// 24 August 2026: *"veg is currently limited to 2, that shouldn't be the
+  /// case"*. It was enforced here, in the kitchen panel's builder, and in the
+  /// Mac Mini both of them write through; all three are gone, because a screen
+  /// that offered a third while the house dropped it would build a meal missing
+  /// an ingredient and say nothing.
   void _chooseVeg(String one) {
     setState(() {
       if (_veg.remove(one)) return;
-      if (_veg.length >= 2) {
-        _problem = MealBuilder.twoIsTheLimit;
-        return;
-      }
       _problem = null;
       _veg.add(one);
     });
