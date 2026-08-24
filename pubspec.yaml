@@ -63,7 +63,7 @@ dependencies:
   auto_size_text: ^3.0.0
   animated_flip_counter: ^0.3.4
 
-  mobile_scanner: ^6.0.2
+  mobile_scanner: ^7.4.0
 
   # Recording what somebody says they ate. The transcribing happens on the Mac
   # Mini, on the same transcriber the kitchen panel has used for years — this
