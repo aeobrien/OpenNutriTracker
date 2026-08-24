@@ -921,4 +921,24 @@ void main() {
           isTrue);
     });
   });
+
+  group('the food-search screen paints at all', () {
+    test('the Products tab hands its column a height', () {
+      // 24 August 2026. The Products tab painted nothing whatsoever — no
+      // heading, no house foods, no results, no error, no look-it-up button —
+      // and said nothing about it. The column it builds ends in a Flexible,
+      // and a Flexible needs a known height; as a bare child of the tab's
+      // column the height is unknown, so the layout was abandoned. Only a
+      // debug build checks this, so it was invisible on Aidan's phone and
+      // visible the moment the app ran on a simulator.
+      //
+      // The careful tests were blind to it because they build LookItUpWidget
+      // on its own. What was broken was where it had been put.
+      final screen =
+          _calls('lib/features/add_meal/presentation/add_meal_screen.dart');
+      expect(screen.contains('Expanded(child:BlocBuilder<ProductsBloc,'), isTrue,
+          reason: 'the Products tab column needs a bounded height, or the '
+              'whole tab paints nothing in a debug build');
+    });
+  });
 }

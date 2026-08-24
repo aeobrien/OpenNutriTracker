@@ -155,42 +155,55 @@ class _AddMealScreenState extends State<AddMealScreen>
                 child: TabBarView(controller: _tabController, children: [
                   Column(
                     children: [
-                      BlocBuilder<ProductsBloc, ProductsState>(
-                        bloc: _productsBloc,
-                        builder: (context, state) {
-                          final ours =
-                              state is ProductsLoadedState && state.ours;
-                          return Column(children: [
-                            Container(
-                                padding: const EdgeInsets.only(left: 8.0),
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                    ours
-                                        ? AddMealScreen.ourFoodsLabel
-                                        : S.of(context).searchResultsLabel,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .headlineSmall)),
-                            _productsBody(state),
-                            // Last, under everything the two food lists
-                            // offered. See LookItUpWidget for why it is a
-                            // button and why it is here rather than higher up.
-                            Flexible(
-                              child: SingleChildScrollView(
-                                child: ValueListenableBuilder<String>(
-                                  valueListenable: _searchStringListener,
-                                  builder: (context, searchText, _) =>
-                                      LookItUpWidget(
-                                    finder: locator<FoodFinder>(),
-                                    logger: locator<HouseholdLogger>(),
-                                    searchText: searchText,
+                      // Expanded, not a bare child. The column this builds
+                      // hands its last child a Flexible, and a Flexible is
+                      // only legal where the height is known. As a bare child
+                      // of this column the height is not known, so a debug
+                      // build abandons the layout and paints nothing at all —
+                      // no heading, no house foods, no results, no error, no
+                      // look-it-up button. A release build skips the check and
+                      // shows the tab, which is why this reached 24 August
+                      // unnoticed: the only build that shows it is a debug
+                      // one, and the simulator that runs debug builds could
+                      // not compile this app until today.
+                      Expanded(
+                        child: BlocBuilder<ProductsBloc, ProductsState>(
+                          bloc: _productsBloc,
+                          builder: (context, state) {
+                            final ours =
+                                state is ProductsLoadedState && state.ours;
+                            return Column(children: [
+                              Container(
+                                  padding: const EdgeInsets.only(left: 8.0),
+                                  alignment: Alignment.centerLeft,
+                                  child: Text(
+                                      ours
+                                          ? AddMealScreen.ourFoodsLabel
+                                          : S.of(context).searchResultsLabel,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall)),
+                              _productsBody(state),
+                              // Last, under everything the two food lists
+                              // offered. See LookItUpWidget for why it is a
+                              // button and why it is here rather than higher up.
+                              Flexible(
+                                child: SingleChildScrollView(
+                                  child: ValueListenableBuilder<String>(
+                                    valueListenable: _searchStringListener,
+                                    builder: (context, searchText, _) =>
+                                        LookItUpWidget(
+                                      finder: locator<FoodFinder>(),
+                                      logger: locator<HouseholdLogger>(),
+                                      searchText: searchText,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ]);
-                        },
-                      )
+                            ]);
+                          },
+                        )
+                      ),
                     ],
                   ),
                   Column(
