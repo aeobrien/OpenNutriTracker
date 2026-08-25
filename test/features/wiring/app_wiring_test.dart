@@ -338,7 +338,7 @@ void main() {
           reason: 'there is no way to ask, so a food neither list has is a '
               'dead end');
 
-      final results = screen.indexOf('_productsBody(state)');
+      final results = screen.indexOf('_productsSliver(state)');
       final hunt = screen.indexOf('LookItUpWidget(');
       expect(results, greaterThan(-1));
       expect(hunt, greaterThan(results),
@@ -922,23 +922,40 @@ void main() {
     });
   });
 
-  group('the food-search screen paints at all', () {
-    test('the Products tab hands its column a height', () {
-      // 24 August 2026. The Products tab painted nothing whatsoever — no
-      // heading, no house foods, no results, no error, no look-it-up button —
-      // and said nothing about it. The column it builds ends in a Flexible,
-      // and a Flexible needs a known height; as a bare child of the tab's
-      // column the height is unknown, so the layout was abandoned. Only a
-      // debug build checks this, so it was invisible on Aidan's phone and
-      // visible the moment the app ran on a simulator.
-      //
-      // The careful tests were blind to it because they build LookItUpWidget
-      // on its own. What was broken was where it had been put.
+  group('the food-search screen fills the screen and paints at all', () {
+    // Two faults in this one place, a day apart, both invisible to whoever
+    // wrote them, and both about how the Products tab divides its height.
+    //
+    // 24 August. The tab painted nothing whatsoever — no heading, no house
+    // foods, no results, no error, no look-it-up button — and said nothing
+    // about it. The column it built ended in a Flexible, and a Flexible needs
+    // a known height; as a bare child of the tab's column the height was
+    // unknown, so the layout was abandoned. Only a debug build checks that, so
+    // it was invisible on the phone and obvious the moment it ran on a
+    // simulator.
+    //
+    // 25 August, after the first fix. Aidan: "below that is just a blank white
+    // area so we're not making full use of the area available." The column then
+    // had two Flexible children — the food list and the look-it-up block — and
+    // Flutter splits the height between them and does not hand back what one
+    // does not use. The list took its half; the button needed a few lines of
+    // its half; the rest was white.
+    //
+    // Slivers have neither problem, so what is guarded here is that the tab
+    // stays one scroll with no flex child to divide.
+    test('the Products tab is one scroll, not pieces sharing the height', () {
       final screen =
           _calls('lib/features/add_meal/presentation/add_meal_screen.dart');
-      expect(screen.contains('Expanded(child:BlocBuilder<ProductsBloc,'), isTrue,
-          reason: 'the Products tab column needs a bounded height, or the '
-              'whole tab paints nothing in a debug build');
+
+      expect(screen.contains('CustomScrollView(slivers:['), isTrue,
+          reason: 'the tab paints nothing, or leaves a blank band, as soon as '
+              'its parts go back to sharing out a height between them');
+      expect(screen.contains('SliverChildBuilderDelegate('), isTrue,
+          reason: 'the food list is a sliver in that scroll; as a Flexible it '
+              'takes a fixed share of the height and leaves the rest blank');
+      expect(screen.contains('Flexible(child:SingleChildScrollView('), isFalse,
+          reason: 'the look-it-up block taking a fixed share is the other '
+              'half of it');
     });
   });
 }

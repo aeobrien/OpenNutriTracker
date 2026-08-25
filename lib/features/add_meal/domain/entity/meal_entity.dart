@@ -232,18 +232,30 @@ class MealEntity extends Equatable {
     return parsedValue;
   }
 
-  /// TODO extract correct unit
-  /// Unit can either be 100g or 100ml
+  /// A volume unit attached to a number, which is the shape a pack size on
+  /// Open Food Facts takes: '500 ml', '75cl', '1 L', '2 x 250ml'.
+  ///
+  /// Attached to a number on purpose. The letter on its own is in 'lb', and
+  /// the word is in PEELED and PLUM.
+  static final _measuredByVolume = RegExp(
+      r'\d\s*(litres|litre|liters|liter|ml|cl|dl|l)\b',
+      caseSensitive: false);
+
+  /// Grams or millilitres, read off what the pack says it holds.
+  ///
+  /// This used to ask whether the pack size contained the letter "L" anywhere.
+  /// Right for '500ml'; wrong for '1 lb' and for any pack size carrying a word
+  /// with an l in it, both of which came back as millilitres. Nothing about
+  /// that shows on the screen afterwards — the food simply arrives measured in
+  /// the wrong thing.
+  ///
+  /// A missing pack size stays missing rather than becoming grams. That is why
+  /// the unit box on the food's own screen reads 'N/A (g/ml)' and asks the
+  /// person instead: guessing here would put a figure in front of them that
+  /// nobody checked.
   static String? _tryGetUnit(String? quantityString) {
     if (quantityString == null) return null;
-
-    final isLiter = quantityString.toUpperCase().contains("L");
-
-    if (isLiter) {
-      return "ml";
-    } else {
-      return "g";
-    }
+    return _measuredByVolume.hasMatch(quantityString) ? "ml" : "g";
   }
 
   /// The same food, now carrying what this phone last had of it.
