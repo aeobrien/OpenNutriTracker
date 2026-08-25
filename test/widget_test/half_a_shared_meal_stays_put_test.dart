@@ -70,8 +70,19 @@ class _Ledger extends Fake implements FoodLedger {
 
   _Ledger({this.held = const [], this.unreachable = false, this.knownAs});
 
+  /// Every row the "what this used to say" control asked about. Separate from
+  /// [asked] because the two questions are asked by different parts of the
+  /// dialog and have gone wrong independently.
+  final askedForHistory = <String>[];
+
   @override
-  Future<List<WhatItWas>> historyOf(String intakeId) async => const [];
+  Future<List<WhatItWas>> historyOf(String intakeId) async {
+    askedForHistory.add(intakeId);
+    if (knownAs != null && intakeId != knownAs) {
+      throw HouseholdRefused(404, 'no row called $intakeId has reached here');
+    }
+    return const [];
+  }
 
   @override
   Future<List<int>> whoElseHolds(String intakeId) async {
@@ -115,7 +126,9 @@ final _rowFromTheHouse = IntakeEntity(
   snapshotKcal: 640,
 );
 
-Widget _aRowYouCanTap(_Ledger ledger, List<IntakeEdit> given) => MaterialApp(
+Widget _aRowYouCanTap(_Ledger ledger, List<IntakeEdit> given,
+        {IntakeEntity? row}) =>
+    MaterialApp(
       localizationsDelegates: const [
         S.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -130,7 +143,7 @@ Widget _aRowYouCanTap(_Ledger ledger, List<IntakeEdit> given) => MaterialApp(
               final edit = await showDialog<IntakeEdit>(
                 context: context,
                 builder: (_) => EditDialog(
-                  intakeEntity: _row,
+                  intakeEntity: row ?? _row,
                   usesImperialUnits: false,
                   ledger: ledger,
                 ),
@@ -361,5 +374,28 @@ void main() {
 
     expect(find.text(EditDialog.cannotMoveOnto('Emily')), findsOneWidget);
     expect(given, isEmpty, reason: 'nothing moved');
+  });
+
+  /// The same mistake, in the other question the dialog asks the house.
+  ///
+  /// Found on 25 August while fixing the refusal above, in the line right next
+  /// to it. Both questions go out through [FoodLedger.nameFor], which hands
+  /// back whatever name it was given — so asking with this phone's own id
+  /// reaches nothing at the house, and "what this used to say" comes back
+  /// empty for exactly the rows most likely to have been corrected: the ones
+  /// somebody logged at the kitchen panel.
+  ///
+  /// Nothing about it looks wrong on the screen. An empty history and a row
+  /// nobody has ever touched are the same picture.
+  testWidgets('its past is asked for by the house\'s name too', (tester) async {
+    final ledger = _Ledger(knownAs: 'house-row-9');
+
+    await tester.pumpWidget(
+        _aRowYouCanTap(ledger, <IntakeEdit>[], row: _rowFromTheHouse));
+    await tester.tap(find.text("Shepherd's pie"));
+    await tester.pumpAndSettle();
+
+    expect(ledger.askedForHistory, ['house-row-9'],
+        reason: 'this phone\'s own id for its copy means nothing at the house');
   });
 }

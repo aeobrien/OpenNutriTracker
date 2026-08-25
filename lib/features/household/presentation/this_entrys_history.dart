@@ -27,8 +27,16 @@ import 'package:opennutritracker/features/household/domain/what_it_was.dart';
 class ThisEntrysHistory extends StatefulWidget {
   static const heading = 'What this used to say';
 
-  /// The diary row's own id. The household row is named from it — see
-  /// [FoodLedger.nameFor] — so nothing here has to know how.
+  /// The name the household's row is known by — [IntakeEntity.householdName],
+  /// not the diary row's own id.
+  ///
+  /// Those are the same string only for a row this phone logged itself. A row
+  /// that came down from the house has a fresh local id here and is known
+  /// there by its [IntakeEntity.externalId], and [FoodLedger.nameFor] hands
+  /// back whatever name it is given rather than translating between the two.
+  /// This used to be handed the diary row's id, and the rows most likely to
+  /// have been corrected — the ones logged at the kitchen panel — were the
+  /// ones whose past never came back.
   final String intakeId;
 
   /// Called with the version somebody asked to have back. The dialog turns it

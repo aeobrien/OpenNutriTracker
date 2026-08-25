@@ -271,7 +271,13 @@ class _EditDialogState extends State<EditDialog> {
             // behind it and a row without one are corrected just as often and
             // wrongly just as often.
             ThisEntrysHistory(
-              intakeId: widget.intakeEntity.id,
+              // The name the house knows this row by, which is not this
+              // phone's own id when the row came down from the house. Same
+              // reason as the refusal below, and the same getter: asking by
+              // the wrong name gets "no such row" back, and an empty history
+              // is indistinguishable on screen from a row nobody has ever
+              // corrected.
+              intakeId: widget.intakeEntity.householdName,
               ledger: widget.ledger,
               onPutBack: _putBack,
             ),
