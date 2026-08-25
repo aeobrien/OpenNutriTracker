@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
 import 'package:opennutritracker/features/household/presentation/this_entrys_history.dart';
@@ -123,6 +124,8 @@ class EditDialog extends StatefulWidget {
 }
 
 class _EditDialogState extends State<EditDialog> {
+  static final _log = Logger('EditDialog');
+
   late TextEditingController amountEditingController;
 
   /// Only for a row with no food behind it — see [_hasNoFoodBehindIt].
@@ -441,13 +444,26 @@ class _EditDialogState extends State<EditDialog> {
   Future<String?> _whyTheMoveIsRefused(HouseholdPerson moveTo) async {
     final ledger = widget.ledger ?? locator<FoodLedger>();
     try {
-      final held = await ledger.whoElseHolds(widget.intakeEntity.id);
+      // The name the house knows this row by, which is not this phone's own id
+      // when the row came down from the house. See IntakeEntity.householdName.
+      // Asking by the wrong name gets "no such row" back, which is the one
+      // answer below that lets the move through — so this getter is what makes
+      // the refusal fire at all on a row logged at the kitchen panel.
+      final held =
+          await ledger.whoElseHolds(widget.intakeEntity.householdName);
       if (!held.contains(moveTo.id)) return null;
       return EditDialog.cannotMoveOnto(moveTo.name);
-    } on HouseholdRefused {
+    } on HouseholdRefused catch (e) {
       // A row the house has never heard of — logged before the two machines
       // shared a name for a row, or logged only here. It was reached and it
       // answered: there is no other half, so there is nothing to refuse.
+      //
+      // This is the only branch that lets a move through on a question that
+      // was not really answered, so it says so out loud: if it ever fires on a
+      // row the house does know, the log is the only place that would show it.
+      _log.warning('The house does not know '
+          '${widget.intakeEntity.householdName}, so the move is allowed '
+          'without a shared-half check: ${e.message}');
       return null;
     } on HouseholdUnreachable catch (e) {
       // Its own headline, so a Mini that is merely slow is not reported as a

@@ -63,7 +63,12 @@ class _Ledger extends Fake implements FoodLedger {
   /// Every row this was asked about, so a test can prove it was asked at all.
   final asked = <String>[];
 
-  _Ledger({this.held = const [], this.unreachable = false});
+  /// The one name the house knows this row by. When set, asking about any
+  /// other name is refused the way the Mac Mini refuses one — it has no row of
+  /// that name, so it answers 404 rather than "nobody else holds it".
+  final String? knownAs;
+
+  _Ledger({this.held = const [], this.unreachable = false, this.knownAs});
 
   @override
   Future<List<WhatItWas>> historyOf(String intakeId) async => const [];
@@ -72,6 +77,9 @@ class _Ledger extends Fake implements FoodLedger {
   Future<List<int>> whoElseHolds(String intakeId) async {
     asked.add(intakeId);
     if (unreachable) throw HouseholdUnreachable('it did not answer');
+    if (knownAs != null && intakeId != knownAs) {
+      throw HouseholdRefused(404, 'no row called $intakeId has reached here');
+    }
     return held;
   }
 }
@@ -87,6 +95,24 @@ final _row = IntakeEntity(
   quickAddLabel: "Shepherd's pie",
   snapshotKcal: 640,
   thisPhoneDidIt: true,
+);
+
+/// The same meal, but logged at the kitchen panel rather than here.
+///
+/// It came down from the house, so this phone minted a fresh local id for its
+/// own copy and the house has never heard that name. The only name that
+/// reaches the row at the house is [IntakeEntity.externalId].
+final _rowFromTheHouse = IntakeEntity(
+  id: 'intake-this-phones-copy',
+  externalId: 'house-row-9',
+  unit: 'serving',
+  amount: 1,
+  type: IntakeTypeEntity.dinner,
+  meal: MealEntity.empty(),
+  dateTime: DateTime(2026, 8, 22, 19, 30),
+  entryType: 'quickAdd',
+  quickAddLabel: "Shepherd's pie",
+  snapshotKcal: 640,
 );
 
 Widget _aRowYouCanTap(_Ledger ledger, List<IntakeEdit> given) => MaterialApp(
@@ -128,7 +154,9 @@ Widget _aRowYouCanTap(_Ledger ledger, List<IntakeEdit> given) => MaterialApp(
 /// So this one takes the argument away and makes the dialog find its own
 /// ledger, which is the only arrangement the person holding the phone ever
 /// gets.
-Widget _theRowAsTheAppBuildsIt(List<IntakeEdit> given) => MaterialApp(
+Widget _theRowAsTheAppBuildsIt(List<IntakeEdit> given,
+        {IntakeEntity? row}) =>
+    MaterialApp(
       localizationsDelegates: const [
         S.delegate,
         GlobalMaterialLocalizations.delegate,
@@ -143,7 +171,7 @@ Widget _theRowAsTheAppBuildsIt(List<IntakeEdit> given) => MaterialApp(
               final edit = await showDialog<IntakeEdit>(
                 context: context,
                 builder: (_) => EditDialog(
-                  intakeEntity: _row,
+                  intakeEntity: row ?? _row,
                   usesImperialUnits: false,
                   currentOwner: aidan.id,
                 ),
@@ -287,5 +315,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(given.single.moveTo, emily.id);
+  });
+
+  /// The two tests below are the ones the phone failed on 25 August.
+  ///
+  /// Every test above uses a row this phone logged, where the name the phone
+  /// minted and the name the house knows are the same string — so asking by
+  /// the wrong one of the two still reaches the row, and the mistake cannot
+  /// show. A row that came down from the kitchen panel has two different
+  /// names, and only one of them reaches the house.
+  ///
+  /// What Aidan saw: the row simply moved onto Emily's day, with no refusal at
+  /// all. The house had been asked about a name it had never heard, had said
+  /// so, and being told "there is no such row" was being read as "nobody else
+  /// holds it".
+  Future<void> moveTheHousesRowToEmily(
+      WidgetTester tester, _Ledger ledger, List<IntakeEdit> given) async {
+    GetIt.instance.registerSingleton<FoodLedger>(ledger);
+    await tester.pumpWidget(
+        _theRowAsTheAppBuildsIt(given, row: _rowFromTheHouse));
+    await tester.tap(find.text("Shepherd's pie"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text("Emily's"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.current.dialogOKLabel));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('a row from the house is asked about by the house\'s name',
+      (tester) async {
+    final ledger = _Ledger(held: [emily.id], knownAs: 'house-row-9');
+
+    await moveTheHousesRowToEmily(tester, ledger, <IntakeEdit>[]);
+
+    expect(ledger.asked, ['house-row-9'],
+        reason: 'this phone\'s own id for its copy means nothing at the house');
+  });
+
+  testWidgets('so half of a shared meal from the house stays put too',
+      (tester) async {
+    final given = <IntakeEdit>[];
+
+    await moveTheHousesRowToEmily(
+        tester, _Ledger(held: [emily.id], knownAs: 'house-row-9'), given);
+
+    expect(find.text(EditDialog.cannotMoveOnto('Emily')), findsOneWidget);
+    expect(given, isEmpty, reason: 'nothing moved');
   });
 }
