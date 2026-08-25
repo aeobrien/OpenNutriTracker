@@ -153,58 +153,56 @@ class _AddMealScreenState extends State<AddMealScreen>
               const SizedBox(height: 16),
               Expanded(
                 child: TabBarView(controller: _tabController, children: [
-                  Column(
-                    children: [
-                      // Expanded, not a bare child. The column this builds
-                      // hands its last child a Flexible, and a Flexible is
-                      // only legal where the height is known. As a bare child
-                      // of this column the height is not known, so a debug
-                      // build abandons the layout and paints nothing at all —
-                      // no heading, no house foods, no results, no error, no
-                      // look-it-up button. A release build skips the check and
-                      // shows the tab, which is why this reached 24 August
-                      // unnoticed: the only build that shows it is a debug
-                      // one, and the simulator that runs debug builds could
-                      // not compile this app until today.
-                      Expanded(
-                        child: BlocBuilder<ProductsBloc, ProductsState>(
-                          bloc: _productsBloc,
-                          builder: (context, state) {
-                            final ours =
-                                state is ProductsLoadedState && state.ours;
-                            return Column(children: [
-                              Container(
-                                  padding: const EdgeInsets.only(left: 8.0),
-                                  alignment: Alignment.centerLeft,
-                                  child: Text(
-                                      ours
-                                          ? AddMealScreen.ourFoodsLabel
-                                          : S.of(context).searchResultsLabel,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineSmall)),
-                              _productsBody(state),
-                              // Last, under everything the two food lists
-                              // offered. See LookItUpWidget for why it is a
-                              // button and why it is here rather than higher up.
-                              Flexible(
-                                child: SingleChildScrollView(
-                                  child: ValueListenableBuilder<String>(
-                                    valueListenable: _searchStringListener,
-                                    builder: (context, searchText, _) =>
-                                        LookItUpWidget(
-                                      finder: locator<FoodFinder>(),
-                                      logger: locator<HouseholdLogger>(),
-                                      searchText: searchText,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ]);
-                          },
-                        )
-                      ),
-                    ],
+                  // One scrolling column, not a stack of separately-sized
+                  // pieces. Two earlier shapes both went wrong here and both
+                  // were invisible to the person who wrote them:
+                  //
+                  //  * a Flexible as a bare child of a Column, whose height is
+                  //    not known — a debug build abandons the layout and paints
+                  //    nothing at all, while a release build skips the check
+                  //    and looks fine, which is why it reached 24 August;
+                  //  * then two Flexible children side by side, which split the
+                  //    height in half whether or not either needs it. The food
+                  //    list took its half, the look-it-up button needed a
+                  //    sliver of its own, and the bottom third of the screen
+                  //    was blank. Aidan reported that on 25 August.
+                  //
+                  // Slivers have neither problem: the list is as long as it is,
+                  // the button follows the last result, and the whole lot
+                  // scrolls as one with no leftover space to divide.
+                  BlocBuilder<ProductsBloc, ProductsState>(
+                    bloc: _productsBloc,
+                    builder: (context, state) {
+                      final ours = state is ProductsLoadedState && state.ours;
+                      return CustomScrollView(slivers: [
+                        SliverToBoxAdapter(
+                          child: Container(
+                              padding: const EdgeInsets.only(left: 8.0),
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                  ours
+                                      ? AddMealScreen.ourFoodsLabel
+                                      : S.of(context).searchResultsLabel,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineSmall)),
+                        ),
+                        _productsSliver(state),
+                        // Last, under everything the two food lists offered.
+                        // See LookItUpWidget for why it is a button and why it
+                        // is here rather than higher up.
+                        SliverToBoxAdapter(
+                          child: ValueListenableBuilder<String>(
+                            valueListenable: _searchStringListener,
+                            builder: (context, searchText, _) => LookItUpWidget(
+                              finder: locator<FoodFinder>(),
+                              logger: locator<HouseholdLogger>(),
+                              searchText: searchText,
+                            ),
+                          ),
+                        ),
+                      ]);
+                    },
                   ),
                   Column(
                     children: [
@@ -263,36 +261,42 @@ class _AddMealScreenState extends State<AddMealScreen>
   /// What the products tab shows under its heading. Pulled out of the builder
   /// only so the heading above it can change with the state without the whole
   /// thing nesting three levels deeper.
-  Widget _productsBody(ProductsState state) {
+  /// The middle of the food tab, as a sliver so it sits in one scroll with the
+  /// heading above it and the look-it-up button below it.
+  Widget _productsSliver(ProductsState state) {
     if (state is ProductsLoadingState) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 32),
-        child: CircularProgressIndicator(),
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.only(top: 32),
+          child: Center(child: CircularProgressIndicator()),
+        ),
       );
     }
     if (state is ProductsLoadedState) {
       return state.products.isNotEmpty
-          ? Flexible(
-              child: ListView.builder(
-                  itemCount: state.products.length,
-                  itemBuilder: (context, index) {
-                    return MealItemCard(
-                      day: _day,
-                      mealEntity: state.products[index],
-                      addMealType: _mealType,
-                      usesImperialUnits: state.usesImperialUnits,
-                      handBackInstead: _instead,
-                    );
-                  }))
-          : const NoResultsWidget();
+          ? SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => MealItemCard(
+                  day: _day,
+                  mealEntity: state.products[index],
+                  addMealType: _mealType,
+                  usesImperialUnits: state.usesImperialUnits,
+                  handBackInstead: _instead,
+                ),
+                childCount: state.products.length,
+              ),
+            )
+          : const SliverToBoxAdapter(child: NoResultsWidget());
     }
     if (state is ProductsFailedState) {
-      return ErrorDialog(
-        errorText: S.of(context).errorFetchingProductData,
-        onRefreshPressed: _onProductsRefreshButtonPressed,
+      return SliverToBoxAdapter(
+        child: ErrorDialog(
+          errorText: S.of(context).errorFetchingProductData,
+          onRefreshPressed: _onProductsRefreshButtonPressed,
+        ),
       );
     }
-    return const DefaultsResultsWidget();
+    return const SliverToBoxAdapter(child: DefaultsResultsWidget());
   }
 
   Widget _buildRecentlyTab() {
