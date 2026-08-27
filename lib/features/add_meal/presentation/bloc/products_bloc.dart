@@ -54,10 +54,16 @@ class ProductsBloc extends Bloc<ProductsEvent, ProductsState> {
       // or accuse the Mac Mini of anything: it either quietly puts
       // their own foods up, or leaves the screen exactly as it was.
       final ours = await _searchProductUseCase.ourFoods();
-      if (ours.isEmpty) return;
+      if (ours.foods.isEmpty) {
+        // Only when the house was not there to answer. A house that answered
+        // "none" leaves the ordinary opening prompt alone, which is the right
+        // thing for somebody who genuinely has no foods of their own yet.
+        if (!ours.houseAnswered) emit(OurFoodsUnreachableState());
+        return;
+      }
       final config = await _getConfigUsecase.getConfig();
       emit(ProductsLoadedState(
-          products: ours,
+          products: ours.foods,
           usesImperialUnits: config.usesImperialUnits,
           ours: true));
     });

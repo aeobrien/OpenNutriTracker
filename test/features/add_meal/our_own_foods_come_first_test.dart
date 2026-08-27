@@ -71,7 +71,7 @@ void main() {
       mini.addFood(name: 'Oat biscuits', brand: 'Waitrose', kcal100: 450);
       mini.addFood(name: 'Cheddar', kcal100: 416);
 
-      final opening = await searching().ourFoods();
+      final opening = (await searching().ourFoods()).foods;
 
       expect(opening.map((m) => m.name), ['Oat biscuits', 'Cheddar']);
       expect(
@@ -107,8 +107,12 @@ void main() {
                                   client: mini.unreachable()),
               household, FoodItemDao(db)));
 
-      expect(await awayFromHome.ourFoods(), isEmpty);
-      expect(await searching().ourFoods(), isNotEmpty,
+      final away = await awayFromHome.ourFoods();
+      expect(away.foods, isEmpty);
+      expect(away.houseAnswered, isFalse,
+          reason: 'and it knows the difference between that and owning '
+              'nothing — see the_picker_says_when_it_could_not_ask_test');
+      expect((await searching().ourFoods()).foods, isNotEmpty,
           reason: 'the foods are there; it is the Mac Mini that is not');
     });
 
@@ -129,7 +133,7 @@ void main() {
         mini.addFood(name: 'Oat biscuits');
         mini.reachable = false;
 
-        expect(await searching().ourFoods(), isEmpty);
+        expect((await searching().ourFoods()).foods, isEmpty);
       },
     );
   });

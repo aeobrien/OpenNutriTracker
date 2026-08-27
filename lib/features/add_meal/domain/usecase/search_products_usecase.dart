@@ -55,8 +55,18 @@ class SearchProductsUseCase {
   /// The foods this household already has, most-used-by-this-person first.
   /// Empty when the Mac Mini cannot be asked, which is what keeps the
   /// picker usable away from home.
-  Future<List<MealEntity>> ourFoods() async =>
-      await _ours?.theirs() ?? const <MealEntity>[];
+  /// What the picker opens with, and whether the house answered at all.
+  ///
+  /// Carries the second half because an empty list on its own cannot tell the
+  /// screen whether this household owns nothing or whether the Mac Mini was
+  /// simply not reachable. See [FoodFinder.theirsAndWhether].
+  ///
+  /// With no household configured at all there is nothing to reach, so the
+  /// house counts as having answered: the ordinary "type something to search"
+  /// prompt is right for that person and always was.
+  Future<({List<MealEntity> foods, bool houseAnswered})> ourFoods() async =>
+      await _ours?.theirsAndWhether() ??
+      (foods: const <MealEntity>[], houseAnswered: true);
 
   Future<List<MealEntity>> searchFDCFoodByString(String searchString) async {
     final foods = await _productsRepository.getFDCFoodsByString(searchString);

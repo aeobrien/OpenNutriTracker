@@ -173,7 +173,9 @@ class _AddMealScreenState extends State<AddMealScreen>
                   BlocBuilder<ProductsBloc, ProductsState>(
                     bloc: _productsBloc,
                     builder: (context, state) {
-                      final ours = state is ProductsLoadedState && state.ours;
+                      final ours =
+                          (state is ProductsLoadedState && state.ours) ||
+                              state is OurFoodsUnreachableState;
                       return CustomScrollView(slivers: [
                         SliverToBoxAdapter(
                           child: Container(
@@ -287,6 +289,18 @@ class _AddMealScreenState extends State<AddMealScreen>
               ),
             )
           : const SliverToBoxAdapter(child: NoResultsWidget());
+    }
+    if (state is OurFoodsUnreachableState) {
+      // Said plainly and left at that. Nobody asked for this list — it is what
+      // the screen opens with — so it gets no retry button and does not take
+      // the screen over. The search box below still works and is the thing to
+      // do next.
+      return const SliverToBoxAdapter(
+        child: Padding(
+          padding: EdgeInsets.only(top: 16, left: 8, right: 8),
+          child: Text(OurFoodsUnreachableState.sentence),
+        ),
+      );
     }
     if (state is ProductsFailedState) {
       return SliverToBoxAdapter(

@@ -35,8 +35,30 @@ class FoodFinder {
   FoodFinder(this._api, this._household, this._eaten);
 
   /// This person's own foods, most-used first. What the picker opens with.
-  Future<List<MealEntity>> theirs() => _ask(() async =>
-      _api.foods(forPerson: await _household.storedOwner()));
+  Future<List<MealEntity>> theirs() async => (await theirsAndWhether()).foods;
+
+  /// The same question, and whether the house was there to answer it.
+  ///
+  /// Everything else here flattens those two into an empty list, because every
+  /// other caller is about to go and ask the internet and the empty list is on
+  /// its way somewhere. The picker's opening list has nowhere to fall through
+  /// to: it is the whole screen, before anybody has typed anything. So it is
+  /// the one caller that needs the difference between "this household owns
+  /// none of these" and "I could not ask", which are the same empty list and
+  /// very different sentences to put in front of somebody.
+  Future<({List<MealEntity> foods, bool houseAnswered})>
+      theirsAndWhether() async {
+    try {
+      final foods = await _api.foods(forPerson: await _household.storedOwner());
+      return (
+        foods: [for (final f in foods) await _withWhatHeHadLastTime(f)],
+        houseAnswered: true,
+      );
+    } catch (e) {
+      _log.info('[HOUSE] the household food list was not available: $e');
+      return (foods: const <MealEntity>[], houseAnswered: false);
+    }
+  }
 
   /// The household's foods matching what was typed, still in this person's
   /// order.

@@ -34,6 +34,22 @@ class ProductsLoadedState extends ProductsState {
   List<Object?> get props => [products, ours];
 }
 
+/// The picker opened, asked the house what this person's foods are, and could
+/// not reach it.
+///
+/// Separate from [ProductsFailedState], which is a search that failed after
+/// somebody asked for one. Nobody asked for this: it happens on opening the
+/// screen, so it must not take the screen over or offer a retry button. All it
+/// does is replace the "type something to search" prompt, which is the wrong
+/// sentence when the truth is that the house was not there to answer.
+class OurFoodsUnreachableState extends ProductsState {
+  static const sentence =
+      "Couldn't reach the house, so your own foods aren't here.";
+
+  @override
+  List<Object?> get props => [];
+}
+
 class ProductsFailedState extends ProductsState {
   @override
   List<Object?> get props => [];
