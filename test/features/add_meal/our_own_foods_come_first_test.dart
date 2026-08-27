@@ -81,6 +81,37 @@ void main() {
       );
     });
 
+    /// Aidan, away from home, 27 August, on the picker: "Now my own foods
+    /// aren't showing at all. It simply says “Search results” then
+    /// “please enter a search word”."
+    ///
+    /// His own foods live on the Mac Mini and are fetched fresh every time
+    /// this screen opens. Away from home he cannot reach it, so the answer is
+    /// an empty list — and an empty list here is indistinguishable from a
+    /// household that owns no foods at all. The screen draws the same thing
+    /// for both.
+    ///
+    /// This is not about the scrolling change of 25 August, which touched only
+    /// the screen's layout and left every line of this path alone. It is what
+    /// the picker has always done away from the house.
+    test('away from home it comes back empty, which reads as owning nothing',
+        () async {
+      mini.addFood(name: 'Oat biscuits', brand: 'Waitrose', kcal100: 450);
+      mini.addFood(name: 'Cheddar', kcal100: 416);
+
+      // The same two foods, still on the house's list. Only the route to it
+      // is gone.
+      final awayFromHome = SearchProductsUseCase(
+          publicList,
+          FoodFinder(HouseholdApi(baseUrl: 'http://mini',
+                                  client: mini.unreachable()),
+              household, FoodItemDao(db)));
+
+      expect(await awayFromHome.ourFoods(), isEmpty);
+      expect(await searching().ourFoods(), isNotEmpty,
+          reason: 'the foods are there; it is the Mac Mini that is not');
+    });
+
     test(
       "asked on this person's behalf, not the household's in general",
       () async {
