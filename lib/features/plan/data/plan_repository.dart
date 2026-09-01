@@ -135,13 +135,45 @@ class PlanRepository {
     required int foodId,
     required num qty,
     required String unit,
+    String amountFrom = 'said',
   }) =>
       _api.mealSetPart(
           mealId: mealId,
           component: component,
           foodId: foodId,
           qty: qty,
-          unit: unit);
+          unit: unit,
+          amountFrom: amountFrom);
+
+  /// What the house proposes for the parts of a meal nobody has filled in.
+  ///
+  /// Nothing is written by asking. Accepting one is the ordinary part write
+  /// above, carrying 'estimated' so the meal's figure stays honest about
+  /// having been assembled out of guesses.
+  Future<MealProposals> proposalsFor(int mealId) async =>
+      MealProposals.fromJson(await _api.mealSuggestedParts(mealId));
+
+  /// Take every proposal that can be taken, in one go.
+  ///
+  /// Stops at the first refusal rather than carrying on: a half-filled meal
+  /// whose screen said it was filled is worse than one that plainly failed,
+  /// and the caller re-reads the meal either way so whatever did land shows.
+  Future<int> acceptAll(int mealId, List<ProposedPart> proposals) async {
+    var taken = 0;
+    for (final p in proposals) {
+      if (!p.canBeAccepted) continue;
+      await setPart(
+        mealId: mealId,
+        component: p.component,
+        foodId: p.food!.id,
+        qty: p.qty!,
+        unit: p.unit ?? 'g',
+        amountFrom: p.amountFrom ?? 'estimated',
+      );
+      taken++;
+    }
+    return taken;
+  }
 
   /// Ask the house to add a meal up from its parts and remember the figure.
   ///

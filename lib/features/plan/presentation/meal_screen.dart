@@ -79,6 +79,17 @@ class MealScreen extends StatefulWidget {
   static const workItOut = 'Work out its calories';
   static const doItAgain = 'Work them out again';
   static const nobodyHasSaid = 'Nobody has said';
+  static const fillThemIn = 'Fill these in for me';
+  static const fillHeading = 'What these are, probably';
+  static const fillBlurb =
+      "Nothing is saved until you say so. The amounts are guesses at a normal "
+      "helping — take them as they are and change the ones that are wrong.";
+  static const takeThemAll = 'Take these';
+  static const stillToLookUp = 'Still to look up';
+  static const nothingToPropose =
+      "The house has nothing to suggest for this one — its parts are either "
+      'already filled in or are things the food list has never heard of.';
+  static const guessedAmount = 'amount still a guess';
 
   /// The trust line, in words. Null when there is no figure to qualify —
   /// a caveat about a number nobody has is a sentence about nothing.
@@ -94,6 +105,16 @@ class MealScreen extends StatefulWidget {
       case 'guess':
         return 'Worked out from a guess at one of the parts, so treat the '
             'whole figure as a guess.';
+      case 'estimated':
+        // What a meal filled in from proposals and never corrected says about
+        // itself. The foods may be perfectly well known; nobody has looked at
+        // how much of them goes in, and that is what this figure is a figure
+        // of.
+        return 'Worked out from guessed helpings that nobody has checked, so '
+            'treat the whole figure as a guess.';
+      case 'web':
+        return 'Worked out using numbers read off the web rather than off a '
+            'packet in this house.';
       default:
         return 'Worked out from its parts.';
     }
@@ -215,6 +236,61 @@ class _MealScreenState extends State<MealScreen> {
     });
   }
 
+  /// Offer the house's guess at every part nobody has filled in, and save the
+  /// ones he takes.
+  ///
+  /// Two steps rather than one on purpose. Asking writes nothing, so what he
+  /// sees is a list he can walk away from; taking them is the ordinary part
+  /// write, once per row, each carrying the fact that its amount was a guess.
+  /// A single button that filled the meal in silently would put numbers on a
+  /// meal that nobody had agreed to, which is the one thing the whole trust
+  /// story here exists to prevent.
+  Future<void> _fillThemIn() async {
+    setState(() {
+      _busy = true;
+      _problem = null;
+    });
+    MealProposals? proposals;
+    String? wentWrong;
+    try {
+      proposals = await widget.repository.proposalsFor(widget.mealId);
+    } on HouseholdUnreachable catch (e) {
+      wentWrong = "${e.headline}, so it can't suggest anything just now.";
+    }
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _problem = wentWrong;
+    });
+    if (proposals == null) return;
+    if (!proposals.ok || proposals.acceptable.isEmpty) {
+      setState(() => _problem = proposals!.why ?? MealScreen.nothingToPropose);
+      return;
+    }
+    final take = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => _ProposalSheet(proposals: proposals!),
+    );
+    if (take != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _problem = null;
+    });
+    String? failed;
+    try {
+      await widget.repository.acceptAll(widget.mealId, proposals.acceptable);
+    } on HouseholdUnreachable catch (e) {
+      failed = "${e.headline}, so not all of those were saved.";
+    }
+    await _load();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (failed != null) _problem = failed;
+    });
+  }
+
   Future<void> _setPortion(HouseholdPerson person, num portions) async {
     final planned = widget.planned;
     if (planned == null) return;
@@ -252,6 +328,18 @@ class _MealScreenState extends State<MealScreen> {
             _heading(theme, MealScreen.madeOfHeading),
             if (made == null && _problem == null) const Text('…'),
             if (made != null) ..._theParts(theme, made),
+            // Offered only while something is actually missing. A meal whose
+            // parts are all filled in has nothing to propose, and a button
+            // that would come back saying so is a button that wastes a tap.
+            if (made != null && made.isMadeOfParts && made.awaiting.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: FilledButton.tonalIcon(
+                  onPressed: _busy ? null : _fillThemIn,
+                  icon: const Icon(Icons.auto_fix_high_outlined),
+                  label: const Text(MealScreen.fillThemIn),
+                ),
+              ),
             // Only offered for a meal that is made of parts. A packet's
             // numbers are the packet's; there is nothing here to add up, and a
             // button that cannot work should not be on the screen.
@@ -337,7 +425,13 @@ class _MealScreenState extends State<MealScreen> {
         ListTile(
           contentPadding: EdgeInsets.zero,
           title: Text(part.foodName ?? part.component),
-          subtitle: Text(part.why ?? part.howMuch ?? part.component),
+          // A guessed helping reads as a guessed helping. The number itself is
+          // indistinguishable from one somebody weighed, and the meal's total
+          // is only as honest as the least-looked-at line under it.
+          subtitle: Text(part.why ??
+              (part.amountIsAGuess && part.howMuch != null
+                  ? '${part.howMuch} — ${MealScreen.guessedAmount}'
+                  : part.howMuch ?? part.component)),
           // A part that cannot be counted shows its reason where its figure
           // would be, so the row that is holding the total up is the row that
           // explains itself.
@@ -630,6 +724,86 @@ class _PartSheetState extends State<_PartSheet> {
                 child: const Text('Save'),
               ),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// What the house proposes for a meal's empty parts, before anything is saved.
+///
+/// A read-only list and two buttons. It exists so that "fill this in for me"
+/// is something somebody agrees to rather than something that happens to their
+/// meal — the amounts on it are guesses, and a guess arriving silently on a
+/// figure that other screens go on to quote is exactly the failure the trust
+/// wording elsewhere in this file is written to avoid.
+class _ProposalSheet extends StatelessWidget {
+  final MealProposals proposals;
+
+  const _ProposalSheet({required this.proposals});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stillMissing = proposals.needLookingUp;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(MealScreen.fillHeading, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(MealScreen.fillBlurb,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final p in proposals.acceptable)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(p.reads),
+                      subtitle: Text(p.component),
+                    ),
+                  // The ones it cannot help with, named. After taking
+                  // everything above, these are what will still be holding the
+                  // meal's total up, and finding that out by pressing the
+                  // button and watching nothing change would be worse than
+                  // being told now.
+                  if (stillMissing.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(MealScreen.stillToLookUp,
+                        style: theme.textTheme.labelLarge),
+                    for (final p in stillMissing)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(p.component),
+                        subtitle: Text(p.why),
+                      ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('Not now'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text(MealScreen.takeThemAll),
+                ),
+              ],
+            ),
           ],
         ),
       ),

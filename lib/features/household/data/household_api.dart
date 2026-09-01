@@ -437,12 +437,19 @@ class HouseholdApi {
     required int foodId,
     required num qty,
     required String unit,
+    /// Who chose this amount. Left out it is 'said', which is what a number
+    /// somebody typed into the amount box is. Only accepting a helping the
+    /// house proposed passes 'estimated', and it has to be passed rather than
+    /// inferred — a screen that forgot would quietly turn a guess into a
+    /// typed-in figure, and the meal would go on to say so.
+    String amountFrom = 'said',
   }) async {
     await post('/household/meal/$mealId/part', {
       'component': component,
       'food_id': foodId,
       'qty': qty,
       'unit': unit,
+      'amount_from': amountFrom,
     });
   }
 
@@ -471,6 +478,16 @@ class HouseholdApi {
       'portions': portions,
     });
   }
+
+  /// What the house thinks each part of a meal is, before anybody agrees.
+  ///
+  /// A read that stores nothing. What comes back are proposals — the house's
+  /// own food each component most likely means, and a guess at a normal
+  /// helping of it — so that filling a built meal in is reading a few lines
+  /// and correcting the wrong ones, rather than four searches and four
+  /// numbers typed from nothing.
+  Future<Map<String, dynamic>> mealSuggestedParts(int mealId) =>
+      get('/household/meal/$mealId/suggested-parts');
 
   /// What one of the house's meals is made of.
   ///

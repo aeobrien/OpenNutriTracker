@@ -48,6 +48,14 @@ class MealPart {
   /// it can be. This is the sentence the screen shows instead of a figure.
   final String? why;
 
+  /// Who chose this amount: 'said' when a person put it in, 'estimated' when
+  /// it is still the helping the house guessed and nobody has looked at.
+  ///
+  /// The two look identical on screen — a number of grams beside a food — and
+  /// only one of them is somebody's decision, so the screen has to be able to
+  /// tell them apart. Null for a component with no part at all.
+  final String? amountFrom;
+
   /// The house's food itself, whole — its pack weight, its count, its numbers
   /// — so that opening this part to log it opens the food the meal actually
   /// uses. Looking it back up by name would find the wrong tin the first time
@@ -64,8 +72,12 @@ class MealPart {
     this.kcal,
     this.trust,
     this.why,
+    this.amountFrom,
     this.food,
   });
+
+  /// Whether nobody has yet looked at how much of this goes in.
+  bool get amountIsAGuess => amountFrom == 'estimated';
 
   /// Whether this part is one of the ones holding the meal's total up.
   bool get isAGap => why != null;
@@ -91,6 +103,7 @@ class MealPart {
         kcal: json['kcal'] as num?,
         trust: json['trust'] as String?,
         why: json['why'] as String?,
+        amountFrom: json['amount_from'] as String?,
         food: json['food'] == null
             ? null
             : HouseholdFood.fromJson(json['food'] as Map<String, dynamic>),
@@ -197,5 +210,126 @@ class MealMadeOf {
         kcal: json['kcal'] as num?,
         trust: json['trust'] as String?,
         from: json['from'] as String?,
+      );
+}
+
+/// One part of a meal as the house proposes it, before anybody has agreed.
+///
+/// A built meal names its parts in the words somebody built it in — "chicken",
+/// "pak choi", "sushi rice" — and filling those in meant searching for four
+/// foods and typing four amounts before the meal could carry a figure at all.
+/// A proposal is the house's answer to all of them at once: the food it thinks
+/// each one means, and a guess at a normal helping.
+///
+/// **Nothing has been saved.** A proposal becomes a part when somebody accepts
+/// it, and the amount it carries is recorded as a guess when they do, so a meal
+/// filled in this way and never corrected cannot go on to claim its figure was
+/// worked out from amounts somebody typed in.
+class ProposedPart {
+  /// The component this stands for — the meal's own word for it.
+  final String component;
+
+  /// Which part of the meal it is: 'protein', 'veg', 'carb'. What decides the
+  /// size of the helping, since a normal helping of the protein and of the
+  /// vegetable are different numbers.
+  final String role;
+
+  /// Whether somebody has already answered this component. Their answer stands
+  /// and nothing is proposed against it.
+  final bool already;
+
+  /// The house's food this component most likely means, or null when the house
+  /// has nothing like it and this one still needs looking up.
+  final HouseholdFood? food;
+
+  final num? qty;
+  final String? unit;
+
+  /// Where the amount came from — always 'estimated' on a proposal, because
+  /// nobody has looked at it yet. Carried rather than assumed so that whatever
+  /// accepts it passes on what it was told rather than what it expected.
+  final String? amountFrom;
+
+  /// The house's own sentence about this one: what it is proposing and why, or
+  /// why it cannot propose anything.
+  final String why;
+
+  const ProposedPart({
+    required this.component,
+    required this.role,
+    required this.already,
+    required this.why,
+    this.food,
+    this.qty,
+    this.unit,
+    this.amountFrom,
+  });
+
+  /// Whether this is one somebody can accept. A component already answered and
+  /// a component the house has no food for are both un-acceptable, for
+  /// opposite reasons.
+  bool get canBeAccepted => food != null && qty != null && !already;
+
+  /// The proposal in the words it goes on screen in: "Chicken breast, 150 g".
+  String get reads {
+    final f = food?.name ?? component;
+    final q = qty;
+    if (q == null) return f;
+    final tidy = q == q.roundToDouble() ? q.toInt().toString() : q.toString();
+    return '$f, $tidy ${unit ?? 'g'}';
+  }
+
+  factory ProposedPart.fromJson(Map<String, dynamic> json) => ProposedPart(
+        component: (json['component'] as String?) ?? '',
+        role: (json['role'] as String?) ?? '',
+        already: (json['already'] as bool?) ?? false,
+        why: (json['why'] as String?) ?? '',
+        qty: json['qty'] as num?,
+        unit: json['unit'] as String?,
+        amountFrom: json['amount_from'] as String?,
+        food: json['food'] == null
+            ? null
+            : HouseholdFood.fromJson(json['food'] as Map<String, dynamic>),
+      );
+}
+
+/// Everything the house proposes for one meal.
+class MealProposals {
+  /// False when the meal is not made of parts at all — a ready meal out of a
+  /// packet, whose numbers are the packet's. Not an error; there is simply
+  /// nothing here to propose.
+  final bool ok;
+
+  /// Why not, when [ok] is false.
+  final String? why;
+
+  final List<ProposedPart> proposed;
+
+  const MealProposals({
+    required this.ok,
+    this.why,
+    this.proposed = const [],
+  });
+
+  /// The ones somebody could accept in one go.
+  List<ProposedPart> get acceptable =>
+      [for (final p in proposed) if (p.canBeAccepted) p];
+
+  /// The ones the house has nothing for, which still need looking up by hand.
+  /// Named on screen rather than left out: these are what will still be
+  /// holding the meal up after everything else has been accepted.
+  List<ProposedPart> get needLookingUp =>
+      [for (final p in proposed) if (p.food == null && !p.already) p];
+
+  /// Whether there is anything here worth showing somebody.
+  bool get hasAnything => proposed.isNotEmpty;
+
+  factory MealProposals.fromJson(Map<String, dynamic> json) => MealProposals(
+        ok: (json['ok'] as bool?) ?? false,
+        why: json['why'] as String?,
+        proposed: [
+          for (final p in (json['proposed'] as List?) ?? const [])
+            ProposedPart.fromJson(p as Map<String, dynamic>),
+        ],
       );
 }

@@ -249,6 +249,9 @@ class FakeHouseholdServer {
       num? kcal,
       String? trust = 'typed',
       String? why,
+      // Who chose the amount. 'said' is the default because every part written
+      // before proposals existed was typed into the amount box by a person.
+      String? amountFrom = 'said',
       Map<String, dynamic>? food}) {
     mealParts.putIfAbsent(mealId, () => []).add({
       'component': component,
@@ -259,10 +262,46 @@ class FakeHouseholdServer {
       'kcal': kcal,
       'trust': trust,
       'why': why,
+      'amount_from': amountFrom,
       // The whole food, as the Mini hands it back joined onto the part — so a
       // phone opening this part to log it opens the food the meal actually
       // uses rather than looking one up by name.
       'food': food,
+    });
+  }
+
+  /// What the house proposes for a meal's empty parts, keyed by meal id, in
+  /// the shape `/household/meal/<id>/suggested-parts` answers.
+  ///
+  /// Set by a test rather than worked out here. Which of the house's foods a
+  /// component most likely means is the Mini's judgement and is tested on the
+  /// Mini; what a phone has to get right is what it does with the answer.
+  final Map<int, List<Map<String, dynamic>>> mealSuggestions = {};
+
+  /// Propose one part of a meal. A [food] left null is a component the house
+  /// has nothing for — named rather than skipped, since it is what will still
+  /// be holding the meal up after everything else has been accepted.
+  void suggestMealPart(int mealId, String component,
+      {String role = 'protein',
+      Map<String, dynamic>? food,
+      num? qty,
+      String unit = 'g',
+      bool already = false,
+      String? why}) {
+    mealSuggestions.putIfAbsent(mealId, () => []).add({
+      'component': component,
+      'role': role,
+      'already': already,
+      'food': food,
+      'qty': qty,
+      'unit': food == null ? null : unit,
+      'amount_from': food == null ? null : 'estimated',
+      'why': why ??
+          (food == null
+              ? "nothing in the house's food list matches '$component', so "
+                  'this one needs looking up'
+              : "a normal helping of ${food['name']}, guessed — change it if "
+                  'it is wrong'),
     });
   }
 
@@ -985,6 +1024,21 @@ class FakeHouseholdServer {
             'planned_unknown': line['awaiting_count'],
           };
         } else if (path.startsWith('/household/meal/') &&
+            path.endsWith('/suggested-parts')) {
+          final id = int.parse(path.split('/')[3]);
+          final offered = mealSuggestions[id];
+          // A meal with nothing proposed for it is a meal out of a packet, and
+          // that is an ordinary answer rather than an error.
+          result = offered == null
+              ? {
+                  'ok': false,
+                  'meal_id': id,
+                  'proposed': const [],
+                  'why': 'this meal is not made of parts — its numbers come '
+                      'off the packet it was bought in',
+                }
+              : {'ok': true, 'meal_id': id, 'proposed': offered};
+        } else if (path.startsWith('/household/meal/') &&
             path.endsWith('/parts')) {
           final id = int.parse(path.split('/')[3]);
           final made = mealParts[id] ?? const <Map<String, dynamic>>[];
@@ -1174,6 +1228,11 @@ class FakeHouseholdServer {
                 : kcal100 * grams / 100,
             'trust': food['trust'],
             'why': why,
+            // Passed on rather than assumed: a phone accepting a proposed
+            // helping has to be able to say so, and a stand-in that quietly
+            // stamped every write 'said' would let a screen that forgot to
+            // pass it through go on passing its tests.
+            'amount_from': body['amount_from'] ?? 'said',
             'food': food,
           };
           if (was >= 0) {
