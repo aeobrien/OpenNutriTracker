@@ -82,6 +82,67 @@ void main() {
     await totals.addNewTrackedDay(today, 2000, 250, 70, 150);
   }
 
+  // Why the walkthrough step is allowed to be walked the way he walked it.
+  //
+  // Aidan skipped steps 5 and 6 on 1 September 2026 because the install had
+  // wiped his diary, so he added an item to 25 August that same day and
+  // corrected that instead: "I don't know if that tests what you're actually
+  // asking me to test because I only just added it today even though I have
+  // added it to a previous date." It does, and this is why: a diary row keeps
+  // one time and it is the moment the food was eaten. Nothing anywhere records
+  // when the row was written, so there is no field by which a row added today
+  // for 25 August differs from one written on 25 August — the correction path
+  // could not tell them apart if it wanted to.
+  group('a row keeps no record of when it was written', () {
+    test('the only time it carries is the day it is for', () async {
+      final before = DateTime.now();
+      await aRowOnTheOlderDay();
+
+      final rows = await db.select(db.logEntries).get();
+      final row = rows.singleWhere((r) => r.id == 'intake-oats');
+
+      expect(DateTime.fromMillisecondsSinceEpoch(row.timestamp),
+          theDayItWasEaten,
+          reason: 'the day it was eaten, not the moment it was typed');
+      expect(before.isAfter(theDayItWasEaten), isTrue,
+          reason: 'and it really was written long after that day');
+    });
+
+    test('two rows written minutes apart come back indistinguishable',
+        () async {
+      // The same breakfast, on the same past day, written at two different
+      // moments. If anything about the write moment reached the row, these
+      // two would differ somewhere — and the moment they do, the step Aidan
+      // walked stops being a fair test of the step he was asked to walk.
+      Future<void> write(String id) => intakes.addQuickAddIntake(
+            id: id,
+            kcal: 100,
+            protein: 4,
+            carbs: 16,
+            fat: 2,
+            label: 'Overnight oats',
+            mealSlot: 'breakfast',
+            dateTime: theDayItWasEaten,
+          );
+      await write('intake-first');
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await write('intake-second');
+
+      final reader = GetIntakeUsecase(intakes);
+      final first = await reader.getIntakeById('intake-first');
+      final second = await reader.getIntakeById('intake-second');
+
+      expect(first, isNotNull);
+      expect(second, isNotNull);
+      expect(first!.props, isNotEmpty,
+          reason: 'a comparison over nothing would pass over anything');
+      // Everything that identifies the row, bar the id it was given.
+      expect(first.props.where((p) => p != 'intake-first').toList(),
+          second!.props.where((p) => p != 'intake-second').toList(),
+          reason: 'nothing on a diary row says when it was written');
+    });
+  });
+
   test('the older day loses the old figure and gains the new one', () async {
     await aRowOnTheOlderDay();
 
