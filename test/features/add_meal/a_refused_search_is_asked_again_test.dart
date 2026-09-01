@@ -75,15 +75,30 @@ void main() {
       expect(server.asked, hasLength(3));
     });
 
-    test('is not asked a fourth time, and the failure is passed on', () async {
-      final server = serverThatSays([503, 503, 503]);
+    test('keeps asking past the third, because three was not enough', () async {
+      // Aidan's run of 1 September: the search failed on him mid-walkthrough
+      // with three asks in place. Measured again that morning against this
+      // address, fifteen searches came back nine good and six refused, the
+      // refusals scattered rather than in an outage. Three asks leave that at
+      // about one search in sixteen showing an error; five leave it at about
+      // one in a hundred.
+      final server = serverThatSays([503, 503, 503, 503, 200]);
+      final result = await OFFDataSource(client: server.client)
+          .fetchSearchWordResults('plum tomatoes');
+
+      expect(server.asked, hasLength(5));
+      expect(result.products, isEmpty);
+    });
+
+    test('is not asked a sixth time, and the failure is passed on', () async {
+      final server = serverThatSays([503, 503, 503, 503, 503]);
 
       await expectLater(
         OFFDataSource(client: server.client)
             .fetchSearchWordResults('peanut butter'),
         throwsA(503),
       );
-      expect(server.asked, hasLength(3));
+      expect(server.asked, hasLength(5));
     });
 
     test('asks for exactly the same thing each time', () async {

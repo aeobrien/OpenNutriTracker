@@ -21,10 +21,20 @@ class OFFDataSource {
   /// three asks turn 36% into 82%, and the second ask alone does most of the
   /// work. A fourth was not measured and is not claimed.
   ///
-  /// It costs a second at worst, and only on a search that was going to show an
-  /// error anyway: their refusal is a page of HTML returned in about a fifth of
-  /// a second, carrying no instruction to wait.
-  static const _attempts = 3;
+  /// Three was not enough. On 1 September 2026 the search failed in front of
+  /// Aidan mid-test with three asks already in place. Measured again that
+  /// morning against the same address: fifteen searches, nine good and six
+  /// refused, the refusals scattered through the run rather than bunched into
+  /// an outage — so a refusal says nothing about whether the next ask will be
+  /// refused too, which is exactly the shape asking again is for.
+  ///
+  /// At that refusal rate three asks still show an error on about one search in
+  /// sixteen; five bring it to about one in a hundred.
+  ///
+  /// It costs four seconds at worst, and only on a search that was going to
+  /// show an error anyway: their refusal is a page of HTML returned in about a
+  /// fifth of a second, carrying no instruction to wait.
+  static const _attempts = 5;
   static const _betweenAttempts = Duration(seconds: 1);
 
   final log = Logger('OFFDataSource');

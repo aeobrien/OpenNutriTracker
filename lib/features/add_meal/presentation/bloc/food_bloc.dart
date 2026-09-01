@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/domain/usecase/get_config_usecase.dart';
+import 'package:opennutritracker/features/add_meal/data/data_sources/fdc_data_source.dart';
 import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/features/add_meal/domain/usecase/search_products_usecase.dart';
 
@@ -35,6 +36,12 @@ class FoodBloc extends Bloc<FoodEvent, FoodState> {
         _lastSearchFailed = false;
         emit(FoodLoadedState(
             food: result, usesImperialUnits: config.usesImperialUnits));
+      } on FoodDatabaseNotSetUp {
+        // Not marked as failed: there is nothing to try again, and leaving the
+        // flag set would send a fresh doomed request every time the words are
+        // retyped.
+        log.severe('the food database has no usable key');
+        emit(FoodSourceNotSetUpState());
       } catch (error) {
         log.severe(error);
         _lastSearchFailed = true;
@@ -48,6 +55,9 @@ class FoodBloc extends Bloc<FoodEvent, FoodState> {
             await _searchProductUseCase.searchFDCFoodByString(_searchString);
         _lastSearchFailed = false;
         emit(FoodLoadedState(food: result));
+      } on FoodDatabaseNotSetUp {
+        log.severe('the food database has no usable key');
+        emit(FoodSourceNotSetUpState());
       } catch (error) {
         log.severe(error);
         _lastSearchFailed = true;

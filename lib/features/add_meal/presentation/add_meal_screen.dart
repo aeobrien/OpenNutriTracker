@@ -240,6 +240,17 @@ class _AddMealScreenState extends State<AddMealScreen>
                                           );
                                         }))
                                 : const NoResultsWidget();
+                          } else if (state is FoodSourceNotSetUpState) {
+                            // No cloud-off picture and nothing to press. This
+                            // is not a bad line and Retry can never mend it.
+                            return const Padding(
+                              padding: EdgeInsets.only(
+                                  top: 48, left: 24, right: 24),
+                              child: Text(
+                                FoodSourceNotSetUpState.sentence,
+                                textAlign: TextAlign.center,
+                              ),
+                            );
                           } else if (state is FoodFailedState) {
                             return ErrorDialog(
                               errorText: S.of(context).errorFetchingProductData,
