@@ -186,6 +186,52 @@ void main() {
     expect(scroll.controller!.position.maxScrollExtent, greaterThan(0.0));
   });
 
+  testWidgets('and the bar is not sitting on top of anything', (tester) async {
+    // The bar this replaced was drawn, correct, and in the way. Aidan walked
+    // build 65 on 1 September 2026 and said, whole: "There is a scroll bar but
+    // it overlaps with the gram symbol after the quantity field and the green
+    // line underneath it, as well as the lines underneath the which meal drop
+    // down. It will be good to move the scroll bar slightly to the right".
+    //
+    // The test above it could not have caught that, and it is worth saying why
+    // rather than just adding this one: it asks whether the bar exists and
+    // whether it is visible before anything moves. Both were true the whole
+    // time. Nothing that only asks whether a thing is there can see it lying on
+    // top of something else — that is a question about two rectangles, so this
+    // one measures them.
+    tester.view.physicalSize = const Size(390, 500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_aRowYouCanTap(
+        _ALedger([_aVersion(version: 1), _aVersion(version: 0)]), []));
+    await tester.pumpAndSettle();
+    await openIt(tester);
+
+    // Where the thumb is allowed to be drawn: a lane down the right-hand edge
+    // of the scrolling area, as wide as the thumb is thick.
+    final barArea = tester.getRect(find.descendant(
+        of: find.byType(AlertDialog), matching: find.byType(Scrollbar)));
+    final laneStarts = barArea.right - EditDialog.barThickness;
+
+    // Everything he named, by the thing on screen rather than by the widget
+    // that draws it. The quantity field carries its own 'g' as a suffix and
+    // its own underline, so its rectangle is both of the first two.
+    final onTheRight = {
+      'the quantity field, its gram symbol and the line under it':
+          find.byType(TextFormField),
+      'the which-meal dropdown and the line under it':
+          find.byType(DropdownButtonFormField<IntakeTypeEntity>),
+    };
+
+    for (final entry in onTheRight.entries) {
+      expect(tester.getRect(entry.value.first).right,
+          lessThanOrEqualTo(laneStarts),
+          reason: 'the bar is drawn over ${entry.key}');
+    }
+  });
+
   testWidgets('a row that has been changed shows what it used to say',
       (tester) async {
     await tester

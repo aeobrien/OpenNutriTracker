@@ -108,6 +108,17 @@ class EditDialog extends StatefulWidget {
       'half there would count one dinner twice against them and leave nobody '
       'with the other half.';
 
+  /// How thick the scroll bar's thumb is, and therefore how wide a lane it
+  /// needs to itself. Named so the test that measures the overlap and the
+  /// dialog that leaves room for it cannot drift apart.
+  static const barThickness = 8.0;
+
+  /// The gap between the content's right edge and the dialog's, which is where
+  /// the bar now lives. Taken out of the dialog's own padding rather than out
+  /// of the content, so the content stays exactly as wide as it was and only
+  /// the bar moves — which is what Aidan asked for.
+  static const barLane = 12.0;
+
   static const notReallySharedLabel = 'Delete it instead';
   static const leaveItLabel = 'Leave it as it is';
 
@@ -261,6 +272,11 @@ class _EditDialogState extends State<EditDialog> {
 
     return AlertDialog(
       title: Text(S.of(context).editItemDialogTitle),
+      // Material's own padding, less the bar's lane on the right. The lane is
+      // given back to the content below, so nothing on screen moves except the
+      // bar, which slides out into space that was already blank.
+      contentPadding:
+          const EdgeInsets.fromLTRB(24.0, 20.0, 24.0 - EditDialog.barLane, 24.0),
       // The bar is drawn before anything moves.
       //
       // This dialog is taller than a phone screen as soon as a row has any
@@ -273,8 +289,14 @@ class _EditDialogState extends State<EditDialog> {
       content: Scrollbar(
         controller: _scroll,
         thumbVisibility: true,
+        thickness: EditDialog.barThickness,
         child: SingleChildScrollView(
           controller: _scroll,
+          // The bar's lane, handed back. Without this the bar is drawn at the
+          // right-hand edge of the content — which is where the quantity
+          // field's 'g', its underline and the line under the which-meal
+          // dropdown all end, so it sat on all three.
+          padding: const EdgeInsets.only(right: EditDialog.barLane),
           child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
