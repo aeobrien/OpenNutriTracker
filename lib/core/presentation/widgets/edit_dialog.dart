@@ -160,6 +160,11 @@ class _EditDialogState extends State<EditDialog> {
   bool get _theFoodCanBeChanged =>
       !widget.intakeEntity.isQuickAdd && !widget.intakeEntity.isRecipe;
 
+  /// Shared by the scroll bar and the thing it scrolls, which is the whole
+  /// point of it existing: a bar handed a different controller from the view
+  /// beside it throws rather than drawing.
+  final _scroll = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -202,6 +207,7 @@ class _EditDialogState extends State<EditDialog> {
     kcalEditingController.removeListener(_onKcalChanged);
     kcalEditingController.dispose();
     nameEditingController.dispose();
+    _scroll.dispose();
     super.dispose();
   }
 
@@ -255,33 +261,47 @@ class _EditDialogState extends State<EditDialog> {
 
     return AlertDialog(
       title: Text(S.of(context).editItemDialogTitle),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _hasNoFoodBehindIt
-                ? _foodlessRow(context)
-                : _rowWithAFoodBehindIt(
-                    context, unitStr, unitLabel, hasServing),
-            // Under both shapes, for the same reason: a breakfast eaten late
-            // and a snack that was really lunch are the same mistake whether
-            // or not there is a food behind the row.
-            _whichMealOfTheDay(context),
-            // Under both shapes of the dialog, because a row with a food
-            // behind it and a row without one are corrected just as often and
-            // wrongly just as often.
-            ThisEntrysHistory(
-              // The name the house knows this row by, which is not this
-              // phone's own id when the row came down from the house. Same
-              // reason as the refusal below, and the same getter: asking by
-              // the wrong name gets "no such row" back, and an empty history
-              // is indistinguishable on screen from a row nobody has ever
-              // corrected.
-              intakeId: widget.intakeEntity.householdName,
-              ledger: widget.ledger,
-              onPutBack: _putBack,
-            ),
-          ],
+      // The bar is drawn before anything moves.
+      //
+      // This dialog is taller than a phone screen as soon as a row has any
+      // history on it, and iOS keeps a scroll bar hidden until a finger has
+      // already scrolled — so a dialog with more below it looks exactly like a
+      // dialog that ends where the screen does. Aidan reached the history on
+      // 1 September 2026 and said: "It wasn't clear that I had to scroll down
+      // to see it though. There was no scroll bar visible." Now there is one,
+      // and it is there on arrival rather than as a reward for guessing.
+      content: Scrollbar(
+        controller: _scroll,
+        thumbVisibility: true,
+        child: SingleChildScrollView(
+          controller: _scroll,
+          child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _hasNoFoodBehindIt
+                    ? _foodlessRow(context)
+                    : _rowWithAFoodBehindIt(
+                        context, unitStr, unitLabel, hasServing),
+                // Under both shapes, for the same reason: a breakfast eaten late
+                // and a snack that was really lunch are the same mistake whether
+                // or not there is a food behind the row.
+                _whichMealOfTheDay(context),
+                // Under both shapes of the dialog, because a row with a food
+                // behind it and a row without one are corrected just as often and
+                // wrongly just as often.
+                ThisEntrysHistory(
+                  // The name the house knows this row by, which is not this
+                  // phone's own id when the row came down from the house. Same
+                  // reason as the refusal below, and the same getter: asking by
+                  // the wrong name gets "no such row" back, and an empty history
+                  // is indistinguishable on screen from a row nobody has ever
+                  // corrected.
+                  intakeId: widget.intakeEntity.householdName,
+                  ledger: widget.ledger,
+                onPutBack: _putBack,
+              ),
+            ],
+          ),
         ),
       ),
       actions: [

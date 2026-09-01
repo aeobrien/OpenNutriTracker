@@ -155,6 +155,37 @@ void main() {
     expect(find.text('Put this back'), findsNothing);
   });
 
+  testWidgets('on a short screen the panel says out loud that it scrolls',
+      (tester) async {
+    // Aidan, walking build 62 on 1 September 2026, reached the history and
+    // said: "It wasn't clear that I had to scroll down to see it though.
+    // There was no scroll bar visible." iOS hides a scroll bar until
+    // something moves, so a dialog that is taller than the screen looks like
+    // a dialog that ends where the screen does. This one says so.
+    tester.view.physicalSize = const Size(390, 500);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_aRowYouCanTap(
+        _ALedger([_aVersion(version: 1), _aVersion(version: 0)]), []));
+    await tester.pumpAndSettle();
+    await openIt(tester);
+
+    final bar = tester.widget<Scrollbar>(find.descendant(
+        of: find.byType(AlertDialog), matching: find.byType(Scrollbar)));
+    expect(bar.thumbVisibility, isTrue,
+        reason: 'the thumb is drawn before anything moves');
+
+    // And there is genuinely more below, so the bar is telling the truth.
+    final scroll = tester.widget<SingleChildScrollView>(find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(SingleChildScrollView)));
+    expect(scroll.controller, isNotNull,
+        reason: 'the bar and the view have to be the same scrollable');
+    expect(scroll.controller!.position.maxScrollExtent, greaterThan(0.0));
+  });
+
   testWidgets('a row that has been changed shows what it used to say',
       (tester) async {
     await tester
