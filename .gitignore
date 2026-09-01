@@ -67,3 +67,8 @@ understudy-runs/
 pubspec_overrides.yaml
 tool/harness/out/
 hodor-runs/
+
+# The food-database key. Tracked until 1 September 2026, which meant a real
+# key would have gone into the next commit and, from there, to a public
+# repository — and FoodData Central deactivates keys it finds in one.
+.env
