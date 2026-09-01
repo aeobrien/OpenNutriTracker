@@ -5,7 +5,9 @@ import 'package:opennutritracker/core/domain/entity/intake_entity.dart';
 import 'package:opennutritracker/core/domain/entity/intake_type_entity.dart';
 import 'package:opennutritracker/core/domain/entity/tracked_day_entity.dart';
 import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
+import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
+import 'package:opennutritracker/features/household/data/household_repository.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
@@ -162,6 +164,7 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
                 onCopyIntake: _onCopyIntakeItem,
                 onCopyActivity: _onCopyActivityItem,
                 usesImperialUnits: usesImperialUnits,
+                onIntakeItemTapped: _onIntakeItemTapped,
               );
             }
             return const SizedBox();
@@ -169,6 +172,63 @@ class _DiaryPageState extends State<DiaryPage> with WidgetsBindingObserver {
         )
       ],
     );
+  }
+
+  /// Tapping a row on the day being looked at, to correct it.
+  ///
+  /// The same dialog the home screen opens, doing the same thing to the same
+  /// row — the only difference is which day's totals the correction is taken
+  /// off and put back on, which is this screen's selected day rather than
+  /// today. Until 1 September 2026 this screen had no tap at all: the cards
+  /// were built without one and swallowed being tapped, so an older meal could
+  /// be read, deleted or copied, and never corrected.
+  void _onIntakeItemTapped(
+    BuildContext context,
+    IntakeEntity intakeEntity,
+    bool usesImperialUnits,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final updatedText = S.of(context).itemUpdatedSnackbar;
+    // Whose phone this is, so that putting an older version of a row back knows
+    // whether that also means moving it to the other person's day.
+    final owner = await locator<HouseholdRepository>().storedOwner();
+    if (!context.mounted) return;
+
+    final edit = await showDialog<IntakeEdit>(
+      context: context,
+      builder: (context) => EditDialog(
+        intakeEntity: intakeEntity,
+        usesImperialUnits: usesImperialUnits,
+        currentOwner: owner,
+      ),
+    );
+    if (edit == null) return;
+    if (edit.remove) {
+      if (!context.mounted) return;
+      _onDeleteIntakeItem(intakeEntity, null);
+      return;
+    }
+    // A tap that changed nothing is not a correction and must not travel to the
+    // household as one — an empty amend still bumps the row's version there and
+    // discards anything still on the wire for it.
+    if (edit.fields.isEmpty && edit.moveTo == null && edit.nowItIs == null) {
+      return;
+    }
+
+    await _calendarDayBloc.updateIntakeItem(
+      intakeEntity.id,
+      edit.fields,
+      _selectedDate,
+      moveTo: edit.moveTo,
+      nowItIs: edit.nowItIs,
+    );
+    _diaryBloc.add(const LoadDiaryYearEvent());
+    _calendarDayBloc.add(LoadCalendarDayEvent(_selectedDate));
+    _diaryBloc.updateHomePage();
+    messenger.showSnackBar(SnackBar(
+      content: Text(
+          edit.moveTo != null ? 'Moved off your day.' : updatedText),
+    ));
   }
 
   void _onDeleteIntakeItem(

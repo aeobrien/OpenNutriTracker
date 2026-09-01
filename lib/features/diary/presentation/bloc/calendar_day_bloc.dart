@@ -10,6 +10,8 @@ import 'package:opennutritracker/core/domain/usecase/delete_user_activity_usecas
 import 'package:opennutritracker/core/domain/usecase/get_intake_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_tracked_day_usecase.dart';
 import 'package:opennutritracker/core/domain/usecase/get_user_activity_usecase.dart';
+import 'package:opennutritracker/core/domain/usecase/update_intake_usecase.dart';
+import 'package:opennutritracker/features/add_meal/domain/entity/meal_entity.dart';
 import 'package:opennutritracker/core/utils/calc/macro_calc.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/diary_bloc.dart';
@@ -25,6 +27,7 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
   final DeleteUserActivityUsecase _deleteUserActivityUsecase;
   final GetTrackedDayUsecase _getTrackedDayUsecase;
   final AddTrackedDayUsecase _addTrackedDayUsecase;
+  final UpdateIntakeUsecase _updateIntakeUsecase;
 
   DateTime? _currentDay;
 
@@ -34,7 +37,8 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
       this._deleteIntakeUsecase,
       this._deleteUserActivityUsecase,
       this._getTrackedDayUsecase,
-      this._addTrackedDayUsecase)
+      this._addTrackedDayUsecase,
+      this._updateIntakeUsecase)
       : super(CalendarDayInitial()) {
     on<LoadCalendarDayEvent>((event, emit) async {
       emit(CalendarDayLoading());
@@ -141,6 +145,39 @@ class CalendarDayBloc extends Bloc<CalendarDayEvent, CalendarDayState> {
     );
 
     emit(CalendarWeekLoaded(summary, dailyRows));
+  }
+
+  /// Correct a row on a day that is not necessarily today.
+  ///
+  /// The day is passed in rather than read off the clock. Its twin on the home
+  /// screen uses `DateTime.now()`, which is right there and only there: a
+  /// correction made from the diary is nearly always to an earlier day, and
+  /// taking the old figures off today's total instead of that day's would move
+  /// two days' numbers at once and neither of them to the right thing.
+  Future<void> updateIntakeItem(
+      String intakeId, Map<String, dynamic> fields, DateTime day,
+      {int? moveTo, MealEntity? nowItIs}) async {
+    final before = await _getIntakeUsecase.getIntakeById(intakeId);
+    if (before == null) return;
+    final after = await _updateIntakeUsecase.updateIntake(intakeId, fields,
+        moveTo: moveTo, nowItIs: nowItIs);
+
+    // The whole of what it was off, then the whole of what it now is back on,
+    // rather than a signed difference — so a correction that moves calories one
+    // way and a macro the other cannot land half-applied. Same as the home
+    // screen's.
+    await _addTrackedDayUsecase.removeDayCaloriesTracked(day, before.totalKcal);
+    await _addTrackedDayUsecase.removeDayMacrosTracked(day,
+        carbsTracked: before.totalCarbsGram,
+        fatTracked: before.totalFatsGram,
+        proteinTracked: before.totalProteinsGram);
+    if (after != null) {
+      await _addTrackedDayUsecase.addDayCaloriesTracked(day, after.totalKcal);
+      await _addTrackedDayUsecase.addDayMacrosTracked(day,
+          carbsTracked: after.totalCarbsGram,
+          fatTracked: after.totalFatsGram,
+          proteinTracked: after.totalProteinsGram);
+    }
   }
 
   Future<void> deleteIntakeItem(

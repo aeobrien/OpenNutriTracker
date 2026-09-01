@@ -32,6 +32,14 @@ class DayInfoWidget extends StatelessWidget {
   final Function(UserActivityEntity userActivityEntity,
       TrackedDayEntity? trackedDayEntity) onCopyActivity;
 
+  /// Opening a row to correct it. Optional only so the existing tests can build
+  /// this screen without one; the diary page always passes it.
+  ///
+  /// Without this every card on this screen was handed a null tap and quietly
+  /// ignored being tapped, while the same card on today's screen opened. See
+  /// an_older_days_row_answers_a_tap_test.
+  final Function(BuildContext, IntakeEntity, bool)? onIntakeItemTapped;
+
   const DayInfoWidget({
     super.key,
     required this.selectedDay,
@@ -46,6 +54,7 @@ class DayInfoWidget extends StatelessWidget {
     required this.onDeleteActivity,
     required this.onCopyIntake,
     required this.onCopyActivity,
+    this.onIntakeItemTapped,
   });
 
   @override
@@ -129,6 +138,7 @@ class DayInfoWidget extends StatelessWidget {
               intakeList: breakfastIntake,
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
               onCopyIntakeCallback:
                   DateUtils.isSameDay(selectedDay, DateTime.now())
                       ? null
@@ -144,6 +154,7 @@ class DayInfoWidget extends StatelessWidget {
               intakeList: lunchIntake,
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
               usesImperialUnits: usesImperialUnits,
               onCopyIntakeCallback:
                   DateUtils.isSameDay(selectedDay, DateTime.now())
@@ -159,6 +170,7 @@ class DayInfoWidget extends StatelessWidget {
               intakeList: dinnerIntake,
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
               onCopyIntakeCallback:
                   DateUtils.isSameDay(selectedDay, DateTime.now())
                       ? null
@@ -173,6 +185,7 @@ class DayInfoWidget extends StatelessWidget {
               intakeList: snackIntake,
               onDeleteIntakeCallback: onDeleteIntake,
               onItemLongPressedCallback: onIntakeItemLongPressed,
+              onItemTappedCallback: onIntakeItemTapped,
               usesImperialUnits: usesImperialUnits,
               onCopyIntakeCallback:
                   DateUtils.isSameDay(selectedDay, DateTime.now())
