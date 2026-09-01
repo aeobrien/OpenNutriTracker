@@ -8,7 +8,6 @@ import 'package:opennutritracker/core/domain/entity/user_activity_entity.dart';
 import 'package:opennutritracker/core/presentation/widgets/activity_vertial_list.dart';
 import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/delete_dialog.dart';
-import 'package:opennutritracker/core/presentation/widgets/disclaimer_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/say_the_row_is_gone.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
@@ -98,7 +97,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         } else if (state is HomeLoadedState) {
           return _getLoadedContent(
             context,
-            state.showDisclaimerDialog,
             state.totalKcalDaily,
             state.totalKcalLeft,
             state.totalKcalSupplied,
@@ -146,7 +144,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Widget _getLoadedContent(
     BuildContext context,
-    bool showDisclaimerDialog,
     double totalKcalDaily,
     double totalKcalLeft,
     double totalKcalSupplied,
@@ -170,9 +167,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     DateTime? activeCaloriesUpdatedAt,
     bool healthKitConnected,
   ) {
-    if (showDisclaimerDialog) {
-      _showDisclaimerDialog(context);
-    }
+    // Nothing stands in front of the day. The medical disclaimer used to open
+    // over this screen on a phone that had not accepted it, and it was asked
+    // for from inside this build method — so every redraw while the flag was
+    // still unset scheduled another one, and accepting it triggers a reload,
+    // which redraws. Aidan met it four or five times in a row on 1 September
+    // 2026 and asked for it gone: "I know that this is not a medical
+    // application. I'm in no danger of misinterpreting something that I've
+    // built." The wording is still in Settings, where it is read on purpose.
     return Stack(
       children: [
         ListView(
@@ -437,22 +439,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     // puts the row's figures back on the ring it just came off.
     await _homeBloc.deleteIntakeItem(intake);
     _reload();
-  }
-
-  /// Show disclaimer dialog after build method
-  void _showDisclaimerDialog(BuildContext context) async {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final dialogConfirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) {
-          return const DisclaimerDialog();
-        },
-      );
-      if (dialogConfirmed != null) {
-        _homeBloc.saveConfigData(dialogConfirmed);
-        _reload();
-      }
-    });
   }
 
   /// Refresh page on resume (picks up HealthKit updates + day changes)

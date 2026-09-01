@@ -89,9 +89,16 @@ class HeldOpen {
 // --- the stand-ins ---------------------------------------------------------
 
 class FakeGetConfig extends Fake implements GetConfigUsecase {
+  /// Whether this phone has already had the medical disclaimer put to it.
+  /// False is the state a brand-new install is in, and the state that used to
+  /// put a dialog over the screen.
+  final bool acceptedDisclaimer;
+
+  FakeGetConfig({this.acceptedDisclaimer = true});
+
   @override
   Future<ConfigEntity> getConfig() async =>
-      const ConfigEntity(true, true, false, AppThemeEntity.system);
+      ConfigEntity(acceptedDisclaimer, true, false, AppThemeEntity.system);
 }
 
 class FakeAddConfig extends Fake implements AddConfigUsecase {}
@@ -302,12 +309,13 @@ class ADrivableHome {
     List<UserActivityEntity> exercise = const [],
     List<LoggedItem> onTheHouseholdsDay = const [],
     bool houseUnreachable = false,
+    bool disclaimerAccepted = true,
   }) {
     final foodRemoval = HeldOpen();
     final exerciseRemoval = HeldOpen();
     final day = FakeGetIntake(breakfast: food);
     final bloc = HomeBloc(
-      FakeGetConfig(),
+      FakeGetConfig(acceptedDisclaimer: disclaimerAccepted),
       FakeAddConfig(),
       day,
       FakeDeleteIntake(foodRemoval),

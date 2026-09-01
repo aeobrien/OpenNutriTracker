@@ -69,7 +69,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       currentDay = DateTime.now();
       final configData = await _getConfigUsecase.getConfig();
       final usesImperialUnits = configData.usesImperialUnits;
-      final showDisclaimerDialog = !configData.hasAcceptedDisclaimer;
 
       final breakfastIntakeList =
           await _getIntakeUsecase.getTodayBreakfastIntake();
@@ -177,7 +176,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       }
 
       emit(HomeLoadedState(
-          showDisclaimerDialog: showDisclaimerDialog,
           totalKcalDaily: totalKcalGoal,
           totalKcalLeft: totalKcalLeft,
           totalKcalSupplied: totalKcalIntake,

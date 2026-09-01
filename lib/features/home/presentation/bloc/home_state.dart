@@ -15,7 +15,6 @@ class HomeLoadingState extends HomeState {
 }
 
 class HomeLoadedState extends HomeState {
-  final bool showDisclaimerDialog;
   final double totalKcalDaily;
   final double totalKcalLeft;
   final double totalKcalSupplied;
@@ -40,7 +39,6 @@ class HomeLoadedState extends HomeState {
   final bool healthKitConnected;
 
   const HomeLoadedState({
-    required this.showDisclaimerDialog,
     required this.totalKcalDaily,
     required this.totalKcalLeft,
     required this.totalKcalSupplied,
