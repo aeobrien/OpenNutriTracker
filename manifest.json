@@ -1,0 +1,31 @@
+{
+  "capture_finished_at_utc": "2026-09-01T01:18:45Z",
+  "capture_started_at_utc": "2026-09-01T01:18:43Z",
+  "captured_at_utc": "2026-09-01T01:18:43Z",
+  "captured_byte_estimate": 11252437,
+  "captured_path_count": 505,
+  "consistency_retry_count": 0,
+  "excluded": [
+    {
+      "path_sha256": "e9cbb0224c4a3d23a6019ba557e0cd568c1ad5e1582ff1e335fb7d99b7a1055d",
+      "reason": "secret_path",
+      "remote_recoverable": false,
+      "size": 160,
+      "threshold": null
+    }
+  ],
+  "github_hard_limit_bytes": 100000000,
+  "guardian_version": "2.0-sidecar",
+  "head_state": "symbolic",
+  "host": "aidans-laptop",
+  "racy_capture": false,
+  "repository_id": "ONT-wt-integration-64e7cee5477b",
+  "schema_version": 1,
+  "snapshot_blob_threshold_bytes": 94371840,
+  "snapshot_consistency": "stable",
+  "source_branch": "phase-blitz/integration",
+  "source_head_oid": "ce80081b3e1454d0eeaa325cfdceaea16afd5f39",
+  "source_index_sha256": "3eb9676e5b5b91b6f9a376c19bd66e5241419834b951746b5490dc256da8e50c",
+  "source_path": "/Users/aidan/Dev/ONT-wt-integration",
+  "upstream_observed": null
+}
