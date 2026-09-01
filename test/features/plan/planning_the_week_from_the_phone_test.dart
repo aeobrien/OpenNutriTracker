@@ -89,14 +89,14 @@ void main() {
 
   group('the way in', () {
     testWidgets('tapping a day on the week opens that day', (tester) async {
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
 
       expect(find.text(PlanDaySheet.heading(friday)), findsOneWidget);
     });
 
     testWidgets('a day with nothing on it says so rather than looking broken',
         (tester) async {
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
 
       expect(find.text(PlanDaySheet.nothingPlanned), findsOneWidget);
     });
@@ -104,7 +104,7 @@ void main() {
     testWidgets('a day already planned shows what is on it', (tester) async {
       mini.planMeal(day: friday, title: 'Chilli', mealKcal: 640);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
 
       expect(inSheet(find.text('Chilli')), findsOneWidget);
     });
@@ -116,7 +116,7 @@ void main() {
       await tester.pumpWidget(screen(canPlan: false));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Fri'));
+      await tester.tap(find.text('Fri 21'));
       await tester.pumpAndSettle();
 
       expect(find.text(PlanDaySheet.heading(friday)), findsNothing);
@@ -136,7 +136,7 @@ void main() {
       mini.addMeal(name: 'Chilli', kcal: 640);
       mini.addMeal(name: 'Porridge', kcal: 300);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.text(PlanDaySheet.addLabel));
       await tester.pumpAndSettle();
 
@@ -147,7 +147,7 @@ void main() {
     testWidgets('picking one puts it on that day', (tester) async {
       mini.addMeal(name: 'Chilli', kcal: 640);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await add(tester, 'Chilli');
 
       expect(mini.plan.single['day'], friday);
@@ -158,7 +158,7 @@ void main() {
         (tester) async {
       mini.addMeal(name: 'Chilli', kcal: 640);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await add(tester, 'Chilli');
 
       expect(mini.requests, contains('POST /household/plan/add'));
@@ -171,7 +171,7 @@ void main() {
       mini.addMeal(name: 'Chilli', kcal: 640);
       await household.people();
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await add(tester, 'Chilli');
 
       expect(mini.plannedBy.single, 'Aidan');
@@ -181,7 +181,7 @@ void main() {
         (tester) async {
       mini.addMeal(name: 'Chilli', kcal: 640);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await add(tester, 'Chilli');
 
       // Twice: once on the picker row, once on the day it is now on.
@@ -192,7 +192,7 @@ void main() {
     testWidgets('a search that matches nothing says so', (tester) async {
       mini.addMeal(name: 'Chilli', kcal: 640);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.text(PlanDaySheet.addLabel));
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), 'lasagne');
@@ -209,7 +209,7 @@ void main() {
       // meal you can plan; what it must not do is look as if it has a figure.
       mini.addMeal(name: 'Chilli');
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.text(PlanDaySheet.addLabel));
       await tester.pumpAndSettle();
 
@@ -226,7 +226,7 @@ void main() {
       mini.addMeal(name: 'Chilli', kcal: 640);
       mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.text(PlanDaySheet.addLabel));
       await tester.pumpAndSettle();
       await tester.tap(find.text(PlanDaySheet.buildLabel));
@@ -242,7 +242,7 @@ void main() {
       // every other meal takes.
       mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.text(PlanDaySheet.addLabel));
       await tester.pumpAndSettle();
       await tester.tap(find.text(PlanDaySheet.buildLabel));
@@ -264,7 +264,7 @@ void main() {
       // difference between that and having to go and find out.
       mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.text(PlanDaySheet.addLabel));
       await tester.pumpAndSettle();
       await tester.tap(find.text(PlanDaySheet.buildLabel));
@@ -283,7 +283,7 @@ void main() {
         (tester) async {
       mini.planMeal(day: friday, title: 'Chilli', mealKcal: 640);
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
 
@@ -295,7 +295,7 @@ void main() {
           mini.planMeal(day: friday, title: 'Chilli', mealKcal: 640);
       mini.decisions[planId] = {mini.emily: 'ate'};
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
 
@@ -309,7 +309,7 @@ void main() {
           mini.planMeal(day: friday, title: 'Chilli', mealKcal: 640);
       mini.decisions[planId] = {mini.emily: 'ate'};
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Leave it'));
@@ -332,7 +332,7 @@ void main() {
         'kcal': 640,
       };
 
-      await openDay(tester, 'Fri');
+      await openDay(tester, 'Fri 21');
       await tester.tap(find.byIcon(Icons.close));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Take it off'));
@@ -352,7 +352,7 @@ void main() {
       await tester.pumpAndSettle();
       mini.reachable = false;
 
-      await tester.tap(find.text('Fri'));
+      await tester.tap(find.text('Fri 21'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining("Can't reach the Mac Mini"),
@@ -365,7 +365,7 @@ void main() {
       await tester.pumpAndSettle();
       mini.reachable = false;
 
-      await tester.tap(find.text('Fri'));
+      await tester.tap(find.text('Fri 21'));
       await tester.pumpAndSettle();
 
       // Not a disabled button either — the control is not there. A decision
@@ -383,7 +383,7 @@ void main() {
 
       await tester.pumpWidget(screen(figuresOff: true));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Fri'));
+      await tester.tap(find.text('Fri 21'));
       await tester.pumpAndSettle();
 
       expect(inSheet(find.text('Chilli')), findsOneWidget);
@@ -398,7 +398,7 @@ void main() {
 
       await tester.pumpWidget(screen(figuresOff: true));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Fri'));
+      await tester.tap(find.text('Fri 21'));
       await tester.pumpAndSettle();
 
       expect(find.textContaining("don't have numbers"), findsNothing);

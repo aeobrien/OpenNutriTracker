@@ -46,6 +46,13 @@ class WeekAheadSection extends StatefulWidget {
   /// it runs.
   final String? start;
 
+  /// The week that just arrived, handed back to whoever put this on the
+  /// screen. The Plan tab needs it to say which week is showing and to step to
+  /// the next one, and asking for null means the Mac Mini decides which week
+  /// that is — so the phone cannot work it out for itself without risking a
+  /// different answer to the one on screen.
+  final void Function(WeekView week)? onLoaded;
+
   const WeekAheadSection({
     super.key,
     required this.repository,
@@ -53,9 +60,9 @@ class WeekAheadSection extends StatefulWidget {
     this.planner,
     this.shopping,
     this.onPlanned,
+    this.onLoaded,
   });
 
-  static const heading = 'This week';
   static const nothingYet = 'Nothing on the week yet.';
   static const shoppingLabel = 'Shopping list';
 
@@ -64,6 +71,14 @@ class WeekAheadSection extends StatefulWidget {
   static const dayNames = [
     'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun',
   ];
+
+  /// The day's name and its date together — 'Mon 1'. The name alone was all
+  /// this row ever showed, which reads fine on the week you are standing in
+  /// and not at all once you can move off it: Aidan, 1 September 2026, on a
+  /// screen showing seven unlabelled weekdays — *"I can't see any dates at
+  /// all."*
+  static String dayLabel(DateTime date) =>
+      '${dayNames[date.weekday - 1]} ${date.day}';
 
   /// The honest sentence. Plural handled here rather than in three places.
   static String awaitingLine(int count) => count == 1
@@ -98,6 +113,7 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
         _week = week;
         _problem = null;
       });
+      widget.onLoaded?.call(week);
     } on HouseholdUnreachable catch (e) {
       // "Nothing is planned" and "I could not find out what is planned" are
       // different facts, and showing the first when the second is true is the
@@ -151,11 +167,10 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-          child: Text(WeekAheadSection.heading,
-              style: theme.textTheme.titleSmall),
-        ),
+        // No heading of its own any more. It said 'This week', which stopped
+        // being true on 1 September 2026 when the Plan tab learned to show
+        // other weeks — and the tab now names the week by its dates above
+        // this, which is the thing that was actually missing.
         for (final day in week.days)
           _DayRow(
             day: day,
@@ -207,9 +222,9 @@ class _DayRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 44,
+            width: 56,
             child: Text(
-              WeekAheadSection.dayNames[day.date.weekday - 1],
+              WeekAheadSection.dayLabel(day.date),
               style: isToday
                   ? theme.textTheme.bodyMedium
                       ?.copyWith(fontWeight: FontWeight.bold)

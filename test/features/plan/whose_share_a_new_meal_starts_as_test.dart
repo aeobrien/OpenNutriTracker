@@ -74,7 +74,7 @@ void main() {
   Future<void> addAMealToFriday(WidgetTester tester, String meal) async {
     await tester.pumpWidget(screen());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fri'));
+    await tester.tap(find.text('Fri 21'));
     await tester.pumpAndSettle();
     await tester.tap(find.text(PlanDaySheet.addLabel));
     await tester.pumpAndSettle();

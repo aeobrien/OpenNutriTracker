@@ -869,7 +869,9 @@ void main() {
     // give them their own menu item on the bottom of the screen."
     test('the tab is on the bar and the week is what it shows', () {
       final main = _calls('lib/core/presentation/main_screen.dart');
-      expect(main.contains('constPlanPage(),'), isTrue);
+      // Carries a key now, because the calendar in that tab's app bar — which
+      // is built out here and not by the page — is how a week gets chosen.
+      expect(main.contains('PlanPage(key:_plan),'), isTrue);
       expect(main.contains('label:PlanPage.label'), isTrue,
           reason: 'a tab nobody can see is the same as no tab');
       final page = _calls('lib/features/plan/presentation/plan_page.dart');
@@ -892,7 +894,7 @@ void main() {
       final bodies = RegExp(r'_bodyPages = \[(.*?)\];', dotAll: true)
           .firstMatch(main)!
           .group(1)!;
-      final pages = RegExp(r'const (\w+)\(\)')
+      final pages = RegExp(r'(\w+Page)\(')
           .allMatches(bodies)
           .map((m) => m.group(1))
           .toList();

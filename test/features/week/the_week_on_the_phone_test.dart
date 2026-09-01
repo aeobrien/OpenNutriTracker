@@ -75,23 +75,29 @@ void main() {
   group('what the week shows', () {
     testWidgets('a week with nothing on it draws nothing at all',
         (tester) async {
-      // Not a heading with an empty space under it. A person with no plan and
-      // no diary should see Home exactly as it was before this existed.
+      // Not seven empty rows. Mounted read-only, a person with no plan and no
+      // diary should see the screen exactly as it was before this existed.
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
 
-      expect(find.text(WeekAheadSection.heading), findsNothing);
+      expect(find.byType(InkWell), findsNothing);
+      for (final name in WeekAheadSection.dayNames) {
+        expect(find.textContaining(name), findsNothing);
+      }
     });
 
-    testWidgets('a week with something on it has a heading and seven days',
+    testWidgets('a week with something on it has seven dated days',
         (tester) async {
       ate(monday, 500);
       await tester.pumpWidget(screen());
       await tester.pumpAndSettle();
 
-      expect(find.text(WeekAheadSection.heading), findsOneWidget);
-      for (final name in WeekAheadSection.dayNames) {
-        expect(find.text(name), findsOneWidget);
+      // Named and dated, both. The name alone was all this row showed until
+      // 1 September 2026, which reads fine on the week you are standing in and
+      // not at all once the screen can move off it.
+      for (var i = 0; i < 7; i++) {
+        final day = DateTime.parse(monday).add(Duration(days: i));
+        expect(find.text(WeekAheadSection.dayLabel(day)), findsOneWidget);
       }
     });
 

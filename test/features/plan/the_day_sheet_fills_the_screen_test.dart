@@ -78,7 +78,7 @@ void main() {
     aPhoneSizedScreen(tester);
     await tester.pumpWidget(screen());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Fri'));
+    await tester.tap(find.text('Fri 21'));
     await tester.pumpAndSettle();
   }
 

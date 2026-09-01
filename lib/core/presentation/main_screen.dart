@@ -21,6 +21,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedPageIndex = 0;
 
+  /// The Plan tab's own state, held here because the tab's app bar is built
+  /// out here rather than by the page — and the calendar in that bar is how
+  /// the week is chosen.
+  final _plan = GlobalKey<PlanPageState>();
+
   late List<Widget> _bodyPages;
   late List<PreferredSizeWidget> _appbarPages;
 
@@ -29,15 +34,18 @@ class _MainScreenState extends State<MainScreen> {
     _bodyPages = [
       const HomePage(),
       const DiaryPage(),
-      const PlanPage(),
+      PlanPage(key: _plan),
       const RecipesPage(),
       const ProfilePage(),
     ];
     _appbarPages = [
       const HomeAppbar(),
       MainAppbar(title: S.of(context).diaryLabel, iconData: Icons.book),
-      const MainAppbar(
-          title: PlanPage.label, iconData: Icons.calendar_month),
+      MainAppbar(
+          title: PlanPage.label,
+          iconData: Icons.calendar_month,
+          leadingTooltip: 'Choose a week',
+          onLeadingPressed: () => _plan.currentState?.pickWeek()),
       MainAppbar(
           title: S.of(context).recipesLabel,
           iconData: Icons.restaurant_menu),
