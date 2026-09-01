@@ -153,17 +153,6 @@ class PlanPageState extends State<PlanPage> {
               ),
             ],
           ),
-          // Only when it would do something. A way back to a week you are
-          // already on is a control that has to be read before it can be
-          // ignored.
-          if (!_isThisWeek)
-            Align(
-              alignment: Alignment.center,
-              child: TextButton(
-                onPressed: showThisWeek,
-                child: const Text(PlanPage.thisWeek),
-              ),
-            ),
           WeekAheadSection(
             key: _week,
             repository: locator<WeekRepository>(),
@@ -176,6 +165,20 @@ class PlanPageState extends State<PlanPage> {
             planner: locator<PlanRepository>(),
             shopping: locator<ShoppingRepository>(),
             onPlanned: () => _week.currentState?.reload(),
+            // At the foot of the week, on the right, opposite the shopping
+            // list link — and only when it would do something. It used to sit
+            // centred under the dates and above the days, where Aidan read it
+            // as a heading rather than a control: "could we move it down to
+            // the bottom so that where the shopping list link sits on the
+            // left, the this week button sits on the right?" A way back to a
+            // week you are already on is a control that has to be read before
+            // it can be ignored, so it is not there at all then.
+            footerAction: _isThisWeek
+                ? null
+                : TextButton(
+                    onPressed: showThisWeek,
+                    child: const Text(PlanPage.thisWeek),
+                  ),
             onLoaded: (week) {
               if (!mounted) return;
               setState(() => _showing = week);

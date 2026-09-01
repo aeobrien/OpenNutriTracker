@@ -37,6 +37,11 @@ class WeekAheadSection extends StatefulWidget {
   /// at all rather than there and inert.
   final ShoppingRepository? shopping;
 
+  /// One control the screen around this puts at the foot of the week, on the
+  /// right, level with the shopping list link. Null on Home, which has nothing
+  /// to put there.
+  final Widget? footerAction;
+
   /// Called after the plan changes, so the screen around this can redraw —
   /// putting tonight's dinner on the plan changes what today looks like.
   final VoidCallback? onPlanned;
@@ -59,6 +64,7 @@ class WeekAheadSection extends StatefulWidget {
     this.start,
     this.planner,
     this.shopping,
+    this.footerAction,
     this.onPlanned,
     this.onLoaded,
   });
@@ -180,17 +186,30 @@ class WeekAheadSectionState extends State<WeekAheadSection> {
         _WeekFooter(week: week),
         // Under the week rather than above it: the list is what the week is
         // for, and it is reached after looking at the week, not instead of it.
-        if (widget.shopping != null)
+        //
+        // Whatever the screen around this wants at the foot of the week sits
+        // on the right of the same row. On the Plan tab that is the way back
+        // to this week, which used to sit centred above the days and read as
+        // a heading rather than a control — Aidan, 1 September 2026: "could we
+        // move it down to the bottom so that where the shopping list link sits
+        // on the left, the this week button sits on the right?"
+        if (widget.shopping != null || widget.footerAction != null)
           Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: TextButton.icon(
-                icon: const Icon(Icons.shopping_basket_outlined),
-                label: const Text(WeekAheadSection.shoppingLabel),
-                onPressed: () => ShoppingScreen.show(context,
-                    repository: widget.shopping!),
-              ),
+            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (widget.shopping != null)
+                  TextButton.icon(
+                    icon: const Icon(Icons.shopping_basket_outlined),
+                    label: const Text(WeekAheadSection.shoppingLabel),
+                    onPressed: () => ShoppingScreen.show(context,
+                        repository: widget.shopping!),
+                  )
+                else
+                  const SizedBox.shrink(),
+                widget.footerAction ?? const SizedBox.shrink(),
+              ],
             ),
           ),
       ],

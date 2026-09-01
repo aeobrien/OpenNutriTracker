@@ -139,6 +139,29 @@ void main() {
     expect(find.text(PlanPage.thisWeek), findsOneWidget);
   });
 
+  testWidgets('the way back sits at the foot of the week, opposite the list',
+      (tester) async {
+    // Aidan, 1 September 2026, on where it was — centred above the week,
+    // under the dates: "because that button looks like it's a heading not a
+    // navigation button, could we move it down to the bottom so that where
+    // the shopping list link sits on the left, the this week button sits on
+    // the right?"
+    await tester.pumpWidget(screen());
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip(PlanPage.nextWeek));
+    await tester.pumpAndSettle();
+
+    final back = tester.getCenter(find.text(PlanPage.thisWeek));
+    final list = tester.getCenter(find.text(WeekAheadSection.shoppingLabel));
+    final lastDay = tester.getCenter(find.text('Sun 13'));
+
+    expect(back.dy, greaterThan(lastDay.dy),
+        reason: 'below the week, not above it');
+    expect(back.dx, greaterThan(list.dx), reason: 'on the right');
+    expect((back.dy - list.dy).abs(), lessThan(4),
+        reason: 'level with the shopping list link, not under it');
+  });
+
   testWidgets('the calendar in the top-left opens a date to choose',
       (tester) async {
     // The app bar belongs to the screen around the tab, so this stands it up
