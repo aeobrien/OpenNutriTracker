@@ -23,12 +23,17 @@ class FakeProductsRepository implements ProductsRepository {
   final List<String> searchesMade = [];
   final List<String> barcodesLookedUp = [];
 
+  /// Set to have the search answer as the second food database rather than the
+  /// usual one, which is what the screen puts a notice above.
+  bool answersAsTheSecondService = false;
+
   @override
-  Future<List<MealEntity>> getOFFProductsByString(String searchString) async {
+  Future<({List<MealEntity> products, bool secondChoice})>
+      getOFFProductsByString(String searchString) async {
     searchesMade.add(searchString);
     final fault = searchesFailWith;
     if (fault != null) throw fault;
-    return willReturn;
+    return (products: willReturn, secondChoice: answersAsTheSecondService);
   }
 
   @override

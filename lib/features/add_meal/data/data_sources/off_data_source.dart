@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:opennutritracker/core/utils/app_const.dart';
 import 'package:opennutritracker/core/utils/off_const.dart';
 import 'package:opennutritracker/core/utils/ont_http_client.dart';
+import 'package:opennutritracker/features/add_meal/data/dto/off/off_fallback_search.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/off/off_product_response_dto.dart';
 import 'package:opennutritracker/features/add_meal/data/dto/off/off_word_response_dto.dart';
 import 'package:opennutritracker/features/scanner/data/product_not_found_exception.dart';
@@ -44,7 +45,14 @@ class OFFDataSource {
 
   OFFDataSource({http.Client? client}) : _client = client;
 
-  Future<OFFWordResponseDTO> fetchSearchWordResults(String searchString) async {
+  /// A search, and which of the two services answered it.
+  ///
+  /// [secondChoice] is true when the old service refused every ask and the
+  /// newer one answered instead. The screen needs to know, because those
+  /// results are worse and Aidan should be able to tell that from the app
+  /// getting worse — see [OFFFallbackSearch] and the banner on the results.
+  Future<({OFFWordResponseDTO response, bool secondChoice})>
+      fetchSearchWordResults(String searchString) async {
     try {
       final searchUrlString = OFFConst.getOffWordSearchUrl(searchString);
       final userAgentString = await AppConst.getUserAgentString();
@@ -69,15 +77,40 @@ class OFFDataSource {
         final wordResponse =
             OFFWordResponseDTO.fromJson(jsonDecode(response.body));
         log.fine('Successful response from OFF');
-        return wordResponse;
-      } else {
-        log.warning('Failed OFF call: ${response.statusCode}');
-        return Future.error(response.statusCode);
+        return (response: wordResponse, secondChoice: false);
       }
+      // Five refusals is where the retry gives up and, until 1 September 2026,
+      // where an error screen went up. Measured that day: the old address
+      // answered 7 of 20 asks at human pace and the newer one 20 of 20, so
+      // there is a service willing to answer standing right next to the one
+      // that will not. It is asked only here, and only for the codes that mean
+      // "not answering" — the same narrowness as the retry above.
+      if (OFFConst.offHttpDownCodes.contains(response.statusCode)) {
+        log.warning('OFF refused ${_attempts} times, trying the other service');
+        return (
+          response: await _fetchFromTheOtherService(httpClient, searchString),
+          secondChoice: true,
+        );
+      }
+      log.warning('Failed OFF call: ${response.statusCode}');
+      return Future.error(response.statusCode);
     } catch (exception, stacktrace) {
       log.severe('Exception while getting OFF word search $exception');
       return Future.error(exception);
     }
+  }
+
+  /// Asked once, not five times. Its refusal rate is not the other one's, and
+  /// a person who has already waited out five asks has waited long enough.
+  Future<OFFWordResponseDTO> _fetchFromTheOtherService(
+      ONTHttpClient httpClient, String searchString) async {
+    final url = OFFConst.getOffFallbackSearchUrl(searchString);
+    final response = await httpClient.get(url).timeout(_timeoutDuration);
+    if (response.statusCode != OFFConst.offHttpSuccessCode) {
+      log.warning('The other service refused too: ${response.statusCode}');
+      throw response.statusCode;
+    }
+    return OFFFallbackSearch.read(jsonDecode(response.body));
   }
 
   Future<OFFProductResponseDTO> fetchBarcodeResults(String barcode) async {

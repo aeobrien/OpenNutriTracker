@@ -63,7 +63,7 @@ class _IngredientSearchSheetState extends State<IngredientSearchSheet> {
           final offDataSource = locator<OFFDataSource>();
           final offResponse =
               await offDataSource.fetchSearchWordResults(query.trim());
-          final products = offResponse.products;
+          final products = offResponse.response.products;
           for (final product in products) {
             results.add(_SearchResult(
               name: product.product_name ?? 'Unknown',

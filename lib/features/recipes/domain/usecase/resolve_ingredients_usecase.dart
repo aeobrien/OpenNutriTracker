@@ -125,7 +125,9 @@ class ResolveIngredientsUsecase {
   Future<ResolvedIngredient?> _searchOff(String query) async {
     try {
       final response = await _offDataSource.fetchSearchWordResults(query);
-      final products = response.products;
+      // Whichever service answered. This is matching an ingredient name to a
+      // food, with nobody watching, so a second-choice list beats no list.
+      final products = response.response.products;
       if (products.isEmpty) return null;
 
       final product = products.first;

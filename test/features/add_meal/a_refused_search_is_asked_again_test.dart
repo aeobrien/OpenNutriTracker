@@ -64,7 +64,7 @@ void main() {
           .fetchSearchWordResults('peanut butter');
 
       expect(server.asked, hasLength(2));
-      expect(result.products, isEmpty);
+      expect(result.response.products, isEmpty);
     });
 
     test('is asked a third time if the second is refused too', () async {
@@ -87,10 +87,36 @@ void main() {
           .fetchSearchWordResults('plum tomatoes');
 
       expect(server.asked, hasLength(5));
-      expect(result.products, isEmpty);
+      expect(result.response.products, isEmpty);
     });
 
-    test('is not asked a sixth time, and the failure is passed on', () async {
+    test('is not asked a sixth time', () async {
+      // Since 1 September there IS a sixth request, but it goes somewhere
+      // else: five refusals from this service is the point at which the other
+      // one is asked instead of showing the cannot-help screen. What has not
+      // changed, and is what this test is here for, is that this service is
+      // asked five times and never a sixth. The handover itself is tested in
+      // when_the_old_search_refuses_the_other_one_answers_test.dart.
+      final server = serverThatSays([503, 503, 503, 503, 503]);
+
+      await expectLater(
+        OFFDataSource(client: server.client)
+            .fetchSearchWordResults('peanut butter'),
+        throwsA(anything),
+      );
+      expect(
+          server.asked
+              .where((u) => u.host == 'world.openfoodfacts.org')
+              .toList(),
+          hasLength(5));
+    });
+
+    test('and when the other service refuses too, the failure is passed on',
+        () async {
+      // Both down is the case the fallback cannot rescue, and it must still
+      // reach the screen as a failure rather than as an empty list — an empty
+      // list reads as "no such food", which is a different and wrong thing to
+      // tell somebody.
       final server = serverThatSays([503, 503, 503, 503, 503]);
 
       await expectLater(
@@ -98,7 +124,7 @@ void main() {
             .fetchSearchWordResults('peanut butter'),
         throwsA(503),
       );
-      expect(server.asked, hasLength(5));
+      expect(server.asked.last.host, 'search.openfoodfacts.org');
     });
 
     test('asks for exactly the same thing each time', () async {

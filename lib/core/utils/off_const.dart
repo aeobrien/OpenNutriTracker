@@ -53,6 +53,33 @@ class OFFConst {
 
   static String _getReturnFields() => _returnFields.join(",");
 
+  /// The newer search service, used only when the old one has refused every
+  /// ask.
+  ///
+  /// A separate host running different software, which is why it is worth
+  /// asking when the other will not answer: measured 1 September 2026, twenty
+  /// requests at human pace in the same window, the old address answered 7 and
+  /// this one 20. It is not better, only reachable — its answers carry fewer
+  /// calorie figures and rank worse — so nothing asks it first.
+  static const _offFallbackBaseUrl = "search.openfoodfacts.org";
+  static const _offFallbackSearchTag = "/search";
+  static const _offFallbackQueryTag = "q";
+  static const _offFallbackPageSizeTag = "page_size";
+
+  /// Fifty, to match what the old service hands back unasked. A shorter list
+  /// from the fallback would read as the app finding less rather than the
+  /// source being different.
+  static const _offFallbackPageSize = "50";
+
+  static Uri getOffFallbackSearchUrl(String searchString) => Uri.https(
+        _offFallbackBaseUrl,
+        _offFallbackSearchTag,
+        {
+          _offFallbackQueryTag: searchString,
+          _offFallbackPageSizeTag: _offFallbackPageSize,
+        },
+      );
+
   static Uri getOffWordSearchUrl(String searchString) {
     final queryParameters = {
       _offProductSearchTermsTag: searchString,

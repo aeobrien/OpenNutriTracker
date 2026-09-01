@@ -145,7 +145,7 @@ void main() {
 
       final results = await searching().searchOFFProductsByString('oat');
 
-      expect(results.map((m) => m.name), ['Oat biscuits', 'Oaty bars']);
+      expect(results.foods.map((m) => m.name), ['Oat biscuits', 'Oaty bars']);
     });
 
     test(
@@ -155,7 +155,7 @@ void main() {
 
         final results = await searching().searchOFFProductsByString('oat');
 
-        expect(HouseholdFood.idFromCode(results.first.code), row['id']);
+        expect(HouseholdFood.idFromCode(results.foods.first.code), row['id']);
       },
     );
 
@@ -164,7 +164,7 @@ void main() {
 
       final results = await searching().searchOFFProductsByString('oat');
 
-      expect(results.map((m) => m.name), ['Oaty bars']);
+      expect(results.foods.map((m) => m.name), ['Oaty bars']);
     });
 
     test(
@@ -177,7 +177,7 @@ void main() {
         final results = await searching().searchOFFProductsByString('oat');
 
         expect(
-          results.map((m) => m.name),
+          results.foods.map((m) => m.name),
           ['Oaty bars'],
           reason: 'searching for food away from home has to keep working',
         );
@@ -199,7 +199,11 @@ void main() {
 
         final results = await searching().searchOFFProductsByString('oat');
 
-        expect(results.map((m) => m.name), ['Oat biscuits']);
+        expect(results.foods.map((m) => m.name), ['Oat biscuits']);
+        expect(results.secondChoice, isFalse,
+            reason: "these are the house's own foods, and telling him they "
+                'are second-choice results from a stand-in database would be '
+                'the opposite of true');
       },
     );
 
@@ -226,7 +230,7 @@ void main() {
 
         final results = await searching().searchOFFProductsByString('banana');
 
-        expect(results.map((m) => m.name), ['Banana']);
+        expect(results.foods.map((m) => m.name), ['Banana']);
       },
     );
   });

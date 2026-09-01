@@ -8,15 +8,18 @@ class ProductsRepository {
 
   ProductsRepository(this._offDataSource, this._fdcDataSource);
 
-  Future<List<MealEntity>> getOFFProductsByString(String searchString) async {
+  /// The products, and whether they came from the service that answers when
+  /// the usual one will not. See [OFFDataSource.fetchSearchWordResults].
+  Future<({List<MealEntity> products, bool secondChoice})>
+      getOFFProductsByString(String searchString) async {
     final offWordResponse =
         await _offDataSource.fetchSearchWordResults(searchString);
 
-    final products = offWordResponse.products
+    final products = offWordResponse.response.products
         .map((offProduct) => MealEntity.fromOFFProduct(offProduct))
         .toList();
 
-    return products;
+    return (products: products, secondChoice: offWordResponse.secondChoice);
   }
 
   Future<List<MealEntity>> getFDCFoodsByString(String searchString) async {

@@ -14,6 +14,7 @@ import 'package:opennutritracker/features/add_meal/presentation/widgets/look_it_
 import 'package:opennutritracker/features/add_meal/presentation/widgets/meal_search_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/no_results_widget.dart';
+import 'package:opennutritracker/features/add_meal/presentation/widgets/second_choice_notice.dart';
 import 'package:opennutritracker/features/add_meal/presentation/widgets/meal_item_card.dart';
 import 'package:opennutritracker/features/add_meal/presentation/bloc/products_bloc.dart';
 import 'package:opennutritracker/features/diary/presentation/bloc/calendar_day_bloc.dart';
@@ -189,6 +190,11 @@ class _AddMealScreenState extends State<AddMealScreen>
                                       .textTheme
                                       .headlineSmall)),
                         ),
+                        // Above the results, not below them: a notice
+                        // underneath twenty rows is a notice he scrolls past.
+                        if (SecondChoiceNotice.forState(state) != null)
+                          SliverToBoxAdapter(
+                              child: SecondChoiceNotice.forState(state)!),
                         _productsSliver(state),
                         // Last, under everything the two food lists offered.
                         // See LookItUpWidget for why it is a button and why it

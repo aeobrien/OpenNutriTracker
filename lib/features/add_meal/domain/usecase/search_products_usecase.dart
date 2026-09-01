@@ -34,7 +34,8 @@ class SearchProductsUseCase {
   /// It is deliberately quiet about the failure rather than saying so on the
   /// screen: the shorter list is the only thing the person sees. Saying it out
   /// loud would be better and is a change to the screen, not to this.
-  Future<List<MealEntity>> searchOFFProductsByString(
+  Future<({List<MealEntity> foods, bool secondChoice})>
+      searchOFFProductsByString(
     String searchString,
   ) async {
     final ours = await _ours?.matching(searchString) ?? const <MealEntity>[];
@@ -42,13 +43,18 @@ class SearchProductsUseCase {
       final theirs = await _productsRepository.getOFFProductsByString(
         searchString,
       );
-      return [...ours, ...theirs];
+      return (
+        foods: [...ours, ...theirs.products],
+        secondChoice: theirs.secondChoice,
+      );
     } catch (_) {
       // Nothing of ours either is the one case that still fails, because there
       // genuinely is nothing to show and an empty list would read as "no such
       // food" rather than "nobody could be asked".
       if (ours.isEmpty) rethrow;
-      return ours;
+      // This household's own foods are not second-choice anything, whatever
+      // the public database did.
+      return (foods: ours, secondChoice: false);
     }
   }
 
