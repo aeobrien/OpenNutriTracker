@@ -42,6 +42,12 @@ class PlanDaySheet extends StatefulWidget {
       'Somebody has already eaten this. Taking it off the plan '
       "won't take it off their day.";
 
+  /// What the sheet says once a meal has gone on the day.
+  ///
+  /// It names the meal, because the picker closes over the sheet and the row
+  /// that was just added can be the fourth one down.
+  static String onThePlan(String name) => '$name is on the plan.';
+
   /// How the day is written at the top of the sheet — 'Tuesday 25 August'.
   static String heading(String day) {
     final date = DateTime.parse(day);
@@ -138,21 +144,26 @@ class _PlanDaySheetState extends State<PlanDaySheet> {
       final added =
           await widget.repository.add(day: widget.day, mealId: chosen.id);
       _changed = true;
-      // Aidan asked for the whole meal to go down as his and to be prompted to
-      // change it. This is the prompt half; without it the guess is silent,
-      // which is the thing he ruled against.
-      _said = added.guessedShare ? PlanRepository.defaultedPortions : null;
+      // Adding a meal says so, on the day, and goes no further.
+      //
+      // A meal with no figure used to send this sheet straight to that meal's
+      // own screen, on the reasoning that being shown what is missing beats
+      // having to go and find out. It cost more than it bought: Aidan planned
+      // a chicken katsu on 1 September 2026 and landed on its ingredients —
+      // "It's not clear that it's just been added. It should just add it to
+      // the plan and show me that it's added to the plan and then I can choose
+      // to tap on it and open that page if I want to." The reason survives
+      // without the push, because the row it just added says "We don't have
+      // numbers for this yet" where it sits, and tapping it still opens the
+      // screen that used to open itself.
+      //
+      // The share half is Aidan's earlier ruling and stays: the whole meal
+      // goes down as his, and the guess is announced rather than silent.
+      _said = [
+        PlanDaySheet.onThePlan(chosen.name),
+        if (added.guessedShare) PlanRepository.defaultedPortions,
+      ].join(' ');
       await _load();
-      // A meal built a moment ago is a name and four component names: nobody
-      // has said which of the house's foods stands for the broccoli or how
-      // much goes in, so it has no figure and cannot have one. Its own screen
-      // is where that is said, and landing there is the difference between
-      // being told what is missing and having to go and find out.
-      if (mounted && chosen.kcal == null) {
-        final on = (_day?.planned ?? const [])
-            .where((p) => p.mealId == chosen.id);
-        if (on.isNotEmpty) await _openMeal(on.last);
-      }
     } on HouseholdUnreachable catch (e) {
       if (!mounted) return;
       setState(() => _problem = '${e.headline}, so that meal is not on the '

@@ -256,12 +256,17 @@ void main() {
       expect(mini.plan.single['day'], friday);
     });
 
-    testWidgets('a meal just built lands on its own screen, gaps and all',
+    testWidgets('a meal just built goes on the plan and stays on the plan',
         (tester) async {
       // It is a name and some component names: nobody has said which of the
       // house's foods stands for the asparagus or how much goes in, so it has
-      // no figure and cannot have one. Being shown what is missing is the
-      // difference between that and having to go and find out.
+      // no figure and cannot have one. That used to send the sheet straight to
+      // the meal's own screen so the gaps were in front of you — and Aidan,
+      // planning a chicken katsu on 1 September 2026, could not tell it had
+      // been added at all: "It should just add it to the plan and show me that
+      // it's added to the plan and then I can choose to tap on it and open
+      // that page if I want to." So the sheet says it, on the day, and the row
+      // says what is still missing.
       mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
 
       await openDay(tester, 'Fri 21');
@@ -274,6 +279,34 @@ void main() {
       await tester.tap(find.text(MealBuilder.buildIt));
       await tester.pumpAndSettle();
 
+      expect(find.text(MealScreen.madeOfHeading), findsNothing);
+      expect(find.textContaining(PlanDaySheet.onThePlan('salmon')),
+          findsOneWidget);
+      expect(find.text(PlanDaySheet.heading(friday)), findsOneWidget);
+    });
+
+    testWidgets('what is missing is still said, on the row, without opening it',
+        (tester) async {
+      // The reason the old behaviour existed was that a meal with no figure
+      // needs somebody to go and say what it is made of. That reason survives
+      // the change: the row it just added says so where it sits.
+      mini.hasCooked('salmon', 'baked', veg: ['asparagus']);
+
+      await openDay(tester, 'Fri 21');
+      await tester.tap(find.text(PlanDaySheet.addLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(PlanDaySheet.buildLabel));
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilterChip, 'salmon'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(MealBuilder.buildIt));
+      await tester.pumpAndSettle();
+
+      expect(find.text("We don't have numbers for this yet"), findsOneWidget);
+
+      // And it is still one tap away, for whoever wants to go and fill it in.
+      await tester.tap(find.text('salmon').last);
+      await tester.pumpAndSettle();
       expect(find.text(MealScreen.madeOfHeading), findsOneWidget);
     });
   });

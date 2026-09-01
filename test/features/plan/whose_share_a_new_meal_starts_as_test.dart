@@ -134,7 +134,10 @@ void main() {
 
       await addAMealToFriday(tester, 'Chilli');
 
-      expect(find.text(PlanRepository.defaultedPortions), findsOneWidget);
+      // Alongside the line saying it went on, not instead of it — since
+      // 1 September 2026 the sheet says both in one breath.
+      expect(find.textContaining(PlanRepository.defaultedPortions),
+          findsOneWidget);
     });
 
     testWidgets('and still shows what is on the day', (tester) async {
@@ -160,7 +163,11 @@ void main() {
 
       await addAMealToFriday(tester, 'Chilli');
 
-      expect(find.text(PlanRepository.defaultedPortions), findsNothing);
+      expect(find.textContaining(PlanRepository.defaultedPortions),
+          findsNothing);
+      expect(find.textContaining(PlanDaySheet.onThePlan('Chilli')),
+          findsOneWidget,
+          reason: 'it still says the meal went on; only the guess is unsaid');
       expect(
           find.descendant(
               of: find.byType(PlanDaySheet), matching: find.text('Chilli')),
