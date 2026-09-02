@@ -7,6 +7,10 @@ import 'package:opennutritracker/core/utils/secure_app_storage_provider.dart';
 import 'package:opennutritracker/features/label_scan/data/data_source/openai_data_source.dart';
 import 'package:opennutritracker/features/label_scan/data/dto/llm_nutrition_result.dart';
 import 'package:opennutritracker/features/label_scan/domain/usecase/extract_nutrition_usecase.dart';
+import 'dart:io';
+
+import 'package:opennutritracker/features/label_scan/data/label_scan_offline_exception.dart';
+import 'package:opennutritracker/features/label_scan/data/pending_label_scan_queue.dart';
 import 'package:opennutritracker/features/label_scan/presentation/bloc/label_scan_bloc.dart';
 
 // Manual mocks
@@ -34,6 +38,7 @@ class MockSecureStorage extends SecureAppStorageProvider {
 
 class MockImagePicker extends ImagePicker {
   XFile? fileToReturn;
+  ImageSource? lastSource;
 
   @override
   Future<XFile?> pickImage({
@@ -44,8 +49,17 @@ class MockImagePicker extends ImagePicker {
     CameraDevice preferredCameraDevice = CameraDevice.rear,
     bool requestFullMetadata = true,
   }) async {
+    lastSource = source;
     return fileToReturn;
   }
+}
+
+/// Writes a small temp image so XFile.readAsBytes() works in tests.
+Future<XFile> _tempImage() async {
+  final dir = await Directory.systemTemp.createTemp('bloc_img');
+  final file = File('${dir.path}/label.jpg');
+  await file.writeAsBytes([1, 2, 3]);
+  return XFile(file.path);
 }
 
 void main() {
@@ -54,14 +68,25 @@ void main() {
     late MockImagePicker mockImagePicker;
     late LabelScanBloc bloc;
 
-    setUp(() {
+    late PendingLabelScanQueue queue;
+    late Directory queueTempDir;
+
+    setUp(() async {
       mockUsecase = MockExtractNutritionUsecase();
       mockImagePicker = MockImagePicker();
-      bloc = LabelScanBloc(mockUsecase, imagePicker: mockImagePicker);
+      queueTempDir =
+          await Directory.systemTemp.createTemp('bloc_queue');
+      queue = PendingLabelScanQueue(
+          baseDirProvider: () async => Directory('${queueTempDir.path}/q'));
+      bloc = LabelScanBloc(mockUsecase,
+          imagePicker: mockImagePicker, pendingQueue: queue);
     });
 
-    tearDown(() {
-      bloc.close();
+    tearDown(() async {
+      await bloc.close();
+      if (await queueTempDir.exists()) {
+        await queueTempDir.delete(recursive: true);
+      }
     });
 
     test('initial state is LabelScanInitialState', () {
@@ -147,6 +172,77 @@ void main() {
 
       // Should still be initial
       expect(bloc.state, isA<LabelScanInitialState>());
+    });
+
+    test('gallery source is passed through to the image picker', () async {
+      mockImagePicker.fileToReturn = null;
+
+      bloc.add(const CaptureAndExtractEvent(source: ImageSource.gallery));
+      await Future.delayed(const Duration(milliseconds: 100));
+
+      expect(mockImagePicker.lastSource, ImageSource.gallery);
+    });
+
+    test('emits not-found state when the label cannot be parsed', () async {
+      mockImagePicker.fileToReturn = await _tempImage();
+      mockUsecase.resultToReturn = const ExtractionResult(
+        nutrition: LlmNutritionResult(
+          caloriesPer100g: 0,
+          proteinPer100g: 0,
+          carbsPer100g: 0,
+          fatPer100g: 0,
+          error: 'Not a nutrition label',
+        ),
+        validation: ValidationResult(
+          calculatedKcal: 0,
+          deviationPct: 0,
+          status: ValidationStatus.ok,
+        ),
+      );
+
+      bloc.add(const CaptureAndExtractEvent());
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      expect(bloc.state, isA<LabelScanNotFoundState>());
+    });
+
+    test('queues the photo and emits queued state when offline', () async {
+      mockImagePicker.fileToReturn = await _tempImage();
+      mockUsecase.errorToThrow = const LabelScanOfflineException();
+
+      bloc.add(const CaptureAndExtractEvent());
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      expect(bloc.state, isA<LabelScanQueuedState>());
+      expect((bloc.state as LabelScanQueuedState).queuedCount, 1);
+      expect(await queue.count(), 1);
+    });
+
+    test('processes a queued scan when back online', () async {
+      // Pre-seed the queue with one offline scan.
+      await queue.enqueue(Uint8List.fromList([9, 9, 9]), 'image/jpeg');
+
+      mockUsecase.resultToReturn = ExtractionResult(
+        nutrition: const LlmNutritionResult(
+          name: 'Beans',
+          caloriesPer100g: 100,
+          proteinPer100g: 5,
+          carbsPer100g: 15,
+          fatPer100g: 1,
+        ),
+        validation: NutritionValidator.validateConsistency(
+          reportedKcal: 100,
+          proteinGrams: 5,
+          carbsGrams: 15,
+          fatGrams: 1,
+        ),
+      );
+
+      bloc.add(const ProcessQueuedScansEvent());
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      expect(bloc.state, isA<LabelScanResultState>());
+      expect(await queue.count(), 0);
     });
   });
 }

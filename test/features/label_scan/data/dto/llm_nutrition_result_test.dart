@@ -231,4 +231,69 @@ void main() {
       expect(updated.fatPer100g, 3);
     });
   });
+
+  group('LlmNutritionResult.stableCode', () {
+    test('same name + brand yields the same code (reusable food item)', () {
+      const a = LlmNutritionResult(
+        name: 'Cheerios',
+        brand: 'General Mills',
+        caloriesPer100g: 357,
+        proteinPer100g: 10,
+        carbsPer100g: 75,
+        fatPer100g: 5,
+      );
+      const b = LlmNutritionResult(
+        name: 'cheerios',
+        brand: '  GENERAL MILLS ',
+        caloriesPer100g: 360,
+        proteinPer100g: 11,
+        carbsPer100g: 74,
+        fatPer100g: 6,
+      );
+      expect(a.stableCode(), b.stableCode());
+      expect(a.stableCode(), startsWith('llm_'));
+    });
+
+    test('different products yield different codes', () {
+      const a = LlmNutritionResult(
+        name: 'Cheerios',
+        caloriesPer100g: 357,
+        proteinPer100g: 10,
+        carbsPer100g: 75,
+        fatPer100g: 5,
+      );
+      const b = LlmNutritionResult(
+        name: 'Weetabix',
+        caloriesPer100g: 357,
+        proteinPer100g: 10,
+        carbsPer100g: 75,
+        fatPer100g: 5,
+      );
+      expect(a.stableCode(), isNot(b.stableCode()));
+    });
+
+    test('falls back to a unique id when name is missing', () {
+      const a = LlmNutritionResult(
+        caloriesPer100g: 357,
+        proteinPer100g: 10,
+        carbsPer100g: 75,
+        fatPer100g: 5,
+      );
+      expect(a.stableCode(), isNot(startsWith('llm_')));
+      // Two calls produce distinct ids since there is nothing to key on.
+      expect(a.stableCode(), isNot(a.stableCode()));
+    });
+
+    test('toMealEntity uses the stable code', () {
+      const a = LlmNutritionResult(
+        name: 'Cheerios',
+        brand: 'General Mills',
+        caloriesPer100g: 357,
+        proteinPer100g: 10,
+        carbsPer100g: 75,
+        fatPer100g: 5,
+      );
+      expect(a.toMealEntity().code, a.stableCode());
+    });
+  });
 }
