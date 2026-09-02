@@ -9,8 +9,8 @@ import 'package:opennutritracker/core/presentation/widgets/activity_vertial_list
 import 'package:opennutritracker/core/presentation/widgets/edit_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/delete_dialog.dart';
 import 'package:opennutritracker/core/presentation/widgets/say_the_row_is_gone.dart';
+import 'package:opennutritracker/core/utils/calc/meal_grouping.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
-import 'package:opennutritracker/features/add_meal/presentation/add_meal_type.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/dashboard_widget.dart';
 import 'package:opennutritracker/features/home/presentation/widgets/intake_vertical_list.dart';
@@ -167,6 +167,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     DateTime? activeCaloriesUpdatedAt,
     bool healthKitConnected,
   ) {
+    // The four lists arrive separately and are put back together so the one
+    // list of meals can hand each strip its own entries. Nothing is reordered:
+    // the grouping keeps every entry where its own slot put it.
+    final byMeal = MealGrouping.groupByMeal([
+      ...breakfastIntakeList,
+      ...lunchIntakeList,
+      ...dinnerIntakeList,
+      ...snackIntakeList,
+    ]);
+
     // Nothing stands in front of the day. The medical disclaimer used to open
     // over this screen on a phone that had not accepted it, and it was asked
     // for from inside this build method — so every redraw while the flag was
@@ -240,62 +250,43 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               userActivityList: userActivities,
               onItemLongPressedCallback: onActivityItemLongPressed,
             ),
-            IntakeVerticalList(
-              day: DateTime.now(),
-              title: S.of(context).breakfastLabel,
-              listIcon: IntakeTypeEntity.breakfast.getIconData(),
-              addMealType: AddMealType.breakfastType,
-              intakeList: breakfastIntakeList,
-              onDeleteIntakeCallback: onDeleteIntake,
-              onItemLongPressedCallback: onIntakeItemLongPressed,
-              onItemTappedCallback: onIntakeItemTapped,
-              usesImperialUnits: usesImperialUnits,
-            ),
-            IntakeVerticalList(
-              day: DateTime.now(),
-              title: S.of(context).lunchLabel,
-              listIcon: IntakeTypeEntity.lunch.getIconData(),
-              addMealType: AddMealType.lunchType,
-              intakeList: lunchIntakeList,
-              onDeleteIntakeCallback: onDeleteIntake,
-              onItemLongPressedCallback: onIntakeItemLongPressed,
-              onItemTappedCallback: onIntakeItemTapped,
-              usesImperialUnits: usesImperialUnits,
-            ),
-            IntakeVerticalList(
-              day: DateTime.now(),
-              title: S.of(context).dinnerLabel,
-              addMealType: AddMealType.dinnerType,
-              listIcon: IntakeTypeEntity.dinner.getIconData(),
-              intakeList: dinnerIntakeList,
-              // The plan does not record which meal of the day it is for — it
-              // is one meal against a date — and every meal ever planned on
-              // this household's panel has been the evening one. So the ghosts
-              // sit in dinner. If breakfasts are ever planned, this is the line
-              // that has to learn about it.
-              planned: _planned.items,
-              onAtePlanned: (item, slot) => _decidePlanned(item, slot, true),
-              onPlannedNotEaten: (item, slot) =>
-                  _decidePlanned(item, slot, false),
-              onAtePlannedForBoth: (item, slot) =>
-                  _decidePlanned(item, slot, true, forBoth: true),
-              otherPersonName: _planned.theOther?.name,
-              onDeleteIntakeCallback: onDeleteIntake,
-              onItemLongPressedCallback: onIntakeItemLongPressed,
-              onItemTappedCallback: onIntakeItemTapped,
-              usesImperialUnits: usesImperialUnits,
-            ),
-            IntakeVerticalList(
-              day: DateTime.now(),
-              title: S.of(context).snackLabel,
-              listIcon: IntakeTypeEntity.snack.getIconData(),
-              addMealType: AddMealType.snackType,
-              intakeList: snackIntakeList,
-              onDeleteIntakeCallback: onDeleteIntake,
-              onItemLongPressedCallback: onIntakeItemLongPressed,
-              onItemTappedCallback: onIntakeItemTapped,
-              usesImperialUnits: usesImperialUnits,
-            ),
+            // One strip per meal of the day, from the one list that says
+            // what the meals of the day are and what order they come in.
+            // There used to be four copies of this block; they had already
+            // started to drift apart, and the drift is the argument for the
+            // loop rather than tidiness.
+            for (final slot in MealGrouping.displayOrder)
+              IntakeVerticalList(
+                day: DateTime.now(),
+                title: slot.getLabel(context),
+                listIcon: slot.getIconData(),
+                addMealType: slot.getAddMealType(),
+                intakeList: byMeal[slot] ?? const [],
+                // The plan does not record which meal of the day it is for —
+                // it is one meal against a date — and every meal ever planned
+                // on this household's panel has been the evening one. So the
+                // ghosts sit in dinner, and only dinner is handed the things
+                // that answer for them. If breakfasts are ever planned, this
+                // is the line that has to learn about it.
+                planned:
+                    slot == IntakeTypeEntity.dinner ? _planned.items : const [],
+                onAtePlanned: slot == IntakeTypeEntity.dinner
+                    ? (item, s) => _decidePlanned(item, s, true)
+                    : null,
+                onPlannedNotEaten: slot == IntakeTypeEntity.dinner
+                    ? (item, s) => _decidePlanned(item, s, false)
+                    : null,
+                onAtePlannedForBoth: slot == IntakeTypeEntity.dinner
+                    ? (item, s) => _decidePlanned(item, s, true, forBoth: true)
+                    : null,
+                otherPersonName: slot == IntakeTypeEntity.dinner
+                    ? _planned.theOther?.name
+                    : null,
+                onDeleteIntakeCallback: onDeleteIntake,
+                onItemLongPressedCallback: onIntakeItemLongPressed,
+                onItemTappedCallback: onIntakeItemTapped,
+                usesImperialUnits: usesImperialUnits,
+              ),
             // The shopping list, which is a phone thing rather than a panel
             // thing: it is read standing in a supermarket. Not a section — a
             // way through to a screen of its own. The week itself stays off

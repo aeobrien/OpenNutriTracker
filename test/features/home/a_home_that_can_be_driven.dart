@@ -247,11 +247,18 @@ class QuietSaid extends Fake implements SaidRepository {
 class FakeDayRepository extends Fake implements DayRepository {
   final List<LoggedItem> rows;
 
+  /// Meals the household has planned for today and nobody has answered about
+  /// yet. Empty by default, because most tests here are not about them.
+  final List<PlannedItem> plannedRows;
+
   /// When true the Mac Mini cannot be reached, which is the ordinary case this
   /// has to survive rather than an error worth showing anybody.
   final bool unreachable;
 
-  FakeDayRepository({this.rows = const [], this.unreachable = false});
+  FakeDayRepository(
+      {this.rows = const [],
+      this.plannedRows = const [],
+      this.unreachable = false});
 
   var asked = 0;
 
@@ -264,7 +271,7 @@ class FakeDayRepository extends Fake implements DayRepository {
       personId: 1,
       settings: const PersonSettings(personId: 1),
       logged: rows,
-      planned: const [],
+      planned: plannedRows,
       exercise: const [],
     );
   }
@@ -308,6 +315,7 @@ class ADrivableHome {
     List<IntakeEntity> food = const [],
     List<UserActivityEntity> exercise = const [],
     List<LoggedItem> onTheHouseholdsDay = const [],
+    List<PlannedItem> plannedForToday = const [],
     bool houseUnreachable = false,
     bool disclaimerAccepted = true,
   }) {
@@ -336,7 +344,9 @@ class ADrivableHome {
       bloc,
       QuietSaid(),
       FakeDayRepository(
-          rows: onTheHouseholdsDay, unreachable: houseUnreachable),
+          rows: onTheHouseholdsDay,
+          plannedRows: plannedForToday,
+          unreachable: houseUnreachable),
     );
   }
 

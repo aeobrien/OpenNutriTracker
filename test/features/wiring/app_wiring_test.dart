@@ -40,6 +40,34 @@ String _read(String path) => File(path).readAsStringSync();
 /// it was when I was written".
 String _calls(String path) => _read(path).replaceAll(RegExp(r'\s+'), '');
 
+const _homePage = 'lib/features/home/home_page.dart';
+const _mealSlots = 'lib/core/utils/calc/meal_grouping.dart';
+
+/// How many of the diary's meal strips Home mounts.
+///
+/// Until 2 September this was simply the number of `IntakeVerticalList(` call
+/// sites in the file, because Home wrote all four of them out one after
+/// another. It now draws them in a loop over one shared list of the day's meal
+/// slots, so the number is the length of that list instead.
+///
+/// The question has not changed — are all four of the diary's meal slots still
+/// on Home — only where the answer is written down. Both shapes are counted,
+/// so this check reports the same number whichever one the file is in, and
+/// still says three when a slot goes missing from either.
+int _mealStripsOnHome() {
+  final callSites = 'IntakeVerticalList('.allMatches(_read(_homePage)).length;
+  if (callSites != 1) return callSites; // written out one per slot
+  if (!_calls(_homePage)
+      .contains('for(finalslotinMealGrouping.displayOrder)')) {
+    return callSites; // one strip and no loop really is one strip
+  }
+  final order =
+      RegExp(r'displayOrder\s*=\s*(?:const\s*)?\[(.*?)\]', dotAll: true)
+          .firstMatch(_read(_mealSlots));
+  if (order == null) return 0;
+  return 'IntakeTypeEntity.'.allMatches(order.group(1)!).length;
+}
+
 void main() {
   group('there is one day, and it is Home', () {
     test('there is one list of food on Home, and it is the diary', () {
@@ -49,8 +77,8 @@ void main() {
       // the issues we had yesterday you are still building a separate system
       // inside the existing system." Any household list of eaten food mounted
       // on this screen is that fault coming back.
-      final home = _read('lib/features/home/home_page.dart');
-      expect('IntakeVerticalList('.allMatches(home).length, 4,
+      final home = _read(_homePage);
+      expect(_mealStripsOnHome(), 4,
           reason: 'the diary\'s four meal slots are no longer all on Home');
       expect(home.contains('WeekAheadSection('), isFalse,
           reason: 'WeekAheadSection( is a second day on the screen that '
@@ -72,8 +100,14 @@ void main() {
       //
       // And it is a wiring check, not a component one, because the card has its
       // own tests and they cannot see whether Home ever passes it anything.
-      final wired = _calls('lib/features/home/home_page.dart');
-      expect(wired.contains('planned:_planned.items'), isTrue,
+      final wired = _calls(_homePage);
+      // Read as "the strip's `planned:` is given the day's planned meals",
+      // rather than as one exact string. Since the four strips became one loop
+      // the dinner slot decides at the point of the call whether it is the one
+      // holding the plan, so what sits between `planned:` and the next comma
+      // is a choice rather than a bare field. What matters is unchanged: the
+      // day's planned meals are handed to the diary's own list.
+      expect(RegExp(r'planned:[^,]*_planned\.items').hasMatch(wired), isTrue,
           reason: 'nothing on Home hands the day\'s planned meals to the '
               'diary, so a planned dinner can never be confirmed from the '
               'phone');
