@@ -120,6 +120,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       // HealthKit permission: request once if not yet asked
       bool healthKitConnected = false;
       double activeCaloriesToday = 0.0;
+      // Whether the figure above came back from the watch on this load, as
+      // opposed to being the zero it starts as. The target below is worked out
+      // from it, and a failed read must not be passed off as a day with no
+      // exercise on it.
+      bool haveTodaysExercise = false;
       DateTime? activeCaloriesUpdatedAt;
       try {
         final hasAsked = await _configRepository.getHasAskedHealthPermission();
@@ -137,6 +142,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         if (healthKitConnected) {
           activeCaloriesToday =
               await _healthRepository.fetchAndCacheActiveCalories();
+          haveTodaysExercise = true;
           final cached = await _healthRepository.getCachedActiveCalories();
           activeCaloriesUpdatedAt = cached.$2;
         }
@@ -144,7 +150,23 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         _log.warning('Error during HealthKit check', e);
       }
 
-      final totalKcalGoal = await _getKcalGoalUsecase.getKcalGoal();
+      // The watch has already been asked for today's exercise a few lines up,
+      // and the day's target is worked out from that same figure. Handing it
+      // over rather than letting the target go and fetch it again is the whole
+      // of the "opens faster" change: that second round trip to Apple Health
+      // was the slowest thing on this path, and it was asking for a number the
+      // screen was already holding.
+      //
+      // The June version of this change did something different — it read the
+      // target off the day's saved row and skipped the calculation entirely.
+      // That would be wrong here. The saved target does not include what the
+      // watch recorded; only hand-logged exercise ever writes to it. Reading it
+      // back would have quietly stopped a walk moving the ring, which is the
+      // exact thing GetKcalGoalUsecase was rewritten in August to protect.
+      final exerciseSoFar =
+          haveTodaysExercise ? activeCaloriesToday : totalKcalActivities;
+      final totalKcalGoal = await _getKcalGoalUsecase
+          .getKcalGoal(totalKcalActivitiesParam: exerciseSoFar);
       final totalCarbsGoal =
           await _getMacroGoalUsecase.getCarbsGoal(totalKcalGoal);
       final totalFatsGoal =
