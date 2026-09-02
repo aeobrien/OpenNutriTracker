@@ -9,6 +9,8 @@ import 'package:opennutritracker/core/utils/calc/meal_slot_calc.dart';
 import 'package:opennutritracker/core/utils/id_generator.dart';
 import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/features/home/presentation/bloc/home_bloc.dart';
+import 'package:opennutritracker/features/quick_add/domain/entity/quick_add_draft_entity.dart';
+import 'package:opennutritracker/features/quick_add/domain/usecase/quick_add_draft_usecase.dart';
 import 'package:opennutritracker/features/quick_add/presentation/quick_add_screen_arguments.dart';
 import 'package:opennutritracker/generated/l10n.dart';
 
@@ -19,7 +21,8 @@ class QuickAddScreen extends StatefulWidget {
   State<QuickAddScreen> createState() => _QuickAddScreenState();
 }
 
-class _QuickAddScreenState extends State<QuickAddScreen> {
+class _QuickAddScreenState extends State<QuickAddScreen>
+    with WidgetsBindingObserver {
   final _log = Logger('QuickAddScreen');
   final _kcalController = TextEditingController();
   final _proteinController = TextEditingController();
@@ -28,23 +31,69 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
   final _labelController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
+  final _draftUsecase = locator<QuickAddDraftUsecase>();
+
   late String _selectedSlot;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedSlot = MealSlotCalc.suggestSlot(DateTime.now());
+    _restoreDraft();
   }
 
   @override
   void dispose() {
+    // Persist any in-progress entry so it survives the screen being torn down.
+    _persistDraft();
+    WidgetsBinding.instance.removeObserver(this);
     _kcalController.dispose();
     _proteinController.dispose();
     _carbsController.dispose();
     _fatController.dispose();
     _labelController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Save the draft when the app is backgrounded, so it survives app switches.
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused) {
+      _persistDraft();
+    }
+    super.didChangeAppLifecycleState(state);
+  }
+
+  QuickAddDraftEntity _currentDraft() => QuickAddDraftEntity(
+        kcal: _kcalController.text,
+        protein: _proteinController.text,
+        carbs: _carbsController.text,
+        fat: _fatController.text,
+        label: _labelController.text,
+        mealSlot: _selectedSlot,
+      );
+
+  void _persistDraft() {
+    if (_saving) return; // a successful save clears the draft itself
+    // Fire-and-forget: dispose/lifecycle callbacks cannot await.
+    _draftUsecase.saveDraft(_currentDraft());
+  }
+
+  Future<void> _restoreDraft() async {
+    final draft = await _draftUsecase.getDraft();
+    if (draft == null || !mounted) return;
+    setState(() {
+      _kcalController.text = draft.kcal;
+      _proteinController.text = draft.protein;
+      _carbsController.text = draft.carbs;
+      _fatController.text = draft.fat;
+      _labelController.text = draft.label;
+      _selectedSlot = draft.mealSlot;
+    });
+    _log.fine('Restored quick-add draft');
   }
 
   @override
@@ -244,6 +293,9 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
           proteinTracked: intake.totalProteinsGram);
 
       _log.fine('Quick-add saved: $kcal kcal, slot=$_selectedSlot');
+
+      // Entry is committed — discard the in-progress draft.
+      await _draftUsecase.clearDraft();
 
       if (mounted) {
         locator<HomeBloc>().add(LoadItemsEvent());
