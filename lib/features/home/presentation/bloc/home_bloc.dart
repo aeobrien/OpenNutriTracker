@@ -152,6 +152,27 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final totalProteinsGoal =
           await _getMacroGoalUsecase.getProteinsGoal(totalKcalGoal);
 
+      // A day nothing has been logged on has no row of its own, and until now
+      // the calories the watch recorded for it were written to no row and
+      // dropped without a word. Give the day a row — with the target this
+      // screen has just worked out, which is the same target the first meal of
+      // the day would have written — and put the figure on it.
+      //
+      // This sits after the targets rather than beside the read above because
+      // it needs them: a row cannot exist without a calorie target, and a
+      // placeholder would be worse than the bug. Every path that logs food or
+      // exercise sets the day's target only when the day has no row yet, so a
+      // row invented here with a target of zero would keep that target for the
+      // rest of the day and the diary would read "650 / 0 kcal".
+      if (healthKitConnected &&
+          !await _addTrackedDayUseCase.hasTrackedDay(currentDay)) {
+        await _addTrackedDayUseCase.addNewTrackedDay(currentDay, totalKcalGoal,
+            totalCarbsGoal, totalFatsGoal, totalProteinsGoal);
+        await _healthRepository.cacheActiveCalories(activeCaloriesToday);
+        activeCaloriesUpdatedAt =
+            (await _healthRepository.getCachedActiveCalories()).$2;
+      }
+
       final totalKcalLeft =
           CalorieGoalCalc.getDailyKcalLeft(totalKcalGoal, totalKcalIntake);
 

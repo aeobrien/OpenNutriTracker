@@ -17,10 +17,23 @@ class HealthRepository {
 
   Future<double> fetchAndCacheActiveCalories() async {
     final calories = await _healthDataSource.getActiveCaloriesToday();
+    await cacheActiveCalories(calories);
+    return calories;
+  }
+
+  /// Put a figure already read from the watch onto today's row.
+  ///
+  /// Split out from [fetchAndCacheActiveCalories] because of what happens on a
+  /// day nothing has been logged on: that day has no row of its own until
+  /// something creates one, and the write below then lands on no rows at all
+  /// and is silently lost. Creating the row here is not an option — a row
+  /// cannot exist without the day's calorie target, and this layer has no
+  /// business deciding what that is. So the caller creates the day out of the
+  /// target it already holds and asks for the figure to be written again.
+  Future<void> cacheActiveCalories(double calories) async {
     final todayKey = _todayDateString();
     await _dailyStatsDao.updateActiveCalories(todayKey, calories);
     _log.fine('Cached active calories: $calories for $todayKey');
-    return calories;
   }
 
   Future<(double calories, DateTime? updatedAt)> getCachedActiveCalories() async {
