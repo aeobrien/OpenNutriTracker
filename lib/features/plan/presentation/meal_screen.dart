@@ -5,6 +5,10 @@ import 'package:opennutritracker/core/utils/locator.dart';
 import 'package:opennutritracker/core/utils/navigation_options.dart';
 import 'package:opennutritracker/features/household/data/food_finder.dart';
 import 'package:opennutritracker/features/household/data/household_api.dart';
+import 'package:opennutritracker/features/household/data/household_logger.dart';
+import 'package:opennutritracker/features/household/data/outbox.dart';
+import 'package:opennutritracker/features/label_scan/domain/food_draft.dart';
+import 'package:opennutritracker/features/label_scan/presentation/confirm_food_screen.dart';
 import 'package:opennutritracker/features/household/domain/household_food.dart';
 import 'package:opennutritracker/features/household/domain/household_person.dart';
 import 'package:opennutritracker/features/household/presentation/figures.dart';
@@ -90,6 +94,28 @@ class MealScreen extends StatefulWidget {
       "The house has nothing to suggest for this one — its parts are either "
       'already filled in or are things the food list has never heard of.';
   static const guessedAmount = 'amount still a guess';
+
+  // --- Getting a food the house has never bought -------------------------
+  // Two doors, on Aidan's answer of 2 September 2026 when he was asked which
+  // one he wanted: "Can we have the option of either?"
+  static const neverBoughtThis =
+      "This house has never bought that. You can photograph the packet, or "
+      'have it looked up online — either way it joins the food list first.';
+  static const photographThePacket = 'Photograph it';
+  static const lookItUpOnline = 'Look it up';
+  static const webCandidatesBlurb =
+      "Read off shops' pages just now, and saved by nobody yet. Pick the one "
+      'that matches your packet and check its numbers on the next screen.';
+  static const nothingOnTheWeb =
+      "Nothing came back for that. You can photograph the packet instead, or "
+      'type it in from the food list.';
+  static const savedButNotSentYet =
+      "Saved on this phone, but the house has not heard about it yet — this "
+      'phone cannot reach the Mac Mini. It will be here to pick once it can.';
+  static const checkTheseNumbers = 'Check these numbers';
+  static const savedUnderAnotherName =
+      "Saved. It is not matching what you typed, so it has gone in under a "
+      'different name — clear the box to see the whole list.';
 
   /// The trust line, in words. Null when there is no figure to qualify —
   /// a caveat about a number nobody has is a sentence about nothing.
@@ -460,10 +486,19 @@ class _MealScreenState extends State<MealScreen> {
   /// it again replaces it. A separate correction path would be a second way of
   /// doing one thing, and the two would drift.
   Future<void> _sayWhatItIs(MealPart part) async {
+    // Read here and carried in, the way the day sheet does it: a sheet opens on
+    // the navigator's overlay rather than inside this screen's widget tree, so
+    // whether this person wants to see calorie figures is not in scope by the
+    // time the sheet builds. It matters now that a door out of this sheet shows
+    // figures of its own.
+    final figuresOff = Figures.off(context);
     final said = await showModalBottomSheet<_WhatGoesIn>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => _PartSheet(component: part.component, was: part),
+      builder: (_) => FiguresScope(
+        figuresOff: figuresOff,
+        child: _PartSheet(component: part.component, was: part),
+      ),
     );
     if (said == null || !mounted) return;
     setState(() {
@@ -576,11 +611,27 @@ class _WhatGoesIn {
 
 /// Choosing the food that stands for one component, and how much of it.
 ///
-/// The food list is the household's own and nothing else. A part of a meal
-/// this house cooks is a thing this house buys; offering the internet's food
-/// database here would let a meal be built out of somebody else's guess at a
-/// packet, and the meal's whole calorie figure is only ever as good as its
-/// worst part.
+/// The list offered here is the household's own and nothing else. A part of a
+/// meal this house cooks is a thing this house buys; offering the internet's
+/// food database directly would let a meal be built out of somebody else's
+/// guess at a packet, and the meal's whole calorie figure is only ever as good
+/// as its worst part.
+///
+/// That left a dead end, which is what Aidan hit on 2 September 2026: a meal
+/// naming something the house has never bought had nowhere to go from here.
+/// His answer, asked which way out he wanted, was *"Can we have the option of
+/// either?"* — so there are two, and the wall they are cut into is unchanged.
+/// Both doors end by writing a food into the household's own list, carrying an
+/// honest account of where its numbers came from ('photo' off a packet in this
+/// house, 'web' off somebody's page), and only then is it picked from that
+/// list like any other. Nothing here reads a figure straight off the internet
+/// into a meal.
+///
+/// The new food is written through the same queue everything else goes
+/// through, so it does not exist for the house until the phone has spoken to
+/// it. That is why both doors drain the queue and then search again rather
+/// than assuming: a part filled from a food the Mini has never heard of is a
+/// part pointing at nothing.
 class _PartSheet extends StatefulWidget {
   final String component;
 
@@ -598,6 +649,19 @@ class _PartSheet extends StatefulWidget {
 class _PartSheetState extends State<_PartSheet> {
   List<MealEntity>? _foods;
   MealEntity? _chosen;
+
+  /// What is in the search box. Kept because the two doors out of an empty
+  /// search need it: it is the name to photograph a packet for, the name to
+  /// hunt the web with, and the name to search again with afterwards.
+  String _looked = '';
+
+  /// Set while a door is open or the queue is being drained, so the sheet
+  /// says something is happening rather than sitting still.
+  bool _busy = false;
+
+  /// What went wrong, in words, when a door did not end in a food. Nulled on
+  /// the next search so a stale sentence never sits under a fresh list.
+  String? _trouble;
   late final TextEditingController _amount;
   late String _unit;
 
@@ -626,7 +690,114 @@ class _PartSheetState extends State<_PartSheet> {
   Future<void> _search(String q) async {
     final found = await locator<FoodFinder>().matching(q);
     if (!mounted) return;
-    setState(() => _foods = found);
+    setState(() {
+      _looked = q;
+      _foods = found;
+      _trouble = null;
+    });
+  }
+
+  /// Whether to offer the two ways of getting a food the house has never
+  /// bought.
+  ///
+  /// Only once somebody has typed something and the house has answered with
+  /// nothing. Offering it against an empty box would be offering to photograph
+  /// a packet nobody has named, and offering it while the search is still out
+  /// would be calling a slow answer a missing one.
+  bool get _nothingHere =>
+      _chosen == null && _looked.trim().isNotEmpty && (_foods?.isEmpty ?? false);
+
+  /// Photograph the packet: the same three-shot screen a food is entered by
+  /// anywhere else, so a food reached from here and a food reached from the
+  /// food list are written the same way and are equally accountable.
+  Future<void> _photographIt() async {
+    await Navigator.of(context).pushNamed(NavigationOptions.labelCaptureRoute);
+    await _pickUpWhatWasJustWritten();
+  }
+
+  /// Look it up online: candidates from the web, none of them saved, one of
+  /// them confirmed by a person on the same form a photographed label goes
+  /// through. Confirming is what writes it; looking costs nothing.
+  Future<void> _lookItUp() async {
+    final name = _looked.trim();
+    setState(() {
+      _busy = true;
+      _trouble = null;
+    });
+    final drafts = await locator<FoodFinder>().huntFor(name);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (drafts.isEmpty) {
+      setState(() => _trouble = MealScreen.nothingOnTheWeb);
+      return;
+    }
+    final figuresOff = Figures.off(context);
+    final draft = await showModalBottomSheet<FoodDraft>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheet) => FiguresScope(
+        figuresOff: figuresOff,
+        child: _WebCandidates(name: name, drafts: drafts),
+      ),
+    );
+    if (draft == null || !mounted) return;
+    // The form is a section rather than a page — a bare Column, so the
+    // photograph flow can drop it into its own layout. A route that hosts it
+    // has to supply what a page needs: something for the fields to sit on,
+    // somewhere to scroll, and a way back. Nine text fields on nothing is what
+    // happens otherwise.
+    final saved = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (page) => Scaffold(
+        appBar: AppBar(title: Text(MealScreen.checkTheseNumbers)),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 24),
+            child: Builder(
+              builder: (form) => ConfirmFoodScreen(
+                logger: locator<HouseholdLogger>(),
+                draft: draft,
+                // No offer to put it on today. Naming what goes into a Tuesday
+                // dinner is not eating it, and the same distinction is already
+                // made on the photograph route.
+                onSaved: (_) => Navigator.of(form).pop(true),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ));
+    if (saved != true || !mounted) return;
+    await _pickUpWhatWasJustWritten();
+  }
+
+  /// Search again for what was just written, once the house has actually been
+  /// told about it.
+  ///
+  /// The drain is not politeness. A food is queued on this phone and only gets
+  /// the id the house knows it by when the Mini accepts it, and a part is
+  /// saved by that id — so searching before the queue has emptied finds
+  /// nothing, and saying "it did not work" would be a lie about a food that is
+  /// sitting in a queue perfectly intact. When the Mini cannot be reached, that
+  /// is what gets said, in those words.
+  Future<void> _pickUpWhatWasJustWritten() async {
+    if (!mounted) return;
+    setState(() => _busy = true);
+    final drained = await locator<Outbox>().drain();
+    if (!mounted) return;
+    await _search(_looked);
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      if (drained.unreachable) {
+        _trouble = MealScreen.savedButNotSentYet;
+      } else if (_foods?.isEmpty ?? true) {
+        // Written and sent, and still not matching what is in the box — most
+        // often because the packet is named something other than what was
+        // typed. Clearing the box shows the whole list, which is where it now
+        // is.
+        _trouble = MealScreen.savedUnderAnotherName;
+      }
+    });
   }
 
   /// The amount as a number, or null when what is typed is not one. Null is
@@ -666,7 +837,7 @@ class _PartSheetState extends State<_PartSheet> {
                 onChanged: _search,
               ),
               const SizedBox(height: 8),
-              if (foods != null)
+              if (foods != null && foods.isNotEmpty)
                 Flexible(
                   child: ListView(
                     shrinkWrap: true,
@@ -680,6 +851,39 @@ class _PartSheetState extends State<_PartSheet> {
                     ],
                   ),
                 ),
+              if (_nothingHere) ...[
+                Text(MealScreen.neverBoughtThis,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.outline)),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _busy ? null : _photographIt,
+                      icon: const Icon(Icons.photo_camera_outlined),
+                      label: const Text(MealScreen.photographThePacket),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _busy ? null : _lookItUp,
+                      icon: const Icon(Icons.travel_explore),
+                      label: const Text(MealScreen.lookItUpOnline),
+                    ),
+                  ),
+                ]),
+              ],
+              if (_busy) ...[
+                const SizedBox(height: 12),
+                const LinearProgressIndicator(),
+              ],
+              if (_trouble != null) ...[
+                const SizedBox(height: 8),
+                Text(_trouble!,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.colorScheme.error)),
+              ],
             ] else ...[
               ListTile(
                 contentPadding: EdgeInsets.zero,
@@ -803,6 +1007,76 @@ class _ProposalSheet extends StatelessWidget {
                   child: const Text(MealScreen.takeThemAll),
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+/// What the web came back with, before any of it is saved.
+///
+/// A read-only list. Tapping one carries it to the same form a photographed
+/// label goes to, where a person looks at the numbers and is the one who saves
+/// it — which is the whole reason this is a list of candidates and not a list
+/// of foods. Nothing was written by asking, and nothing is written by looking.
+class _WebCandidates extends StatelessWidget {
+  final String name;
+  final List<FoodDraft> drafts;
+
+  const _WebCandidates({required this.name, required this.drafts});
+
+  /// What one candidate reads as under its name.
+  ///
+  /// Through the one formatter, like every other calorie figure in the app, so
+  /// it disappears with the rest when figures are switched off — a candidate
+  /// list is exactly the sort of out-of-the-way surface that would otherwise
+  /// keep quoting kcal at somebody who has asked not to see them. Null when the
+  /// page carried no figure at all, because an empty line says "no numbers"
+  /// more honestly than a zero does.
+  static String? numbersLine(BuildContext context, FoodDraft d) =>
+      Figures.per100(context, d.kcal100);
+
+  /// How one candidate is named, brand first when it has one — two shops'
+  /// own-brand versions of the same thing are otherwise the same line twice.
+  static String titleFor(FoodDraft d) {
+    final brand = d.brand;
+    return brand == null || brand.isEmpty ? d.name : '$brand ${d.name}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(name, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(MealScreen.webCandidatesBlurb,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.colorScheme.outline)),
+            const SizedBox(height: 12),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                children: [
+                  for (final d in drafts)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(titleFor(d)),
+                      subtitle: numbersLine(context, d) == null
+                          ? null
+                          : Text(numbersLine(context, d)!),
+                      onTap: () => Navigator.of(context).pop(d),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
